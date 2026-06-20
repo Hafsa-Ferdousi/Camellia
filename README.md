@@ -16,9 +16,9 @@ Camellia is a modern e-commerce platform developed for a Bangladeshi jewellery a
 To streamline jewellery sales, inventory management, and order processing while improving the customer experience.
 
 ## Team
-- Raisa
-- Hafsa 
-- Suchi
-- Jamie
+- Asrafun Nahar Raisa
+- Hafsa Ferdoudi
+- Sadia Afrin Suchi
+- Khaleda Sultana Jamie
 
 
