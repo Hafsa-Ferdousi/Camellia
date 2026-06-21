@@ -17,7 +17,7 @@ To streamline jewellery sales, inventory management, and order processing while 
 
 ## Team
 - Asrafun Nahar Raisa
-- Hafsa Ferdoudi
+- Hafsa Ferdousi
 - Sadia Afrin Suchi
 - Khaleda Sultana Jamie
 
