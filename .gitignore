@@ -1,0 +1,25 @@
+# Dependencies (ignores BOTH backend and frontend node_modules)
+node_modules/
+
+# Environment variables (secret keys, database passwords)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+
+# Operating system junk
+.DS_Store
+Thumbs.db
+
+# VS Code / IDE settings
+.vscode/
+.idea/
+
+# Optional: ignore these if you have them
+*.pem
