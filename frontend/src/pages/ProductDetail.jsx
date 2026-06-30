@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getProductById } from "../api/products";
-import { addToCart } from "../api/cart";
-import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import ImageGallery from "../components/ImageGallery";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { refresh } = useCart();
+  const { addItem } = useCart();
   const navigate = useNavigate();
 
   const [product,         setProduct]         = useState(null);
@@ -30,16 +27,10 @@ export default function ProductDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleAddToCart = async () => {
-    if (!user) { navigate("/login"); return; }
-    try {
-      await addToCart(product._id, quantity, selectedVariant?.sku || null);
-      refresh();
-      setMsg({ text: "Added to your cart ✓", type: "ok" });
-      setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
-    } catch (err) {
-      setMsg({ text: err.response?.data?.message || "Could not add to cart.", type: "err" });
-    }
+  const handleAddToCart = () => {
+    addItem(product, quantity, selectedVariant?.sku || null);
+    setMsg({ text: "Added to your cart ✓", type: "ok" });
+    setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
   };
 
   if (loading) {

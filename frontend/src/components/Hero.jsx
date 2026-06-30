@@ -20,31 +20,6 @@ export default function Hero({ onSearch }) {
         <div className="hero-ornament">✦</div>
         <p className="hero-sub">Kalira · Chura · Diamond Cut · Wedding Sets</p>
 
-        {/* ── Search bar ── */}
-        <div style={s.searchWrap}>
-          <span style={s.searchIcon}>🔍</span>
-          <input
-            ref={inputRef}
-            style={s.searchInput}
-            className="hero-search-input"
-            type="text"
-            placeholder="Search jewellery by name, style or category…"
-            value={query}
-            onChange={e => {
-              setQuery(e.target.value);
-              onSearch?.(e.target.value);
-            }}
-          />
-          {query && (
-            <button style={s.clear} onClick={() => { setQuery(""); onSearch?.(""); inputRef.current?.focus(); }}>✕</button>
-          )}
-          <button
-            style={s.searchBtn}
-            onClick={() => { onSearch?.(query); scrollTo("products-section"); }}
-          >
-            Search
-          </button>
-        </div>
 
         {/* ── CTA buttons ── */}
         <div className="hero-btns">

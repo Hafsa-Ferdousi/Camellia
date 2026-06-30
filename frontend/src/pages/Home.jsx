@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getProducts, getCategories } from "../api/products";
@@ -11,12 +12,16 @@ const CATEGORY_ICONS = {
   necklace: "📿",
   "diamond-cut": "💎",
   "wedding-accessories": "👑",
-  // legacy slugs
   jhumka: "✨",
   "wedding-sets": "👑",
 };
 
-// Skeleton loader card
+const TESTIMONIALS = [
+  { name: "Nusrat A.", role: "Bride, Chattogram", quote: "The kalira set was even more beautiful in person. Delivery was fast and the packaging felt like a gift in itself.", stars: 5 },
+  { name: "Farzana R.", role: "Bride, Dhaka", quote: "Camellia did our entire bridal jewelry — chura, necklace set, everything matched perfectly for the wedding photos.", stars: 5 },
+  { name: "Imran H.", role: "Groom's family, Cox's Bazar", quote: "Ordered as a gift for my sister's wedding. Quality felt premium and the team helped us pick the right size over the phone.", stars: 5 },
+];
+
 function SkeletonCard() {
   return (
     <div style={{
@@ -81,6 +86,56 @@ export default function Home() {
         @media (max-width: 1024px) { .home-product-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 720px)  { .home-product-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
         @media (max-width: 480px)  { .home-product-grid { grid-template-columns: repeat(1, 1fr); } }
+
+        /* ── Featured section ribbon ── */
+        .featured-head {
+          display: flex; justify-content: space-between; align-items: flex-end;
+          margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+        }
+        .featured-badge {
+          display: inline-flex; align-items: center; gap: 6px;
+          background: var(--gold-pale); color: var(--gold-text);
+          font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+          text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+          margin-bottom: 10px;
+        }
+
+        /* ── Testimonials ── */
+        .testimonial-section {
+          background: var(--cream);
+          padding: 60px 0 64px;
+        }
+        .testimonial-grid {
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+        }
+        @media (max-width: 900px) { .testimonial-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; } }
+        .testimonial-card {
+          background: var(--ivory); border: 1px solid var(--border);
+          border-radius: var(--radius-lg); padding: 28px 26px;
+          box-shadow: var(--shadow-sm);
+          display: flex; flex-direction: column; gap: 14px;
+        }
+        .testimonial-stars { color: var(--gold); font-size: 14px; letter-spacing: 2px; }
+        .testimonial-quote {
+          font-family: var(--font-display); font-style: italic;
+          font-size: 16.5px; line-height: 1.55; color: var(--charcoal);
+        }
+        .testimonial-author { font-size: 13px; font-weight: 600; color: var(--maroon); }
+        .testimonial-role { font-size: 12px; color: var(--muted); }
+
+        /* ── CTA banner ── */
+        .cta-banner {
+          position: relative; overflow: hidden;
+          background: linear-gradient(135deg, var(--maroon-dark) 0%, var(--maroon) 55%, var(--maroon-dark) 100%);
+          padding: 64px 24px; text-align: center;
+        }
+        .cta-banner::before {
+          content: '';
+          position: absolute; inset: 0;
+          background: radial-gradient(ellipse at 30% 30%, rgba(212,160,23,0.18) 0%, transparent 55%),
+                      radial-gradient(ellipse at 75% 70%, rgba(212,160,23,0.12) 0%, transparent 55%);
+        }
+        .cta-banner > * { position: relative; }
       `}</style>
 
       {/* ── Hero ── */}
@@ -115,10 +170,10 @@ export default function Home() {
       )}
 
       {/* ── Featured picks ── */}
-      <section className="container" style={{ padding: "56px 24px 44px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
+      <section id="products-section" className="container" style={{ padding: "60px 24px 48px" }}>
+        <div className="featured-head">
           <div>
-            <span className="eyebrow">Handpicked for You</span>
+            <span className="featured-badge">✦ Trending This Week</span>
             <h2 className="section-heading" style={{ fontSize: 28, marginTop: 4 }}>Featured Pieces</h2>
             <div className="divider-gold">✦</div>
           </div>
@@ -186,16 +241,39 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Testimonials (NEW) ── */}
+      <section className="testimonial-section">
+        <div className="container">
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <span className="eyebrow">Happy Brides</span>
+            <h2 className="section-heading" style={{ fontSize: 28, marginTop: 6 }}>What Our Customers Say</h2>
+            <div className="divider-gold" style={{ justifyContent: "center" }}>✦</div>
+          </div>
+          <div className="testimonial-grid">
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} className="testimonial-card">
+                <span className="testimonial-stars">{"★".repeat(t.stars)}</span>
+                <p className="testimonial-quote">"{t.quote}"</p>
+                <div>
+                  <p className="testimonial-author">{t.name}</p>
+                  <p className="testimonial-role">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA Banner ── */}
-      <section style={{ background: "var(--cream-dark)", borderTop: "1px solid var(--border)", padding: "52px 24px", textAlign: "center" }}>
-        <span className="eyebrow">Ready to Shop?</span>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", margin: "10px 0 16px", color: "var(--charcoal)" }}>
+      <section className="cta-banner">
+        <span className="eyebrow" style={{ color: "var(--gold-light)" }}>Ready to Shop?</span>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", margin: "10px 0 16px", color: "#FDF6EC" }}>
           Explore the Full Collection
         </h2>
-        <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 28, maxWidth: 420, margin: "0 auto 28px" }}>
+        <p style={{ fontSize: 14, color: "rgba(232,217,192,0.75)", marginBottom: 28, maxWidth: 420, margin: "0 auto 28px" }}>
           Browse all our handcrafted bridal jewellery — search, filter by category and price, and find your perfect piece.
         </p>
-        <Link to="/products" className="btn" style={{ display: "inline-block", padding: "13px 36px", fontSize: 13, letterSpacing: "0.1em", textDecoration: "none" }}>
+        <Link to="/products" className="btn btn-gold" style={{ display: "inline-block", padding: "13px 36px", fontSize: 13, letterSpacing: "0.1em", textDecoration: "none" }}>
           Browse All Products →
         </Link>
       </section>

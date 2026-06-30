@@ -13,7 +13,7 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
-
+import About from "./pages/About";
 function SiteLayout() {
   return (
     <>
@@ -41,6 +41,7 @@ export default function App() {
               <Route path="/checkout"        element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/orders"          element={<Orders />} />
+              <Route path="/about" element={<About />} />
             </Route>
           </Routes>
         </BrowserRouter>

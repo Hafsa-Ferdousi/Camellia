@@ -9,7 +9,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
-
+  const [q, setQ] = useState("");
   const close = () => setOpen(false);
   const handleLogout = () => { logout(); navigate("/"); close(); };
 
@@ -26,6 +26,18 @@ export default function Navbar() {
     </Link>
   );
 
+  // Scrolls to an in-page section; if not on the homepage, navigates home first.
+  const scrollToSection = (id) => (e) => {
+    close();
+    if (location.pathname === "/") {
+      e.preventDefault();
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 60);
+    } else {
+      // let the <a href="/#id"> handle navigation, then scroll once loaded
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 300);
+    }
+  };
+
   return (
     <>
       <header className="navbar">
@@ -35,16 +47,35 @@ export default function Navbar() {
           <nav className="navbar-links">
             {navLink("/", "Home")}
             {navLink("/products", "Products")}
-            <a href="/#categories-section" className="navbar-link" onClick={e => {
-              close();
-              if (location.pathname === "/") {
-                e.preventDefault();
-                setTimeout(() => document.getElementById("categories-section")?.scrollIntoView({ behavior: "smooth" }), 60);
-              }
-            }}>Categories</a>
-            <a href="/" className="navbar-link" onClick={close}>Contact</a>
+            <a href="/#categories-section" className="navbar-link" onClick={scrollToSection("categories-section")}>
+              Categories
+            </a>
+            {navLink("/about", "About")}
+            {/* FIX: "/contact" had no matching route in App.jsx and 404'd.
+                There's no dedicated Contact page, so this now scrolls to the
+                footer, which has the phone number / contact details. */}
+            <a href="/#site-footer" className="navbar-link" onClick={scrollToSection("site-footer")}>
+              Contact
+            </a>
           </nav>
-
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
+            }}
+            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px", flex: "0 1 220px" }}
+          >
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 13, padding: "6px 4px" }}
+            />
+            <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", fontSize: 11, fontWeight: 600, padding: "5px 12px", cursor: "pointer" }}>
+              🔍
+            </button>
+          </form>
           <div className="navbar-actions">
             {user ? (
               <>
@@ -87,7 +118,13 @@ export default function Navbar() {
         <div className="navbar-mobile-drawer" onClick={e => e.stopPropagation()}>
           <Link to="/" className="mobile-nav-link" onClick={close}>Home</Link>
           <Link to="/products" className="mobile-nav-link" onClick={close}>Products</Link>
-          <Link to="/" className="mobile-nav-link" onClick={close}>Categories</Link>
+          <a href="/#categories-section" className="mobile-nav-link" onClick={scrollToSection("categories-section")}>
+            Categories
+          </a>
+          <Link to="/about" className="mobile-nav-link" onClick={close}>About</Link>
+          <a href="/#site-footer" className="mobile-nav-link" onClick={scrollToSection("site-footer")}>
+            Contact
+          </a>
           <div className="mobile-nav-divider" />
           {user ? (
             <>

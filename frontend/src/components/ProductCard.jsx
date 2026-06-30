@@ -1,25 +1,19 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { addToCart } from "../api/cart";
-import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
 export default function ProductCard({ product }) {
   const image = product.images?.[0] || null;
   const outOfStock = (product.totalStock ?? 0) <= 0;
   const isLowStock = !outOfStock && (product.totalStock ?? 0) <= 5;
-  const { user } = useAuth();
-  const { refresh } = useCart();
+  const { addItem } = useCart();
   const navigate = useNavigate();
-  const [adding, setAdding] = useState(false);
-  const [added,  setAdded]  = useState(false);
-  const [err,    setErr]    = useState("");
+  const [added, setAdded] = useState(false);
 
-  const handleAddToCart = async (e) => {
+  const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { navigate("/login"); return; }
-    if (outOfStock || adding) return;
+    if (outOfStock) return;
 
     // Products with variants need colour selection → go to detail page
     if (product.variants?.length > 0) {
@@ -27,18 +21,9 @@ export default function ProductCard({ product }) {
       return;
     }
 
-    setAdding(true); setErr("");
-    try {
-      await addToCart(product._id, 1, null);
-      refresh(); // update navbar badge
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-    } catch {
-      setErr("Failed to add. Please try again.");
-      setTimeout(() => setErr(""), 2500);
-    } finally {
-      setAdding(false);
-    }
+    addItem(product, 1, null); // no login required
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
   };
 
   return (
@@ -75,18 +60,14 @@ export default function ProductCard({ product }) {
         </div>
       </Link>
 
-      {err && <p style={{ fontSize: 11, color: "var(--red)", padding: "0 16px 4px", textAlign: "center" }}>{err}</p>}
-
       {outOfStock ? (
         <button disabled className="product-add-btn">Out of Stock</button>
       ) : (
         <button
           className={`product-add-btn${added ? " added" : ""}`}
           onClick={handleAddToCart}
-          disabled={adding}
         >
           {added ? "✓ Added!"
-            : adding ? "Adding…"
             : product.variants?.length > 0 ? "Select Options →"
             : "Add to Cart"}
         </button>

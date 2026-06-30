@@ -5,13 +5,13 @@ import { useAuth } from "../context/AuthContext";
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password,   setPassword]   = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
   const { login }  = useAuth();
   const navigate   = useNavigate();
   const location   = useLocation();
 
-  // BUG FIX #35: Show success message after registration
   const registered = location.state?.registered;
 
   const handleSubmit = async (e) => {
@@ -51,8 +51,28 @@ export default function Login() {
             <input className="input" type="text" placeholder="your@email.com" value={identifier} onChange={e => setIdentifier(e.target.value)} required />
           </label>
           <label className="form-label">
-            Password
-            <input className="input" type="password" placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)} required />
+            Password *
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                required
+                minLength={6}
+                style={{ paddingRight: 44 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(s => !s)}
+                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)" }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </label>
           <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
             {loading ? "Signing in…" : "Login"}

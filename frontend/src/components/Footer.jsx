@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 
+
+function ComingSoon(label) {
+  return (e) => {
+    e.preventDefault();
+    alert(`${label} — page coming soon!`);
+  };
+}
+
 export default function Footer() {
   return (
-    <footer className="footer">
+    <footer className="footer" id="site-footer">
       <div className="container">
         <div className="footer-grid">
           {/* Brand */}
@@ -14,37 +22,47 @@ export default function Footer() {
               Cox's Bazar, Bangladesh.
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
-              {["Facebook", "Instagram", "WhatsApp"].map(n => (
-                <a key={n} href="/" style={s.social}>{n}</a>
+              {[
+                { name: "Facebook", href: "https://facebook.com" },
+                { name: "Instagram", href: "https://instagram.com" },
+                { name: "WhatsApp", href: "https://wa.me/8801700000000" },
+              ].map(n => (
+                <a key={n.name} href={n.href} target="_blank" rel="noopener noreferrer" style={s.social}>
+                  {n.name}
+                </a>
               ))}
             </div>
           </div>
 
-          {/* Shop */}
+          {/* Shop — now real category filters instead of dead links */}
           <div>
             <p style={s.colHead}>Shop</p>
             {["Kalira", "Chura", "Jhumka", "Necklace Sets", "Diamond Cut", "Wedding Sets"].map(c => (
-              <a key={c} href="/" style={s.link}>{c}</a>
+              <Link key={c} to={`/products?search=${encodeURIComponent(c)}`} style={s.link}>{c}</Link>
             ))}
           </div>
 
           {/* Information */}
           <div>
             <p style={s.colHead}>Information</p>
-            {["About Us", "Contact", "FAQs", "Privacy Policy", "Terms of Service"].map(i => (
-              <a key={i} href="/" style={s.link}>{i}</a>
-            ))}
+            <Link to="/about" style={s.link}>About Us</Link>
+            <a href="#site-footer" style={s.link} onClick={(e) => { e.preventDefault(); window.location.href = "mailto:hello@camellia.com"; }}>
+              Contact
+            </a>
+            <a href="#" style={s.link} onClick={ComingSoon("FAQs")}>FAQs</a>
+            <a href="#" style={s.link} onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
+            <a href="#" style={s.link} onClick={ComingSoon("Terms of Service")}>Terms of Service</a>
           </div>
 
           {/* Customer Care */}
           <div>
             <p style={s.colHead}>Customer Care</p>
             <Link to="/orders" style={s.link}>Track Order</Link>
-            <a href="/" style={s.link}>Returns &amp; Exchanges</a>
-            <a href="/" style={s.link}>Size Guide</a>
+            <a href="#" style={s.link} onClick={ComingSoon("Returns & Exchanges")}>Returns &amp; Exchanges</a>
+            <a href="#" style={s.link} onClick={ComingSoon("Size Guide")}>Size Guide</a>
             <div style={{ marginTop: 20 }}>
               <p style={{ ...s.colHead, marginBottom: 6 }}>Call Us</p>
-              <p style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</p>
+              <a href="tel:+8801700000000" style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</a>
               <p style={{ color: "rgba(232,217,192,0.4)", fontSize: 12, marginTop: 4 }}>Sat–Thu, 10am–8pm</p>
             </div>
           </div>
@@ -56,11 +74,14 @@ export default function Footer() {
           <span style={{ color: "rgba(232,217,192,0.3)", fontSize: 13 }}>
             © 2026 Camellia — Cox's Bazar, Bangladesh. All rights reserved.
           </span>
-          <a href="/">Home</a>
-          <a href="/">Products</a>
-          <a href="/">Contact</a>
+          {/* FIX: these used <a href="/"> which force a full page reload and
+              all pointed to the homepage regardless of label. Now real
+              client-side routes / non-broken placeholders. */}
+          <Link to="/">Home</Link>
+          <Link to="/products">Products</Link>
+          <a href="#site-footer" onClick={(e) => { e.preventDefault(); window.location.href = "mailto:hello@camellia.com"; }}>Contact</a>
           <Link to="/orders">Track Order</Link>
-          <a href="/">Privacy Policy</a>
+          <a href="#" onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
         </div>
       </div>
     </footer>

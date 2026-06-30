@@ -1,32 +1,10 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCart, updateCartItem, removeCartItem } from "../api/cart";
-import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
 export default function Cart() {
-  const { user, loading: authLoading } = useAuth();
-  const { refresh } = useCart();
+  const { items, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
-  const [items,   setItems]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate("/login"); return; }
-    fetchCart();
-  }, [user, authLoading]);
-
-  const fetchCart = () => {
-    setLoading(true);
-    getCart()
-      .then(r => setItems(r.data))
-      .catch(() => setError("Could not load cart. Please refresh."))
-      .finally(() => setLoading(false));
-  };
-
-  // BUG FIX #21: Price helper must check variant SKU properly
   const getPrice = item => {
     if (item.variantSku && item.product?.variants) {
       const v = item.product.variants.find(v => v.sku === item.variantSku);
@@ -43,27 +21,13 @@ export default function Cart() {
     return item.product?.totalStock || 99;
   };
 
-  // BUG FIX #22: Was passing product._id instead of cart item._id
-  const handleQty = async (cartItemId, qty, maxStock) => {
+  const handleQty = (item, qty, maxStock) => {
     if (qty < 1 || qty > maxStock) return;
-    await updateCartItem(cartItemId, qty).catch(() => {});
-    fetchCart();
-  };
-
-  const handleRemove = async (cartItemId) => {
-    await removeCartItem(cartItemId).catch(() => {});
-    fetchCart();
+    updateQty(item.productId, item.variantSku, qty);
   };
 
   const subtotal = items.reduce((s, i) => s + getPrice(i) * i.quantity, 0);
   const DELIVERY = 80;
-
-  if (loading) return (
-    <div style={{ textAlign: "center", padding: "80px 0", color: "var(--muted)" }}>
-      <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.3 }}>🛍</div>
-      <p>Loading your cart…</p>
-    </div>
-  );
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 64px" }}>
@@ -77,12 +41,6 @@ export default function Cart() {
         )}
       </h1>
       <div className="divider-gold">✦</div>
-
-      {error && (
-        <p style={{ color: "var(--red)", fontSize: 13, padding: "10px 14px", background: "#FEF2F2", borderRadius: "var(--radius-sm)", marginBottom: 16 }}>
-          {error}
-        </p>
-      )}
 
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
@@ -100,13 +58,12 @@ export default function Cart() {
               const price = getPrice(item);
               const stock = getStock(item);
               return (
-                <div className="cart-item" key={item._id}>
-                  <Link to={`/products/${item.product?._id}`} style={{ flexShrink: 0 }}>
+                <div className="cart-item" key={`${item.productId}_${item.variantSku || ""}`}>
+                  <Link to={`/products/${item.productId}`} style={{ flexShrink: 0 }}>
                     <div className="cart-thumb">
                       {item.product?.images?.[0]
                         ? <img src={item.product.images[0]} alt="" />
-                        : <span style={{ fontSize: 22, opacity: 0.3 }}>💍</span>
-                      }
+                        : <span style={{ fontSize: 22, opacity: 0.3 }}>💍</span>}
                     </div>
                   </Link>
 
@@ -115,18 +72,15 @@ export default function Cart() {
                       {item.product?.name?.en}
                     </p>
                     {item.variantSku && (
-                      <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
-                        Variant: {item.variantSku}
-                      </p>
+                      <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Variant: {item.variantSku}</p>
                     )}
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--gold-text)", fontWeight: 600, marginBottom: 10 }}>
                       ৳ {price.toLocaleString()}
                     </p>
                     <div className="qty-stepper">
-                      {/* BUG FIX #22: Pass item._id (cart item id), not product id */}
-                      <button className="qty-btn" onClick={() => handleQty(item._id, item.quantity - 1, stock)} disabled={item.quantity <= 1}>−</button>
+                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} disabled={item.quantity <= 1}>−</button>
                       <span style={{ fontSize: 14, minWidth: 32, textAlign: "center", fontWeight: 500 }}>{item.quantity}</span>
-                      <button className="qty-btn" onClick={() => handleQty(item._id, item.quantity + 1, stock)} disabled={item.quantity >= stock}>+</button>
+                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity + 1, stock)} disabled={item.quantity >= stock}>+</button>
                     </div>
                   </div>
 
@@ -134,14 +88,13 @@ export default function Cart() {
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--charcoal)", marginBottom: 10 }}>
                       ৳ {(price * item.quantity).toLocaleString()}
                     </p>
-                    <button className="remove-btn" onClick={() => handleRemove(item._id)}>Remove</button>
+                    <button className="remove-btn" onClick={() => removeItem(item.productId, item.variantSku)}>Remove</button>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Order summary — BUG FIX #23: Show real delivery charge, not always "Free" */}
           <div className="panel" style={{ marginBottom: 16 }}>
             <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 16 }}>Order Summary</p>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 14, color: "var(--muted)" }}>
@@ -172,9 +125,7 @@ export default function Cart() {
           </button>
 
           <p style={{ textAlign: "center" }}>
-            <Link to="/" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "underline" }}>
-              Continue Shopping
-            </Link>
+            <Link to="/" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "underline" }}>Continue Shopping</Link>
           </p>
         </>
       )}
