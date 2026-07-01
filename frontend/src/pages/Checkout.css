@@ -1,0 +1,76 @@
+/* frontend/src/pages/Checkout.css */
+.checkout-container {
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.checkout-container h1 {
+  text-align: center;
+  color: #333;
+}
+
+.checkout-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.checkout-container input {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.checkout-container input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.checkout-container button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.checkout-container button:hover {
+  background-color: #45a049;
+}
+
+.confirmation-container {
+  max-width: 500px;
+  margin: 50px auto;
+  padding: 30px;
+  background: #f0f8f0;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.confirmation-container h1 {
+  color: #4CAF50;
+}
+
+.confirmation-container button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.confirmation-container button:hover {
+  background-color: #45a049;
+}
