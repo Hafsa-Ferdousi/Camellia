@@ -14,6 +14,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 function SiteLayout() {
   return (
     <>
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/orders"          element={<Orders />} />
               <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
             </Route>
           </Routes>
         </BrowserRouter>

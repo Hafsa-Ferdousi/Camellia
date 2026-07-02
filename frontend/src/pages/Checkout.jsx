@@ -14,13 +14,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const getPrice = item => {
-    if (item.variantSku && item.product?.variants) {
-      const v = item.product.variants.find(v => v.sku === item.variantSku);
-      if (v) return v.price;
-    }
-    return item.product?.basePrice || 0;
-  };
+  const getPrice = item => item.product?.basePrice || 0;
   const subtotal = items.reduce((s, i) => s + getPrice(i) * i.quantity, 0);
   const deliveryCharge = paymentMethod === "cod" ? 80 : 0;
 
@@ -61,7 +55,7 @@ export default function Checkout() {
     try {
       // sync local guest cart into the server cart, then checkout
       for (const item of items) {
-        await addToCart(item.productId, item.quantity, item.variantSku);
+        await addToCart(item.productId, item.quantity);
       }
       const { data: order } = await checkoutApi(address, paymentMethod);
       clearCart();

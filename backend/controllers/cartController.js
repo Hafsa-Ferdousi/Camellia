@@ -7,9 +7,9 @@ export const getCart = async (req, res) => {
   res.json(items);
 };
 
-// POST /api/cart  body: { product, variantSku, quantity }
+// POST /api/cart  body: { product, quantity }
 export const addToCart = async (req, res) => {
-  const { product: productId, variantSku = null, quantity = 1 } = req.body;
+  const { product: productId, quantity = 1 } = req.body;
 
   // BUG FIX #1: Validate product exists before adding to cart
   const product = await Product.findById(productId);
@@ -20,12 +20,12 @@ export const addToCart = async (req, res) => {
   if (product.totalStock < quantity)
     return res.status(400).json({ message: "Not enough stock" });
 
-  let item = await CartItem.findOne({ user: req.user._id, product: productId, variantSku });
+  let item = await CartItem.findOne({ user: req.user._id, product: productId });
   if (item) {
     item.quantity += Number(quantity);
     await item.save();
   } else {
-    item = await CartItem.create({ user: req.user._id, product: productId, variantSku, quantity });
+    item = await CartItem.create({ user: req.user._id, product: productId, quantity });
   }
 
   // BUG FIX #3: Populate and return the item so the frontend has full data

@@ -31,20 +31,10 @@ export const checkout = async (req, res) => {
         return res.status(400).json({ message: `A product in your cart is no longer available. Please refresh your cart.` });
       }
 
-      let price = product.basePrice;
+      const price = product.basePrice;
 
-      if (item.variantSku) {
-        const variant = product.variants.find((v) => v.sku === item.variantSku);
-        if (!variant) throw new Error(`Variant ${item.variantSku} not found`);
-        price = variant.price;
-        if (variant.stock < item.quantity) {
-          throw new Error(`Not enough stock for ${product.name.en} (${variant.color})`);
-        }
-        variant.stock -= item.quantity;
-      } else {
-        if (product.totalStock < item.quantity) {
-          throw new Error(`Not enough stock for ${product.name.en}`);
-        }
+      if (product.totalStock < item.quantity) {
+        throw new Error(`Not enough stock for ${product.name.en}`);
       }
 
       product.totalStock = Math.max(0, product.totalStock - item.quantity);
@@ -54,7 +44,6 @@ export const checkout = async (req, res) => {
       orderItems.push({
         product: product._id,
         nameSnapshot: product.name.en,
-        variantSku: item.variantSku,
         quantity: item.quantity,
         price,
       });

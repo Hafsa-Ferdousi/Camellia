@@ -51,14 +51,10 @@ export default function Navbar() {
               Categories
             </a>
             {navLink("/about", "About")}
-            {/* FIX: "/contact" had no matching route in App.jsx and 404'd.
-                There's no dedicated Contact page, so this now scrolls to the
-                footer, which has the phone number / contact details. */}
-            <a href="/#site-footer" className="navbar-link" onClick={scrollToSection("site-footer")}>
-              Contact
-            </a>
+            {navLink("/contact", "Contact")}
           </nav>
           <form
+            className="navbar-search-form"
             onSubmit={e => {
               e.preventDefault();
               if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
@@ -116,15 +112,32 @@ export default function Navbar() {
 
       {open && (
         <div className="navbar-mobile-drawer" onClick={e => e.stopPropagation()}>
+          <form
+            className="mobile-search-form"
+            onSubmit={e => {
+              e.preventDefault();
+              if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
+            }}
+            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 14px", marginBottom: 8 }}
+          >
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 14, padding: "8px 4px" }}
+            />
+            <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", fontSize: 11, fontWeight: 600, padding: "6px 14px", cursor: "pointer" }}>
+              🔍
+            </button>
+          </form>
           <Link to="/" className="mobile-nav-link" onClick={close}>Home</Link>
           <Link to="/products" className="mobile-nav-link" onClick={close}>Products</Link>
           <a href="/#categories-section" className="mobile-nav-link" onClick={scrollToSection("categories-section")}>
             Categories
           </a>
           <Link to="/about" className="mobile-nav-link" onClick={close}>About</Link>
-          <a href="/#site-footer" className="mobile-nav-link" onClick={scrollToSection("site-footer")}>
-            Contact
-          </a>
+          <Link to="/contact" className="mobile-nav-link" onClick={close}>Contact</Link>
           <div className="mobile-nav-divider" />
           {user ? (
             <>
