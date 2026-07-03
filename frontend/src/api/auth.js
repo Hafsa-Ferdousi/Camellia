@@ -1,5 +1,6 @@
 import client from "./client";
 
+// --- Authentication ---
 export const register = (data) => client.post("/auth/register", data);
 
 // identifier can be email or username — backend accepts both.
@@ -23,7 +24,11 @@ export const verifyTwoFactorLogin = async (tempToken, code) => {
 
 export const logout = async () => {
   localStorage.removeItem("token");
-  try { await client.post("/auth/logout"); } catch { /* best-effort */ }
+  try {
+    await client.post("/auth/logout");
+  } catch {
+    // best‑effort; server may already have cleared the session
+  }
 };
 
 export const getMe = () => client.get("/auth/me");
@@ -35,7 +40,8 @@ export const resendVerification = (email) => client.post("/auth/resend-verificat
 
 // --- Password reset ---
 export const forgotPassword = (email) => client.post("/auth/forgot-password", { email });
-export const resetPassword = (token, password) => client.post(`/auth/reset-password/${token}`, { password });
+export const resetPassword = (token, password) =>
+  client.post(`/auth/reset-password/${token}`, { password });
 export const resetPasswordWithOtp = (email, otp, password) =>
   client.post("/auth/reset-password-otp", { email, otp, password });
 

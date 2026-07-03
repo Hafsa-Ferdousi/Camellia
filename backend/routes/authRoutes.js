@@ -21,7 +21,7 @@ import { loginLimiter, sensitiveActionLimiter } from "../middleware/rateLimiters
 
 const router = express.Router();
 
-// Core auth
+// --- Core authentication ---
 router.post("/register", sensitiveActionLimiter, registerUser);
 router.post("/login", loginLimiter, loginUser);
 router.post("/2fa/verify", loginLimiter, verifyTwoFactorLogin);
@@ -29,17 +29,17 @@ router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.get("/me", protect, getMe);
 
-// Email verification — link (click) and OTP (type a code) both work
+// --- Email verification (link + OTP) ---
 router.post("/verify-email/:token", verifyEmail);
 router.post("/verify-email-otp", sensitiveActionLimiter, verifyEmailOtp);
 router.post("/resend-verification", sensitiveActionLimiter, resendVerification);
 
-// Password reset — link (click) and OTP (type a code) both work
+// --- Password reset (link + OTP) ---
 router.post("/forgot-password", sensitiveActionLimiter, forgotPassword);
 router.post("/reset-password/:token", sensitiveActionLimiter, resetPassword);
 router.post("/reset-password-otp", sensitiveActionLimiter, resetPasswordWithOtp);
 
-// 2FA management (requires being logged in)
+// --- 2FA management (authenticated) ---
 router.post("/2fa/setup", protect, setupTwoFactor);
 router.post("/2fa/verify-setup", protect, verifyTwoFactorSetup);
 router.post("/2fa/disable", protect, disableTwoFactor);

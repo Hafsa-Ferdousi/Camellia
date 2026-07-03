@@ -5,29 +5,30 @@ import { resendVerification } from "../api/auth";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
-  const [password,   setPassword]   = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error,      setError]      = useState("");
-  const [loading,    setLoading]    = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendState, setResendState] = useState("idle"); // idle | sending | sent
 
-  // Two-factor step: once the password checks out on an account with 2FA
-  // enabled, the backend returns a short-lived tempToken instead of logging
-  // us in — we swap the form for a 6-digit code prompt.
+  // Two-factor step
   const [tempToken, setTempToken] = useState(null);
   const [code, setCode] = useState("");
 
-  const { login, completeTwoFactorLogin } = useAuth();
-  const navigate   = useNavigate();
-  const location   = useLocation();
+  const { login, completeTwoFactorLogin } = useAuth(); // ✅ only one login
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const registered = location.state?.registered;
   const from = location.state?.from || "/";
 
+  // --- Main login handler (supports 2FA & verification) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); setNeedsVerification(false); setLoading(true);
+    setError("");
+    setNeedsVerification(false);
+    setLoading(true);
     try {
       const data = await login(identifier, password);
       if (data.twoFactorRequired) {
@@ -49,9 +50,11 @@ export default function Login() {
     }
   };
 
+  // --- 2FA submission handler ---
   const handleTwoFactorSubmit = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError("");
+    setLoading(true);
     try {
       await completeTwoFactorLogin(tempToken, code);
       navigate(from, { replace: true });
@@ -62,6 +65,7 @@ export default function Login() {
     }
   };
 
+  // --- Resend verification email ---
   const handleResend = async () => {
     setResendState("sending");
     try {
@@ -71,13 +75,18 @@ export default function Login() {
     }
   };
 
+  // --- Render 2FA form if tempToken is present ---
   if (tempToken) {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>Two-Factor Verification</p>
-            <p style={{ fontSize: 13, color: "var(--muted)" }}>Enter the 6-digit code from your authenticator app</p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>
+              Two‑Factor Verification
+            </p>
+            <p style={{ fontSize: 13, color: "var(--muted)" }}>
+              Enter the 6‑digit code from your authenticator app
+            </p>
           </div>
           <div className="divider-gold" style={{ justifyContent: "center", marginBottom: 28 }}>✦</div>
 
@@ -94,12 +103,17 @@ export default function Login() {
                 maxLength={6}
                 placeholder="123456"
                 value={code}
-                onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 style={{ letterSpacing: "0.3em", fontSize: 18, textAlign: "center" }}
                 required
               />
             </label>
-            <button className="btn" type="submit" disabled={loading || code.length < 6} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+            <button
+              className="btn"
+              type="submit"
+              disabled={loading || code.length < 6}
+              style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}
+            >
               {loading ? "Verifying…" : "Verify & Continue"}
             </button>
           </form>
@@ -107,8 +121,20 @@ export default function Login() {
           <p style={{ textAlign: "center" }}>
             <button
               type="button"
-              onClick={() => { setTempToken(null); setCode(""); setError(""); }}
-              style={{ marginTop: 20, fontSize: 13, color: "var(--muted)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
+              onClick={() => {
+                setTempToken(null);
+                setCode("");
+                setError("");
+              }}
+              style={{
+                marginTop: 20,
+                fontSize: 13,
+                color: "var(--muted)",
+                textDecoration: "underline",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               ← Back to login
             </button>
@@ -118,22 +144,37 @@ export default function Login() {
     );
   }
 
+  // --- Main login form ---
   return (
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>Welcome Back</p>
+          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>
+            Welcome Back
+          </p>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>Sign in to your Camellia account</p>
         </div>
 
         <div className="divider-gold" style={{ justifyContent: "center", marginBottom: 28 }}>✦</div>
 
+        {/* Registration success message */}
         {registered && (
-          <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0" }}>
+          <div
+            style={{
+              background: "#ECFDF5",
+              color: "#065F46",
+              padding: "10px 14px",
+              borderRadius: "var(--radius-sm)",
+              marginBottom: 16,
+              fontSize: 13,
+              border: "1px solid #A7F3D0",
+            }}
+          >
             ✓ Account created! Please check your email to verify your address, then log in.
           </div>
         )}
 
+        {/* Error message with verification actions */}
         {error && (
           <div style={styles.errorBox}>
             {error}
@@ -146,13 +187,25 @@ export default function Login() {
                     type="button"
                     onClick={handleResend}
                     disabled={resendState === "sending"}
-                    style={{ background: "none", border: "none", padding: 0, color: "var(--red)", textDecoration: "underline", cursor: "pointer", fontSize: 13 }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--red)",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
                   >
                     {resendState === "sending" ? "Sending…" : "Resend verification email"}
                   </button>
                 )}
                 {" · "}
-                <Link to="/verify-otp" state={{ email: identifier }} style={{ color: "var(--red)", textDecoration: "underline", fontSize: 13 }}>
+                <Link
+                  to="/verify-otp"
+                  state={{ email: identifier }}
+                  style={{ color: "var(--red)", textDecoration: "underline", fontSize: 13 }}
+                >
                   Enter code
                 </Link>
               </div>
@@ -163,8 +216,16 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <label className="form-label">
             Email or Username
-            <input className="input" type="text" placeholder="your@email.com" value={identifier} onChange={e => setIdentifier(e.target.value)} required />
+            <input
+              className="input"
+              type="text"
+              placeholder="your@email.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
           </label>
+
           <label className="form-label">
             Password *
             <div style={{ position: "relative" }}>
@@ -173,7 +234,7 @@ export default function Login() {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 6 characters"
                 required
                 minLength={6}
@@ -181,18 +242,37 @@ export default function Login() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(s => !s)}
-                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)" }}
+                onClick={() => setShowPassword((s) => !s)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  color: "var(--muted)",
+                }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "🙈" : "👁"}
               </button>
             </div>
           </label>
+
           <p style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
-            <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline" }}>Forgot password?</Link>
+            <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline" }}>
+              Forgot password?
+            </Link>
           </p>
-          <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+
+          <button
+            className="btn"
+            type="submit"
+            disabled={loading}
+            style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}
+          >
             {loading ? "Signing in…" : "Login"}
           </button>
         </form>
@@ -202,7 +282,17 @@ export default function Login() {
           <Link to="/register" style={{ color: "var(--maroon)", fontWeight: 600 }}>Sign Up</Link>
         </p>
 
-        <div style={{ marginTop: 24, padding: "12px 14px", background: "var(--cream-dark)", borderRadius: "var(--radius-sm)", fontSize: 12, color: "var(--muted)", border: "1px solid var(--border)" }}>
+        <div
+          style={{
+            marginTop: 24,
+            padding: "12px 14px",
+            background: "var(--cream-dark)",
+            borderRadius: "var(--radius-sm)",
+            fontSize: 12,
+            color: "var(--muted)",
+            border: "1px solid var(--border)",
+          }}
+        >
           <strong style={{ color: "var(--charcoal)" }}>Demo accounts:</strong><br />
           Admin: admin@camellia.com / admin123<br />
           Customer: hafsa@example.com / customer123<br />
@@ -214,7 +304,30 @@ export default function Login() {
 }
 
 const styles = {
-  page: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 16px", background: "var(--cream)" },
-  card: { width: "100%", maxWidth: 420, background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "40px 36px", boxShadow: "var(--shadow-md)" },
-  errorBox: { background: "#FEF2F2", color: "var(--red)", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #FECACA" },
+  page: {
+    minHeight: "70vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "48px 16px",
+    background: "var(--cream)",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 420,
+    background: "var(--ivory)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-lg)",
+    padding: "40px 36px",
+    boxShadow: "var(--shadow-md)",
+  },
+  errorBox: {
+    background: "#FEF2F2",
+    color: "var(--red)",
+    padding: "10px 14px",
+    borderRadius: "var(--radius-sm)",
+    marginBottom: 16,
+    fontSize: 13,
+    border: "1px solid #FECACA",
+  },
 };

@@ -12,48 +12,72 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // --- Load user on mount if token exists ---
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     getMe()
-      .then(r => setUser(r.data))
-      .catch(() => { localStorage.removeItem("token"); setUser(null); })
+      .then((res) => setUser(res.data))
+      .catch(() => {
+        localStorage.removeItem("token");
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  // The axios interceptor fires this when a request comes back 401 that a
-  // silent refresh couldn't fix, so we stay in sync even outside a
-  // deliberate logout() call — e.g. the refresh token itself has expired.
+  // --- Listen for global 401 events (from axios interceptor) ---
   useEffect(() => {
     const onUnauthorized = () => setUser(null);
     window.addEventListener("auth:unauthorized", onUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, []);
 
-  // identifier = email or username, backend accepts both.
-  // Resolves to { twoFactorRequired: true, tempToken } if the account has
-  // 2FA enabled — the caller (Login page) should then prompt for a code and
-  // call completeTwoFactorLogin. Otherwise the user is now logged in.
+  // --- Login with optional 2FA ---
   const login = async (identifier, password) => {
     const data = await apiLogin(identifier, password);
-    if (data.twoFactorRequired) return data;
+    if (data.twoFactorRequired) {
+      // Return the tempToken to the caller; they must call completeTwoFactorLogin
+      return data;
+    }
     setUser(data);
     return data;
   };
 
+  // --- Complete 2FA login ---
   const completeTwoFactorLogin = async (tempToken, code) => {
     const data = await apiVerifyTwoFactorLogin(tempToken, code);
     setUser(data);
     return data;
   };
 
+  // --- Logout ---
   const logout = async () => {
-    await apiLogout();
-    setUser(null);
+    try {
+      await apiLogout();
+    } catch {
+      // Ignore server errors – we clear local state anyway
+    } finally {
+      setUser(null);
+      localStorage.removeItem("token");
+      // loading state can stay as is; we don't set loading to false because we're not fetching
+    }
+  };
+
+  // --- Provide context value ---
+  const value = {
+    user,
+    setUser, // exposed for special cases (e.g., profile updates)
+    login,
+    completeTwoFactorLogin,
+    logout,
+    loading,
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, completeTwoFactorLogin, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

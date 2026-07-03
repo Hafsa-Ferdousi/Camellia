@@ -9,18 +9,24 @@ export const protect = async (req, res, next) => {
     try {
       token = authHeader.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+<<<<<<< HEAD
       if (decoded.type !== "access") {
         return res.status(401).json({ message: "Not authorized, invalid token" });
       }
+=======
+>>>>>>> develop
       req.user = await User.findById(decoded.id).select("-password");
       if (!req.user) {
         return res.status(401).json({ message: "User not found" });
       }
       next();
     } catch (error) {
+<<<<<<< HEAD
       if (error.name === "TokenExpiredError") {
         return res.status(401).json({ message: "Access token expired", code: "TOKEN_EXPIRED" });
       }
+=======
+>>>>>>> develop
       return res.status(401).json({ message: "Not authorized, invalid token" });
     }
   } else {
@@ -35,4 +41,7 @@ export const adminOnly = (req, res, next) => {
     return res.status(403).json({ message: "Admin access required" });
   }
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> develop

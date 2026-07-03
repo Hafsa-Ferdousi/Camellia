@@ -3,33 +3,42 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { register } from "../api/auth";
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", name: "", email: "", password: "", phone: "" });
+  const [form, setForm] = useState({
+    username: "",
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+  });
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from;
 
-  const set = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    // Password match check
     if (form.password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
-    // BUG FIX #34: Register was missing username field (required by backend User model)
     try {
       await register(form);
-      // Take them straight to the OTP entry screen — carry the original
-      // destination (e.g. /checkout) forward so Login can bounce them back
-      // there once they've verified and signed in.
+      // After successful registration, go to OTP verification page
+      // Pass email and the original destination (if any) so the user
+      // can be redirected back after verification.
       navigate("/verify-otp", { state: { email: form.email, from } });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
@@ -42,31 +51,80 @@ export default function Register() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>Join Camellia</p>
-          <p style={{ fontSize: 13, color: "var(--muted)" }}>Create your account to start shopping</p>
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 28,
+              fontStyle: "italic",
+              color: "var(--maroon)",
+              marginBottom: 4,
+            }}
+          >
+            Join Camellia
+          </p>
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>
+            Create your account to start shopping
+          </p>
         </div>
 
-        <div className="divider-gold" style={{ justifyContent: "center", marginBottom: 28 }}>✦</div>
+        <div
+          className="divider-gold"
+          style={{ justifyContent: "center", marginBottom: 28 }}
+        >
+          ✦
+        </div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <label className="form-label">
             Full Name *
-            <input className="input" name="name" value={form.name} onChange={set} placeholder="Your Full Name" required />
+            <input
+              className="input"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Your Full Name"
+              required
+            />
           </label>
+
           <label className="form-label">
             Username *
-             <input className="input" name="username" value={form.username} onChange={set} placeholder="Choose a username" required />
+            <input
+              className="input"
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              placeholder="Choose a username"
+              required
+            />
           </label>
+
           <label className="form-label">
             Email Address *
-            <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder="your@email.com" required />
+            <input
+              className="input"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="your@email.com"
+              required
+            />
           </label>
+
           <label className="form-label">
             Phone Number
-            <input className="input" name="phone" value={form.phone} onChange={set} placeholder="01XXXXXXXXX" />
+            <input
+              className="input"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="01XXXXXXXXX"
+            />
           </label>
+
           <label className="form-label">
             Password *
             <div style={{ position: "relative" }}>
@@ -75,7 +133,7 @@ export default function Register() {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 value={form.password}
-                onChange={set}
+                onChange={handleChange}
                 placeholder="Minimum 6 characters"
                 required
                 minLength={6}
@@ -83,34 +141,65 @@ export default function Register() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(s => !s)}
-                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)" }}
+                onClick={() => setShowPassword((s) => !s)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  color: "var(--muted)",
+                }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "🙈" : "👁"}
               </button>
             </div>
           </label>
+
           <label className="form-label">
             Confirm Password *
             <input
               className="input"
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Re-enter your password"
               required
               minLength={6}
             />
           </label>
-          <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+
+          <button
+            className="btn"
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 8,
+              padding: 13,
+              fontSize: 13,
+            }}
+          >
             {loading ? "Creating Account…" : "Create Account"}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 20 }}>
+        <p
+          style={{
+            textAlign: "center",
+            fontSize: 13,
+            color: "var(--muted)",
+            marginTop: 20,
+          }}
+        >
           Already have an account?{" "}
-          <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>Login</Link>
+          <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>
+            Login
+          </Link>
         </p>
       </div>
     </div>
@@ -118,7 +207,30 @@ export default function Register() {
 }
 
 const styles = {
-  page: { minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 16px", background: "var(--cream)" },
-  card: { width: "100%", maxWidth: 440, background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "40px 36px", boxShadow: "var(--shadow-md)" },
-  errorBox: { background: "#FEF2F2", color: "var(--red)", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #FECACA" },
+  page: {
+    minHeight: "70vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "48px 16px",
+    background: "var(--cream)",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 440,
+    background: "var(--ivory)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-lg)",
+    padding: "40px 36px",
+    boxShadow: "var(--shadow-md)",
+  },
+  errorBox: {
+    background: "#FEF2F2",
+    color: "var(--red)",
+    padding: "10px 14px",
+    borderRadius: "var(--radius-sm)",
+    marginBottom: 16,
+    fontSize: 13,
+    border: "1px solid #FECACA",
+  },
 };

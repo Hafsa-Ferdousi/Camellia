@@ -19,6 +19,7 @@ import {
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
+// ─── Helper: public user shape ──────────────────────────────────────────
 const publicUser = (user) => ({
   _id: user._id,
   username: user.username,
@@ -31,8 +32,7 @@ const publicUser = (user) => ({
   preferredLanguage: user.preferredLanguage,
 });
 
-// Issues a fresh access token + rotated refresh token (httpOnly cookie) for
-// a user who has just completed authentication (password, or password+2FA).
+// ─── Issue a new session (access + refresh) ────────────────────────────
 async function issueSession(user, req, res) {
   const accessToken = generateAccessToken(user._id);
 
@@ -40,7 +40,6 @@ async function issueSession(user, req, res) {
   const tokenHash = hashToken(rawRefresh);
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
 
-  // Prune anything expired, then record this session.
   user.refreshTokens = (user.refreshTokens || []).filter((t) => t.expiresAt > new Date());
   user.refreshTokens.push({ tokenHash, expiresAt, userAgent: req.headers["user-agent"] });
   await user.save({ validateBeforeSave: false });
@@ -49,7 +48,7 @@ async function issueSession(user, req, res) {
   return accessToken;
 }
 
-// ─────────────────────────────── Register ───────────────────────────────
+// ─── Register ────────────────────────────────────────────────────────────
 export const registerUser = async (req, res) => {
   try {
     const { username, name, email, password, phone } = req.body;
@@ -82,7 +81,7 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       message: "Account created. Please check your email to verify your address before logging in.",
       email: user.email,
-      // Convenience for local dev when no SMTP is configured — never sent in production.
+      // dev helpers (never sent in production)
       ...(process.env.NODE_ENV !== "production" ? { devVerifyLink: link, devOtp: otp } : {}),
     });
   } catch (error) {
@@ -90,7 +89,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ──────────────────────────── Email verification ────────────────────────
+// ─── Verify email via link ──────────────────────────────────────────────
 export const verifyEmail = async (req, res) => {
   try {
     const tokenHash = hashToken(req.params.token);
@@ -114,6 +113,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+// ─── Verify email via OTP ──────────────────────────────────────────────
 export const verifyEmailOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -145,14 +145,15 @@ export const verifyEmailOtp = async (req, res) => {
   }
 };
 
+// ─── Resend verification email ─────────────────────────────────────────
 export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-    // Same response whether or not the account exists / is already verified,
-    // so this endpoint can't be used to enumerate registered emails.
-    const genericResponse = { message: "If that account exists and isn't verified yet, a new email has been sent." };
+    const genericResponse = {
+      message: "If that account exists and isn't verified yet, a new email has been sent.",
+    };
     if (!user || user.isEmailVerified) return res.json(genericResponse);
 
     const rawToken = generateRawToken();
@@ -166,13 +167,16 @@ export const resendVerification = async (req, res) => {
     const link = `${FRONTEND_URL}/verify-email/${rawToken}`;
     await sendEmail({ to: user.email, ...verificationEmailContent(link, otp) });
 
-    res.json({ ...genericResponse, ...(process.env.NODE_ENV !== "production" ? { devVerifyLink: link, devOtp: otp } : {}) });
+    res.json({
+      ...genericResponse,
+      ...(process.env.NODE_ENV !== "production" ? { devVerifyLink: link, devOtp: otp } : {}),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// ─────────────────────────────────  Login  ───────────────────────────────
+// ─── Login ──────────────────────────────────────────────────────────────
 export const loginUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -185,10 +189,7 @@ export const loginUser = async (req, res) => {
       $or: [{ email: identifier }, { username: identifier }],
     }).select("+password +loginAttempts +lockUntil +twoFactorSecret");
 
-    // Deliberately identical message for "no such user" and "wrong password"
-    // so login can't be used to enumerate valid accounts.
     const invalidCreds = () => res.status(401).json({ message: "Invalid credentials" });
-
     if (!user) return invalidCreds();
 
     if (user.isLocked()) {
@@ -226,7 +227,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ───────────────────────────  2FA: complete login  ───────────────────────
+// ─── 2FA: complete login ───────────────────────────────────────────────
 export const verifyTwoFactorLogin = async (req, res) => {
   try {
     const { tempToken, code } = req.body;
@@ -253,7 +254,7 @@ export const verifyTwoFactorLogin = async (req, res) => {
       secret: user.twoFactorSecret,
       encoding: "base32",
       token: code,
-      window: 1, // allow ±30s clock drift
+      window: 1,
     });
     if (!valid) return res.status(401).json({ message: "Incorrect authentication code." });
 
@@ -264,7 +265,7 @@ export const verifyTwoFactorLogin = async (req, res) => {
   }
 };
 
-// ────────────────────────────  Token refresh  ────────────────────────────
+// ─── Refresh access token ──────────────────────────────────────────────
 export const refreshAccessToken = async (req, res) => {
   try {
     const rawRefresh = req.cookies?.[REFRESH_COOKIE_NAME];
@@ -279,16 +280,13 @@ export const refreshAccessToken = async (req, res) => {
 
     const entry = user.refreshTokens.find((t) => t.tokenHash === tokenHash);
     if (!entry || entry.expiresAt < new Date()) {
-      // Reuse of an expired/stale token — drop it and force re-login.
       user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== tokenHash);
       await user.save({ validateBeforeSave: false });
       res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
       return res.status(401).json({ message: "Refresh token expired. Please log in again." });
     }
 
-    // Rotate: invalidate the used refresh token and issue a new one, so a
-    // stolen-but-unused token can't be replayed after the legitimate client
-    // has refreshed.
+    // Rotate
     user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== tokenHash);
     const accessToken = await issueSession(user, req, res);
 
@@ -298,7 +296,7 @@ export const refreshAccessToken = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────  Logout  ───────────────────────────────
+// ─── Logout ─────────────────────────────────────────────────────────────
 export const logoutUser = async (req, res) => {
   try {
     const rawRefresh = req.cookies?.[REFRESH_COOKIE_NAME];
@@ -313,14 +311,15 @@ export const logoutUser = async (req, res) => {
   }
 };
 
-// ────────────────────────────  Password reset  ───────────────────────────
+// ─── Forgot password ────────────────────────────────────────────────────
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-    // Always return the same message — don't reveal whether the email exists.
-    const genericResponse = { message: "If an account with that email exists, a reset link has been sent." };
+    const genericResponse = {
+      message: "If an account with that email exists, a reset link has been sent.",
+    };
     if (!user) return res.json(genericResponse);
 
     const rawToken = generateRawToken();
@@ -334,12 +333,16 @@ export const forgotPassword = async (req, res) => {
     const link = `${FRONTEND_URL}/reset-password/${rawToken}`;
     await sendEmail({ to: user.email, ...passwordResetEmailContent(link, otp) });
 
-    res.json({ ...genericResponse, ...(process.env.NODE_ENV !== "production" ? { devResetLink: link, devOtp: otp } : {}) });
+    res.json({
+      ...genericResponse,
+      ...(process.env.NODE_ENV !== "production" ? { devResetLink: link, devOtp: otp } : {}),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// ─── Reset password via link ───────────────────────────────────────────
 export const resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
@@ -357,14 +360,12 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Reset link is invalid or has expired." });
     }
 
-    user.password = password; // re-hashed by the pre-save hook
+    user.password = password; // pre-save hook will hash it
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpires = undefined;
     user.passwordResetOtpHash = undefined;
     user.passwordResetOtpExpires = undefined;
-    // Changing the password invalidates every existing session everywhere —
-    // in case the account was compromised.
-    user.refreshTokens = [];
+    user.refreshTokens = []; // invalidate all sessions
     await user.save();
 
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
@@ -374,6 +375,7 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ─── Reset password via OTP ────────────────────────────────────────────
 export const resetPasswordWithOtp = async (req, res) => {
   try {
     const { email, otp, password } = req.body;
@@ -395,7 +397,7 @@ export const resetPasswordWithOtp = async (req, res) => {
       return res.status(400).json({ message: "Code is invalid or has expired." });
     }
 
-    user.password = password; // re-hashed by the pre-save hook
+    user.password = password;
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpires = undefined;
     user.passwordResetOtpHash = undefined;
@@ -410,12 +412,12 @@ export const resetPasswordWithOtp = async (req, res) => {
   }
 };
 
-// ───────────────────────────────  Get profile  ───────────────────────────
+// ─── Get current user profile ──────────────────────────────────────────
 export const getMe = async (req, res) => {
   res.json(publicUser(req.user));
 };
 
-// ───────────────────────────  2FA: setup / manage  ────────────────────────
+// ─── 2FA: setup ─────────────────────────────────────────────────────────
 export const setupTwoFactor = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

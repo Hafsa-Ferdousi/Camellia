@@ -9,6 +9,7 @@ const addressSchema = new mongoose.Schema({
   isDefault: { type: Boolean, default: false },
 });
 
+<<<<<<< HEAD
 // One entry per device/session that currently holds a valid refresh token.
 // We never store the raw token — only its hash — so a DB leak can't be
 // replayed directly.
@@ -21,6 +22,8 @@ const refreshTokenSchema = new mongoose.Schema(
   { _id: false }
 );
 
+=======
+>>>>>>> develop
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
@@ -31,6 +34,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["customer", "admin"], default: "customer" },
     addresses: [addressSchema],
     preferredLanguage: { type: String, enum: ["en", "bn"], default: "en" },
+<<<<<<< HEAD
 
     // --- Email verification ---
     isEmailVerified: { type: Boolean, default: false },
@@ -56,6 +60,8 @@ const userSchema = new mongoose.Schema(
 
     // --- Refresh tokens (multi-device) ---
     refreshTokens: { type: [refreshTokenSchema], default: [], select: false },
+=======
+>>>>>>> develop
   },
   { timestamps: true }
 );
@@ -71,6 +77,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+<<<<<<< HEAD
 userSchema.methods.isLocked = function () {
   return !!(this.lockUntil && this.lockUntil > Date.now());
 };
@@ -100,5 +107,7 @@ userSchema.methods.resetLoginAttempts = async function () {
   }
 };
 
+=======
+>>>>>>> develop
 const User = mongoose.model("User", userSchema);
 export default User;

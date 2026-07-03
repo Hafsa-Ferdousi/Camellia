@@ -6,8 +6,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const client = axios.create({
   baseURL: API_BASE_URL,
+<<<<<<< HEAD
   // Needed so the httpOnly refresh-token cookie is sent/received.
   withCredentials: true,
+=======
+>>>>>>> develop
 });
 
 client.interceptors.request.use((config) => {
@@ -16,6 +19,7 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+<<<<<<< HEAD
 // Access tokens are short-lived (15 min). When one expires mid-session, try
 // a silent refresh using the httpOnly refresh cookie and replay the
 // original request once, so the user is never bounced out just because
@@ -70,4 +74,6 @@ client.interceptors.response.use(
   }
 );
 
+=======
+>>>>>>> develop
 export default client;

@@ -27,8 +27,13 @@ async function seed() {
   // ── Users ──
   console.log("👤 Creating users...");
   await Promise.all([
+<<<<<<< HEAD
     User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "admin123",    role: "admin",    phone: "+8801700000001", isEmailVerified: true }),
     User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "customer123", role: "customer", phone: "+8801700000002", isEmailVerified: true }),
+=======
+    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "admin123",    role: "admin",    phone: "+8801700000001" }),
+    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "customer123", role: "customer", phone: "+8801700000002" }),
+>>>>>>> develop
   ]);
 
   // ── Categories ──
