@@ -1,9 +1,9 @@
 import Product from "../models/Product.js";
 
-// GET /api/products?search=&category=&minPrice=&maxPrice=&color=&limit=&featured=
+// GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured=
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, color, limit, featured, sort } = req.query;
+    const { search, category, minPrice, maxPrice, limit, featured, sort } = req.query;
     const query = { isActive: true };
 
     if (search) {
@@ -18,7 +18,6 @@ export const getProducts = async (req, res) => {
       if (minPrice) query.basePrice.$gte = Number(minPrice);
       if (maxPrice) query.basePrice.$lte = Number(maxPrice);
     }
-    if (color) query["variants.color"] = { $regex: color, $options: "i" };
     // BUG FIX #10: Support featured filter for homepage best sellers
     if (featured === "true") query.isFeatured = true;
 
@@ -53,12 +52,7 @@ export const getProductById = async (req, res) => {
 // POST /api/products (admin only)
 export const createProduct = async (req, res) => {
   try {
-    // BUG FIX #13: Compute totalStock from variants if variants provided
-    const data = { ...req.body };
-    if (data.variants && data.variants.length > 0) {
-      data.totalStock = data.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-    }
-    const product = await Product.create(data);
+    const product = await Product.create(req.body);
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -68,12 +62,7 @@ export const createProduct = async (req, res) => {
 // PUT /api/products/:id (admin only)
 export const updateProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
-    // BUG FIX #14: Recompute totalStock on update
-    if (data.variants && data.variants.length > 0) {
-      data.totalStock = data.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
-    }
-    const product = await Product.findByIdAndUpdate(req.params.id, data, { new: true });
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {

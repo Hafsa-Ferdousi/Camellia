@@ -44,7 +44,7 @@ const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric",
 const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
-  category: "", basePrice: "",
+  category: "", basePrice: "", totalStock: "",
   images: "", isFeatured: false, isActive: true,
 };
 
@@ -139,6 +139,7 @@ export default function Admin() {
       descBn:     p.description?.bn || "",
       category:   p.category?._id || p.category || "",
       basePrice:  p.basePrice,
+      totalStock: p.totalStock ?? 0,
       images:     (p.images || []).join(", "),
       isFeatured: p.isFeatured || false,
       isActive:   p.isActive !== false,
@@ -160,6 +161,7 @@ export default function Admin() {
     description: { en: form.descEn.trim(), bn: form.descBn.trim() },
     category:    form.category,
     basePrice:   Number(form.basePrice),
+    totalStock:  Number(form.totalStock) || 0,
     images:      form.images.split(",").map(s => s.trim()).filter(Boolean),
     isFeatured:  form.isFeatured,
     isActive:    form.isActive,
@@ -169,6 +171,8 @@ export default function Admin() {
     if (!form.nameEn.trim()) return setFormErr("Product name (English) is required.");
     if (!form.category)      return setFormErr("Please select a category.");
     if (!form.basePrice || isNaN(Number(form.basePrice))) return setFormErr("Enter a valid base price.");
+    if (form.totalStock === "" || isNaN(Number(form.totalStock)) || Number(form.totalStock) < 0)
+      return setFormErr("Enter a valid stock quantity.");
     setFormErr(""); setFormSaving(true);
     try {
       if (modal === "add") {
@@ -239,7 +243,7 @@ export default function Admin() {
             {stats && (
               <>
                 {/* Stat cards */}
-                <div style={s.statGrid}>
+                <div className="admin-stat-grid" style={s.statGrid}>
                   {[
                     { label: "Total Revenue",  value: fmt(stats.totalRevenue),  icon: "💰" },
                     { label: "Total Orders",   value: stats.totalOrders,         icon: "📦" },
@@ -409,7 +413,7 @@ export default function Admin() {
 
             {formErr && <div style={s.formErr}>{formErr}</div>}
 
-            <div style={s.formGrid}>
+            <div className="admin-form-grid" style={s.formGrid}>
               <label style={s.label}>
                 Name (English) *
                 <input className="input" name="nameEn" value={form.nameEn} onChange={setF} placeholder="e.g. Gold Necklace" />
@@ -434,6 +438,10 @@ export default function Admin() {
               <label style={s.label}>
                 Base Price (৳) *
                 <input className="input" name="basePrice" type="number" min="0" value={form.basePrice} onChange={setF} placeholder="0" />
+              </label>
+              <label style={s.label}>
+                Stock Quantity *
+                <input className="input" name="totalStock" type="number" min="0" value={form.totalStock} onChange={setF} placeholder="0" />
               </label>
               <label style={{ ...s.label, gridColumn: "1 / -1" }}>
                 Image URLs <span style={{ color: "var(--faint)", fontWeight: 400 }}>(comma-separated)</span>

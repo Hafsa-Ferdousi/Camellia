@@ -14,7 +14,7 @@ export default function About() {
         combining traditional Bangladeshi craftsmanship with modern bridal styling.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, marginBottom: 32 }}>
+      <div className="about-grid" style={{ gap: 32, marginBottom: 32 }}>
         <div className="panel">
           <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 10 }}>Our Mission</p>
           <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>

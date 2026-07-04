@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   nameSnapshot: String, // product name at time of order (in case product changes later)
-  variantSku: String,
   quantity: Number,
   price: Number, // price at time of order
 });

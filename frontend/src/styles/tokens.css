@@ -1,9 +1,7 @@
 /* ============================================================
-   CAMELLIA — Jewellery & Wedding Accessories
+   CAMELLIA: E-Commerce Platform
    Rich, warm, luxurious design system
    ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
 
 :root {
   /* ── Brand palette ── */
@@ -323,19 +321,7 @@ img { max-width: 100%; display: block; }
 
 @media (max-width: 768px) {
   .navbar-burger { display: block; margin-left: auto; }
-  .navbar-links, .navbar-actions { display: none; }
-  .navbar-links.open, .navbar-actions.open {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    position: fixed;
-    top: 64px; left: 0; right: 0;
-    background: var(--nav-bg);
-    border-bottom: 1px solid rgba(212,160,23,0.2);
-    padding: 20px 24px;
-    gap: 16px;
-    z-index: 99;
-  }
+  .navbar-links, .navbar-actions, .navbar-search-form { display: none; }
 }
 
 /* ── Hero ── */
@@ -702,6 +688,28 @@ img { max-width: 100%; display: block; }
   top: 0;
   height: 100vh;
 }
+@media (max-width: 768px) {
+  .admin-layout { flex-direction: column; }
+  .admin-sidebar {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 4px;
+  }
+  .admin-sidebar-logo, .admin-sidebar-role { padding: 0 12px 0 0; }
+  .admin-nav-btn { width: auto; padding: 8px 12px; }
+  .admin-main { padding: 20px 16px; }
+}
+.admin-stat-grid { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) { .admin-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .admin-stat-grid { grid-template-columns: 1fr; } }
+.admin-form-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 560px) { .admin-form-grid { grid-template-columns: 1fr; } }
 .admin-sidebar-logo {
   font-family: var(--font-display);
   font-size: 20px;
@@ -811,13 +819,6 @@ img { max-width: 100%; display: block; }
    ============================================================ */
 
 /* ── Navbar mobile drawer ── */
-.navbar-links { display: flex; }
-.navbar-actions { display: flex; }
-@media (max-width: 768px) {
-  .navbar-links  { display: none; }
-  .navbar-actions { display: none; }
-  .navbar-burger { display: block; margin-left: auto; }
-}
 .navbar-mobile-drawer {
   position: fixed;
   top: 64px;
@@ -1034,9 +1035,29 @@ img { max-width: 100%; display: block; }
 /* ── Hero search bar ── */
 .hero-search-input::placeholder { color: rgba(232,217,192,0.38); }
 
+/* ── About page ── */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 640px) { .about-grid { grid-template-columns: 1fr; } }
+
 /* ── Products page sidebar responsive ── */
-@media (max-width: 720px) {
-  .products-layout aside {
-    display: none;
+.products-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.products-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+}
+@media (max-width: 900px) {
+  .products-layout { flex-direction: column; }
+  .products-sidebar {
+    width: 100%;
+    position: static;
   }
 }

@@ -53,10 +53,6 @@ async function seed() {
       description: { en: "Exquisite traditional kalira with intricate gold filigree work. Perfect for your special day." },
       basePrice: 4500, totalStock: 15, category: kalira._id,
       images: kal(1, 2, 3),
-      variants: [
-        { color: "Gold",      sku: "KAL-GOLD-001", price: 4500, stock: 8 },
-        { color: "Rose Gold", sku: "KAL-ROSE-001", price: 4800, stock: 7 },
-      ],
       isActive: true,
     },
     {
@@ -64,10 +60,6 @@ async function seed() {
       description: { en: "Delicate lotus-shaped kalira with pearl drops. A timeless bridal accessory." },
       basePrice: 3200, totalStock: 10, category: kalira._id,
       images: kal(4, 5, 6),
-      variants: [
-        { color: "Gold",   sku: "KAL-GOLD-002", price: 3200, stock: 6 },
-        { color: "Silver", sku: "KAL-SIL-002",  price: 2800, stock: 4 },
-      ],
       isActive: true,
     },
     {
@@ -89,10 +81,6 @@ async function seed() {
       description: { en: "Premium bridal kalira with layered gold chains and floral drops." },
       basePrice: 6200, totalStock: 5, category: kalira._id,
       images: kal(13, 14, 15),
-      variants: [
-        { color: "Gold",      sku: "KAL-GOLD-003", price: 6200, stock: 3 },
-        { color: "Rose Gold", sku: "KAL-ROSE-003", price: 6600, stock: 2 },
-      ],
       isActive: true,
     },
     {
@@ -109,10 +97,6 @@ async function seed() {
       description: { en: "Complete 21-piece bridal chura set in rich red with gold detailing. A must-have for weddings." },
       basePrice: 2800, totalStock: 20, category: chura._id,
       images: chu(1, 2, 3),
-      variants: [
-        { color: "Red & Gold",    sku: "CHU-RED-001", price: 2800, stock: 12 },
-        { color: "Maroon & Gold", sku: "CHU-MAR-001", price: 3000, stock: 8  },
-      ],
       isActive: true,
     },
     {
@@ -150,10 +134,6 @@ async function seed() {
       description: { en: "Timeless classic gold bangles. Perfect for daily wear or special occasions." },
       basePrice: 3500, totalStock: 20, category: bangles._id,
       images: bgl(1, 2, 3),
-      variants: [
-        { color: "Gold",   sku: "BGL-GOLD-001", price: 3500, stock: 12 },
-        { color: "Silver", sku: "BGL-SIL-001",  price: 3000, stock: 8  },
-      ],
       isActive: true,
     },
     {
@@ -170,10 +150,6 @@ async function seed() {
       description: { en: "Magnificent multi-layered bridal necklace set with matching earrings and tikka." },
       basePrice: 8500, totalStock: 8, category: necklace._id,
       images: nec(1, 2, 3),
-      variants: [
-        { color: "Gold",       sku: "NEC-GOLD-001", price: 8500, stock: 5 },
-        { color: "White Gold", sku: "NEC-WHT-001",  price: 9200, stock: 3 },
-      ],
       isActive: true,
     },
     {
@@ -204,10 +180,6 @@ async function seed() {
       description: { en: "Precision diamond-cut gold bangles that catch light beautifully." },
       basePrice: 6200, totalStock: 5, category: diamond._id,
       images: dia(1, 2, 3),
-      variants: [
-        { color: "22K Gold", sku: "DIA-22K-001", price: 6200, stock: 3 },
-        { color: "18K Gold", sku: "DIA-18K-001", price: 5400, stock: 2 },
-      ],
       isActive: true,
     },
     {
@@ -238,10 +210,6 @@ async function seed() {
       description: { en: "The ultimate bridal jewellery set — necklace, earrings, bangles, tikka, nose ring and more." },
       basePrice: 18500, totalStock: 3, category: wedding._id,
       images: wed(1, 2, 3),
-      variants: [
-        { color: "Gold",      sku: "WED-GOLD-001", price: 18500, stock: 2 },
-        { color: "Rose Gold", sku: "WED-ROSE-001", price: 19800, stock: 1 },
-      ],
       isActive: true,
     },
     {

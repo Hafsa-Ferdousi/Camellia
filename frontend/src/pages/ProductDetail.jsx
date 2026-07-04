@@ -10,7 +10,6 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   const [product,         setProduct]         = useState(null);
-  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity,        setQuantity]        = useState(1);
   const [msg,             setMsg]             = useState({ text: "", type: "ok" });
   const [loading,         setLoading]         = useState(true);
@@ -19,16 +18,13 @@ export default function ProductDetail() {
   useEffect(() => {
     setLoading(true);
     getProductById(id)
-      .then(r => {
-        setProduct(r.data);
-        if (r.data.variants?.length) setSelectedVariant(r.data.variants[0]);
-      })
+      .then(r => setProduct(r.data))
       .catch(() => navigate("/"))
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleAddToCart = () => {
-    addItem(product, quantity, selectedVariant?.sku || null);
+    addItem(product, quantity);
     setMsg({ text: "Added to your cart ✓", type: "ok" });
     setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
   };
@@ -49,8 +45,8 @@ export default function ProductDetail() {
   }
   if (!product) return null;
 
-  const stock      = selectedVariant ? selectedVariant.stock : product.totalStock;
-  const price      = selectedVariant ? selectedVariant.price : product.basePrice;
+  const stock      = product.totalStock;
+  const price      = product.basePrice;
   const outOfStock = (stock ?? 0) <= 0;
 
   return (
@@ -59,7 +55,7 @@ export default function ProductDetail() {
       <nav className="breadcrumb">
         <Link to="/">Home</Link>
         <span>/</span>
-        <Link to="/">Products</Link>
+        <Link to="/products">Products</Link>
         {product.category?.name?.en && <><span>/</span><span>{product.category.name.en}</span></>}
         <span>/</span>
         <span style={{ color: "var(--charcoal)" }}>{product.name?.en}</span>
@@ -105,40 +101,6 @@ export default function ProductDetail() {
             <div style={{ marginBottom: 22 }}>
               <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 8 }}>Description</p>
               <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>{product.description.en}</p>
-            </div>
-          )}
-
-          {/* Variants */}
-          {product.variants?.length > 0 && (
-            <div style={{ marginBottom: 22 }}>
-              <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>
-                Color — <span style={{ color: "var(--charcoal)", fontWeight: 600 }}>{selectedVariant?.color}</span>
-              </p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {product.variants.map(v => (
-                  <button
-                    key={v.sku}
-                    onClick={() => { setSelectedVariant(v); setQuantity(1); }}
-                    style={{
-                      padding: "7px 18px",
-                      border: `${selectedVariant?.sku === v.sku ? "2px" : "1px"} solid ${selectedVariant?.sku === v.sku ? "var(--maroon)" : "var(--border)"}`,
-                      borderRadius: "var(--radius-sm)",
-                      background: selectedVariant?.sku === v.sku ? "var(--cream-dark)" : "var(--ivory)",
-                      fontSize: 13,
-                      cursor: "pointer",
-                      color: selectedVariant?.sku === v.sku ? "var(--maroon)" : "var(--muted)",
-                      fontWeight: selectedVariant?.sku === v.sku ? 600 : 400,
-                      fontFamily: "var(--font-body)",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    {v.color}
-                    {selectedVariant?.sku === v.sku && v.price !== product.basePrice && (
-                      <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.7 }}>৳{v.price?.toLocaleString()}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
