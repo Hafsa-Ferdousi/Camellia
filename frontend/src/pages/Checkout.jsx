@@ -3,6 +3,34 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Checkout.css';
 
+// Helper to safely get string value from object or string
+const getString = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value.en) return value.en;
+  if (typeof value === 'object' && value.bn) return value.bn;
+  return JSON.stringify(value);
+};
+
+// ✅ NEW: Helper to safely get a number from any price format
+const getNumber = (value) => {
+  if (value === undefined || value === null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  if (typeof value === 'object') {
+    // If it's multilingual { en: ..., bn: ... }
+    if (value.en !== undefined) return getNumber(value.en);
+    if (value.bn !== undefined) return getNumber(value.bn);
+    // If it's nested like { amount: ... } or { value: ... }
+    if (value.amount !== undefined) return getNumber(value.amount);
+    if (value.value !== undefined) return getNumber(value.value);
+  }
+  return 0;
+};
+
 const Checkout = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -16,7 +44,7 @@ const Checkout = () => {
   const [cartItems, setCartItems] = useState([]);
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
+    const savedCart = localStorage.getItem('camellia_guest_cart');
     if (savedCart) {
       try {
         const parsed = JSON.parse(savedCart);
@@ -39,7 +67,12 @@ const Checkout = () => {
   };
 
   const calculateTotals = () => {
-    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((sum, item) => {
+      // ✅ Use getNumber to extract price safely
+      const price = getNumber(item.product?.price) || getNumber(item.price) || 0;
+      const qty = item.quantity || 1;
+      return sum + (price * qty);
+    }, 0);
     const vat = subtotal * 0.10;
     return { subtotal, vat };
   };
@@ -140,14 +173,17 @@ const Checkout = () => {
 
     try {
       const { subtotal, vat } = calculateTotals();
+      
+      const orderItems = cartItems.map(item => ({
+        nameSnapshot: getString(item.product?.name || item.name || 'Product'),
+        quantity: item.quantity || 1,
+        price: getNumber(item.product?.price) || getNumber(item.price) || 0,
+        details: getString(item.product?.description || item.details || '')
+      }));
+
       const orderData = {
         _id: 'ORD-' + Date.now(),
-        items: cartItems.map(item => ({
-          nameSnapshot: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          details: item.details || ''
-        })),
+        items: orderItems,
         subtotal: subtotal,
         vat: vat,
         deliveryCharge: formData.deliveryCharge,
@@ -175,7 +211,7 @@ const Checkout = () => {
       const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       savedOrders.push(orderData);
       localStorage.setItem('orders', JSON.stringify(savedOrders));
-      localStorage.removeItem('cart');
+      localStorage.removeItem('camellia_guest_cart');
       setCartItems([]);
       navigate('/order-confirmation', { state: { order: orderData } });
     } catch (err) {
@@ -525,16 +561,24 @@ const Checkout = () => {
               <h2>ORDER REVIEW</h2>
 
               <div className="order-items">
-                {cartItems.map((item, index) => (
-                  <div key={index} className="order-item">
-                    <div className="order-item-info">
-                      <div className="order-item-name">{item.name}</div>
-                      {item.details && <div className="order-item-details">{item.details}</div>}
-                      <div className="order-item-quantity">Quantity: {item.quantity}</div>
+                {cartItems.map((item, index) => {
+                  // ✅ Use getString and getNumber safely
+                  const productName = getString(item.product?.name || item.name || 'Product');
+                  const productPrice = getNumber(item.product?.price) || getNumber(item.price) || 0;
+                  const productQty = item.quantity || 1;
+                  const productDetails = getString(item.product?.description || item.details || '');
+
+                  return (
+                    <div key={index} className="order-item">
+                      <div className="order-item-info">
+                        <div className="order-item-name">{productName}</div>
+                        {productDetails && <div className="order-item-details">{productDetails}</div>}
+                        <div className="order-item-quantity">Quantity: {productQty}</div>
+                      </div>
+                      <div className="order-item-price">Tk {productPrice.toFixed(2)}</div>
                     </div>
-                    <div className="order-item-price">Tk {item.price.toFixed(2)}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="order-summary">
