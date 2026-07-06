@@ -2,13 +2,12 @@ import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 
-const DELIVERY_CHARGE = 80; // BUG FIX #5: Was 0, should be 80tk for COD
+const DELIVERY_CHARGE = 80; // 80tk for COD, free for online payment
 
-// POST /api/orders/checkout  body: { address, paymentMethod }
+// ── POST /api/orders/checkout ──────────────────────────────────────────────
 export const checkout = async (req, res) => {
   const { address, paymentMethod = "cod" } = req.body;
 
-  // BUG FIX #6: Proper address validation matching frontend fields
   if (!address || !address.addressLine || !address.city || !address.phone) {
     return res.status(400).json({ message: "Delivery address is required (addressLine, city, phone)." });
   }
@@ -26,7 +25,6 @@ export const checkout = async (req, res) => {
     for (const item of cartItems) {
       const product = item.product;
 
-      // BUG FIX #7: Guard against deleted products still in cart
       if (!product || !product.isActive) {
         return res.status(400).json({ message: `A product in your cart is no longer available. Please refresh your cart.` });
       }
@@ -62,7 +60,6 @@ export const checkout = async (req, res) => {
 
     await Promise.all(productsToSave.map((p) => p.save()));
 
-    // BUG FIX #8: COD gets delivery charge, online payment waives it
     const deliveryCharge = paymentMethod === "cod" ? DELIVERY_CHARGE : 0;
     const totalAmount = subtotal + deliveryCharge;
 
@@ -84,39 +81,115 @@ export const checkout = async (req, res) => {
   }
 };
 
-// GET /api/orders
+// ── GET /api/orders  (customer sees own, admin sees all) ───────────────────
 export const getOrders = async (req, res) => {
-  const filter = req.user.role === "admin" ? {} : { user: req.user._id };
-  const orders = await Order.find(filter).sort({ createdAt: -1 }).populate("items.product", "name images");
-  res.json(orders);
+  try {
+    const filter = req.user.role === "admin" ? {} : { user: req.user._id };
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("items.product", "name images");
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch orders." });
+  }
 };
 
-// GET /api/orders/:id
+// ── GET /api/orders/:id ────────────────────────────────────────────────────
 export const getOrderById = async (req, res) => {
-  const order = await Order.findById(req.params.id).populate("items.product", "name images");
-  if (!order) return res.status(404).json({ message: "Order not found" });
+  try {
+    const order = await Order.findById(req.params.id).populate("items.product", "name images");
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-  if (req.user.role !== "admin" && order.user.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ message: "Not authorized to view this order" });
+    if (req.user.role !== "admin" && order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to view this order" });
+    }
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch order." });
   }
-  res.json(order);
 };
 
-// PATCH /api/orders/:id/status  (admin only)
+// ── PATCH /api/orders/:id/status  (admin only) ────────────────────────────
 export const updateOrderStatus = async (req, res) => {
-  const order = await Order.findById(req.params.id);
-  if (!order) return res.status(404).json({ message: "Order not found" });
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
 
-  const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
-  if (!validStatuses.includes(req.body.status)) {
-    return res.status(400).json({ message: "Invalid status" });
-  }
+    const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+    if (!validStatuses.includes(req.body.status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
 
-  order.status = req.body.status;
-  // BUG FIX #9: Mark payment as paid when delivered (for COD)
-  if (req.body.status === "delivered" && order.payment.method === "cod") {
-    order.payment.status = "paid";
+    order.status = req.body.status;
+    if (req.body.status === "delivered" && order.payment.method === "cod") {
+      order.payment.status = "paid";
+    }
+    await order.save();
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update order status." });
   }
-  await order.save();
-  res.json(order);
+};
+
+// ── PATCH /api/orders/:id/cancel  (customer can cancel pending orders) ─────
+export const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("items.product");
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to cancel this order" });
+    }
+
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        message: `Cannot cancel an order with status "${order.status}". Only pending orders can be cancelled.`,
+      });
+    }
+
+    // Restore stock for each item
+    for (const item of order.items) {
+      if (item.product) {
+        if (item.variantSku) {
+          const variant = item.product.variants?.find((v) => v.sku === item.variantSku);
+          if (variant) variant.stock += item.quantity;
+          await item.product.save();
+        } else {
+          await Product.findByIdAndUpdate(item.product._id, {
+            $inc: { totalStock: item.quantity },
+          });
+        }
+      }
+    }
+
+    order.status = "cancelled";
+    await order.save();
+    res.json({ message: "Order cancelled successfully.", order });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to cancel order." });
+  }
+};
+
+// ── GET /api/orders/summary  (admin only) ─────────────────────────────────
+export const getOrderSummary = async (req, res) => {
+  try {
+    const totalOrders = await Order.countDocuments();
+    const totalRevenue = await Order.aggregate([
+      { $match: { status: { $ne: "cancelled" } } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+    ]);
+    const statusCounts = await Order.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+    res.json({
+      totalOrders,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      statusCounts: statusCounts.reduce((acc, s) => {
+        acc[s._id] = s.count;
+        return acc;
+      }, {}),
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch order summary." });
+  }
 };
