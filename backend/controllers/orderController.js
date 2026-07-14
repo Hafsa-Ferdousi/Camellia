@@ -70,12 +70,82 @@ export const checkout = async (req, res) => {
   }
 };
 
+// ── POST /api/orders/guest-checkout  (no account required) ─────────────────
+export const guestCheckout = async (req, res) => {
+  const { items, address, paymentMethod = "cod", guestInfo } = req.body;
+
+  if (!address || !address.addressLine || !address.city || !address.phone) {
+    return res.status(400).json({ message: "Delivery address is required (addressLine, city, phone)." });
+  }
+  if (!guestInfo || !guestInfo.name || !guestInfo.email || !guestInfo.phone) {
+    return res.status(400).json({ message: "Guest name, email, and phone are required." });
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: "Cart is empty." });
+  }
+
+  try {
+    let subtotal = 0;
+    const orderItems = [];
+    const productsToSave = [];
+
+    for (const line of items) {
+      const quantity = Number(line.quantity) || 0;
+      if (!line.productId || quantity < 1) {
+        return res.status(400).json({ message: "Invalid item in cart." });
+      }
+
+      const product = await Product.findById(line.productId);
+      if (!product || !product.isActive) {
+        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      }
+      if (product.totalStock < quantity) {
+        throw new Error(`Not enough stock for ${product.name.en}`);
+      }
+
+      const price = product.basePrice;
+      product.totalStock = Math.max(0, product.totalStock - quantity);
+      productsToSave.push(product);
+
+      subtotal += price * quantity;
+      orderItems.push({
+        product: product._id,
+        nameSnapshot: product.name.en,
+        quantity,
+        price,
+      });
+    }
+
+    await Promise.all(productsToSave.map((p) => p.save()));
+
+    const deliveryCharge = paymentMethod === "cod" ? DELIVERY_CHARGE : 0;
+    const totalAmount = subtotal + deliveryCharge;
+
+    const order = await Order.create({
+      user: null,
+      isGuest: true,
+      guestInfo: { name: guestInfo.name, email: guestInfo.email, phone: guestInfo.phone },
+      address,
+      items: orderItems,
+      subtotal,
+      deliveryCharge,
+      totalAmount,
+      payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
+    });
+
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // ── GET /api/orders  (customer sees own, admin sees all) ───────────────────
 export const getOrders = async (req, res) => {
   try {
     const filter = req.user.role === "admin" ? {} : { user: req.user._id };
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
+      .populate("user", "name email phone")
       .populate("items.product", "name images");
     res.json(orders);
   } catch (error) {
@@ -86,10 +156,14 @@ export const getOrders = async (req, res) => {
 // ── GET /api/orders/:id ────────────────────────────────────────────────────
 export const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate("items.product", "name images");
+    const order = await Order.findById(req.params.id)
+      .populate("user", "name email phone")
+      .populate("items.product", "name images");
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (req.user.role !== "admin" && order.user.toString() !== req.user._id.toString()) {
+    // Guest orders (order.user is null) can only be viewed by an admin —
+    // there's no account to authorize the requester against.
+    if (req.user.role !== "admin" && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
     res.json(order);
@@ -126,7 +200,7 @@ export const cancelOrder = async (req, res) => {
     const order = await Order.findById(req.params.id).populate("items.product");
     if (!order) return res.status(404).json({ message: "Order not found" });
 
-    if (order.user.toString() !== req.user._id.toString()) {
+    if (!order.user || order.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "Not authorized to cancel this order" });
     }
 

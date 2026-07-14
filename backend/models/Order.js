@@ -16,7 +16,13 @@ const paymentSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false, default: null },
+    isGuest: { type: Boolean, default: false },
+    guestInfo: {
+      name: String,
+      email: String,
+      phone: String,
+    },
     address: {
       label: String,
       addressLine: String,

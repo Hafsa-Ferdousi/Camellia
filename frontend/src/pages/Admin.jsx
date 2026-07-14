@@ -10,6 +10,9 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
 } from "../api/admin";
 
 // ── helpers ──────────────────────────────────────────────────
@@ -48,6 +51,12 @@ const BLANK_PRODUCT = {
   images: "", isFeatured: false, isActive: true,
 };
 
+// ── blank category form ─────────────────────────────────────────
+const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
+
+const slugify = (str) =>
+  (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
 // ═══════════════════════════════════════════════════════════════
 export default function Admin() {
   const { user, loading: authLoading } = useAuth();
@@ -73,6 +82,16 @@ export default function Admin() {
   const [formErr, setFormErr]         = useState("");
   const [formSaving, setFormSaving]   = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+
+  // categories
+  const [catLoading, setCL]               = useState(false);
+  const [catModal, setCatModal]           = useState(null); // null | "add" | "edit"
+  const [catEditTarget, setCatEditTarget] = useState(null);
+  const [catForm, setCatForm]             = useState(BLANK_CATEGORY);
+  const [catFormErr, setCatFormErr]       = useState("");
+  const [catFormSaving, setCatFormSaving] = useState(false);
+  const [catConfirmDelete, setCatConfirmDelete] = useState(null);
+  const [catReordering, setCatReordering] = useState(null); // category _id currently being moved
 
   // ── auth guard ──────────────────────────────────────────────
   useEffect(() => {
@@ -108,11 +127,20 @@ export default function Admin() {
     } finally { setPL(false); }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    setCL(true);
+    try {
+      const r = await getCategories();
+      setCategories(r.data);
+    } finally { setCL(false); }
+  }, []);
+
   useEffect(() => {
-    if (tab === "overview") loadStats();
-    if (tab === "orders")   loadOrders();
-    if (tab === "products") loadProducts();
-  }, [tab, loadStats, loadOrders, loadProducts]);
+    if (tab === "overview")   loadStats();
+    if (tab === "orders")     loadOrders();
+    if (tab === "products")   loadProducts();
+    if (tab === "categories") loadCategories();
+  }, [tab, loadStats, loadOrders, loadProducts, loadCategories]);
 
   // ── order status update ─────────────────────────────────────
   const handleStatusChange = async (orderId, newStatus) => {
@@ -196,6 +224,108 @@ export default function Admin() {
     setConfirmDelete(null);
   };
 
+  // ── category form helpers ───────────────────────────────────────
+  const openAddCategory = () => {
+    setCatForm(BLANK_CATEGORY);
+    setCatEditTarget(null);
+    setCatFormErr("");
+    setCatModal("add");
+  };
+
+  const openEditCategory = (c) => {
+    setCatForm({
+      nameEn: c.name?.en || "",
+      nameBn: c.name?.bn || "",
+      slug:   c.slug || "",
+      image:  c.image || "",
+      isFixed: c.isFixed || false,
+    });
+    setCatEditTarget(c);
+    setCatFormErr("");
+    setCatModal("edit");
+  };
+
+  const closeCatModal = () => { setCatModal(null); setCatEditTarget(null); };
+
+  const setCF = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCatForm(f => {
+      const next = { ...f, [name]: type === "checkbox" ? checked : value };
+      // Auto-fill the slug from the English name while adding, unless the
+      // admin has already typed a slug of their own.
+      if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) {
+        next.slug = slugify(value);
+      }
+      return next;
+    });
+  };
+
+  const handleSaveCategory = async () => {
+    if (!catForm.nameEn.trim()) return setCatFormErr("Category name (English) is required.");
+    if (!catForm.slug.trim())   return setCatFormErr("Slug is required.");
+    setCatFormErr(""); setCatFormSaving(true);
+    try {
+      const payload = {
+        name: { en: catForm.nameEn.trim(), bn: catForm.nameBn.trim() },
+        slug: slugify(catForm.slug),
+        image: catForm.image.trim(),
+      };
+      if (catModal === "add") {
+        payload.isFixed = catForm.isFixed;
+        payload.sortOrder = categories.length
+          ? Math.max(...categories.map(c => c.sortOrder || 0)) + 1
+          : 1;
+        const r = await createCategory(payload);
+        setCategories(prev => [...prev, r.data].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+      } else {
+        const r = await updateCategory(catEditTarget._id, payload);
+        setCategories(prev => prev.map(c => c._id === catEditTarget._id ? r.data : c));
+      }
+      closeCatModal();
+    } catch (err) {
+      setCatFormErr(err.response?.data?.message || "Save failed.");
+    } finally { setCatFormSaving(false); }
+  };
+
+  const handleDeleteCategory = async (cat) => {
+    try {
+      await deleteCategory(cat._id);
+      setCategories(prev => prev.filter(c => c._id !== cat._id));
+    } catch (err) {
+      setCatFormErr(err.response?.data?.message || "Delete failed.");
+    }
+    setCatConfirmDelete(null);
+  };
+
+  // Swaps sortOrder with the adjacent category and persists both, so the
+  // ordering shown in the customer-facing category section can be curated.
+  const handleMoveCategory = async (cat, direction) => {
+    const sorted = [...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    const idx = sorted.findIndex(c => c._id === cat._id);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    setCatReordering(a._id);
+    try {
+      const [ra, rb] = await Promise.all([
+        updateCategory(a._id, { sortOrder: b.sortOrder }),
+        updateCategory(b._id, { sortOrder: a.sortOrder }),
+      ]);
+      setCategories(prev => {
+        const next = prev.map(c => {
+          if (c._id === ra.data._id) return ra.data;
+          if (c._id === rb.data._id) return rb.data;
+          return c;
+        });
+        return next.sort((x, y) => (x.sortOrder || 0) - (y.sortOrder || 0));
+      });
+    } finally {
+      setCatReordering(null);
+    }
+  };
+
   // ── guards ───────────────────────────────────────────────────
   if (authLoading) return <div style={s.center}>Loading…</div>;
   if (!user || user.role !== "admin") return null;
@@ -208,9 +338,10 @@ export default function Admin() {
         <div className="admin-sidebar-logo">Camellia</div>
         <div className="admin-sidebar-role">Admin Panel</div>
         {[
-          { id: "overview", label: "📊  Overview" },
-          { id: "orders",   label: "📦  Orders" },
-          { id: "products", label: "💎  Products" },
+          { id: "overview",   label: "📊  Overview" },
+          { id: "orders",     label: "📦  Orders" },
+          { id: "products",   label: "💎  Products" },
+          { id: "categories", label: "🏷️  Categories" },
         ].map(t => (
           <button
             key={t.id}
@@ -273,7 +404,7 @@ export default function Admin() {
                       {stats.recentOrders.map(o => (
                         <tr key={o._id} style={s.tr}>
                           <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
-                          <td style={s.td}>{o.user?.name || "—"}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email}</span></td>
+                          <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
                           <td style={s.td}><StatusBadge status={o.status} /></td>
@@ -307,7 +438,7 @@ export default function Admin() {
                       <tr key={o._id} style={s.tr}>
                         <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
                         <td style={s.td}>
-                          <div style={{ fontSize: 13 }}>{o.user?.name || "—"}</div>
+                          <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}</div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
                         </td>
                         <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
@@ -403,6 +534,76 @@ export default function Admin() {
             )}
           </div>
         )}
+
+        {/* ── CATEGORIES ── */}
+        {tab === "categories" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+              <h2 style={s.pageTitle}>Categories</h2>
+              <button className="btn" onClick={openAddCategory}>+ Add Category</button>
+            </div>
+            {catLoading && <p style={{ color: "var(--muted)" }}>Loading categories…</p>}
+            {!catLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {["Image","Name","Slug","Order","Type","Actions"].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((c, i, arr) => (
+                      <tr key={c._id} style={s.tr}>
+                        <td style={s.td}>
+                          {c.image
+                            ? <img src={c.image} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                            : <div style={{ width: 40, height: 40, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏷️</div>
+                          }
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name?.en}</div>
+                          {c.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.name.bn}</div>}
+                        </td>
+                        <td style={{ ...s.td, fontSize: 12, fontFamily: "monospace", color: "var(--muted)" }}>{c.slug}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button
+                            onClick={() => handleMoveCategory(c, "up")}
+                            disabled={i === 0 || catReordering}
+                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === 0 ? 0.35 : 1, marginRight: 4 }}
+                            title="Move up"
+                          >↑</button>
+                          <button
+                            onClick={() => handleMoveCategory(c, "down")}
+                            disabled={i === arr.length - 1 || catReordering}
+                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === arr.length - 1 ? 0.35 : 1 }}
+                            title="Move down"
+                          >↓</button>
+                        </td>
+                        <td style={{ ...s.td, textAlign: "center" }}>
+                          {c.isFixed
+                            ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "#EDE9FE", color: "#5B21B6", fontWeight: 600 }}>Fixed</span>
+                            : <span style={{ fontSize: 11, color: "var(--muted)" }}>Custom</span>
+                          }
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button onClick={() => openEditCategory(c)} style={s.editBtn}>Edit</button>
+                          {!c.isFixed && (
+                            <button onClick={() => setCatConfirmDelete(c)} style={s.delBtn}>Delete</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {categories.length === 0 && (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No categories found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* ── PRODUCT MODAL ── */}
@@ -478,6 +679,71 @@ export default function Admin() {
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>Cancel</button>
               <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDelete(confirmDelete._id)}>
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── CATEGORY MODAL ── */}
+      {catModal && (
+        <div style={s.overlay} onClick={closeCatModal}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{catModal === "add" ? "Add New Category" : "Edit Category"}</h3>
+
+            {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
+
+            <div className="admin-form-grid" style={s.formGrid}>
+              <label style={s.label}>
+                Name (English) *
+                <input className="input" name="nameEn" value={catForm.nameEn} onChange={setCF} placeholder="e.g. Earrings" />
+              </label>
+              <label style={s.label}>
+                Name (Bengali)
+                <input className="input" name="nameBn" value={catForm.nameBn} onChange={setCF} placeholder="বাংলা নাম" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                Slug *
+                <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                Image URL
+                <input className="input" name="image" value={catForm.image} onChange={setCF} placeholder="/categories/earrings.jpg" />
+              </label>
+              {catModal === "add" && (
+                <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
+                  <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
+                  Fixed category (cannot be deleted later)
+                </label>
+              )}
+              {catModal === "edit" && catForm.isFixed && (
+                <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8 }}>
+                  🔒 This is a fixed category and cannot be deleted. Its name, slug, and image can still be edited.
+                </p>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>Cancel</button>
+              <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving}>
+                {catFormSaving ? "Saving…" : catModal === "add" ? "Create Category" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CONFIRM DELETE CATEGORY MODAL ── */}
+      {catConfirmDelete && (
+        <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>Delete Category?</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+              "<strong>{catConfirmDelete.name?.en}</strong>" will be removed. Products already in this category will keep their reference to it.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setCatConfirmDelete(null)}>Cancel</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCategory(catConfirmDelete)}>
                 Yes, Delete
               </button>
             </div>

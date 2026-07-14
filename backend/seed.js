@@ -53,7 +53,7 @@ async function seed() {
       description: { en: "Exquisite traditional kalira with intricate gold filigree work. Perfect for your special day." },
       basePrice: 4500, totalStock: 15, category: kalira._id,
       images: kal(1, 2, 3),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
     {
       name: { en: "Lotus Kalira", bn: "লোটাস কলিরা" },
@@ -97,7 +97,7 @@ async function seed() {
       description: { en: "Complete 21-piece bridal chura set in rich red with gold detailing. A must-have for weddings." },
       basePrice: 2800, totalStock: 20, category: chura._id,
       images: chu(1, 2, 3),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
     {
       name: { en: "Diamond Chura (12 pcs)", bn: "ডায়মন্ড চুড়া" },
@@ -134,7 +134,7 @@ async function seed() {
       description: { en: "Timeless classic gold bangles. Perfect for daily wear or special occasions." },
       basePrice: 3500, totalStock: 20, category: bangles._id,
       images: bgl(1, 2, 3),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
     {
       name: { en: "Twisted Gold Bangles", bn: "টুইস্টেড গোল্ড বালা" },
@@ -150,7 +150,7 @@ async function seed() {
       description: { en: "Magnificent multi-layered bridal necklace set with matching earrings and tikka." },
       basePrice: 8500, totalStock: 8, category: necklace._id,
       images: nec(1, 2, 3),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
     {
       name: { en: "Choker Necklace Set", bn: "চোকার নেকলেস" },
@@ -201,7 +201,7 @@ async function seed() {
       description: { en: "Dazzling diamond-cut necklace set for weddings and special events." },
       basePrice: 9500, totalStock: 4, category: diamond._id,
       images: dia(10, 1, 2),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
 
     // ── WEDDING ACCESSORIES (new real images) ──
@@ -210,7 +210,7 @@ async function seed() {
       description: { en: "The ultimate bridal jewellery set — necklace, earrings, bangles, tikka, nose ring and more." },
       basePrice: 18500, totalStock: 3, category: wedding._id,
       images: wed(1, 2, 3),
-      isActive: true,
+      isActive: true, isFeatured: true,
     },
     {
       name: { en: "Reception Jewellery Set", bn: "রিসেপশন সেট" },

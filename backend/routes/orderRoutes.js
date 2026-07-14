@@ -1,6 +1,7 @@
 import express from "express";
 import {
   checkout,
+  guestCheckout,
   getOrders,
   getOrderById,
   updateOrderStatus,
@@ -10,6 +11,9 @@ import {
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Public — no account required.
+router.post("/guest-checkout", guestCheckout);
 
 router.use(protect);
 
