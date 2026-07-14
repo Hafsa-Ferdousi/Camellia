@@ -27,8 +27,8 @@ async function seed() {
   // ── Users ──
   console.log("👤 Creating users...");
   await Promise.all([
-    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "admin123",    role: "admin",    phone: "+8801700000001" }),
-    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "customer123", role: "customer", phone: "+8801700000002" }),
+    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "Admin123!",    role: "admin",    phone: "+8801700000001" }),
+    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "Customer123!", role: "customer", phone: "+8801700000002" }),
   ]);
 
   // ── Categories ──
@@ -251,8 +251,8 @@ async function seed() {
 
   console.log("✅ Seed complete!\n");
   console.log("👤 Login credentials:");
-  console.log("   Admin    → admin@camellia.com   / admin123");
-  console.log("   Customer → hafsa@example.com    / customer123");
+  console.log("   Admin    → admin@camellia.com   / Admin123!");
+  console.log("   Customer → hafsa@example.com    / Customer123!");
   console.log("💍 27 products across 6 categories.");
   await mongoose.disconnect();
   process.exit(0);

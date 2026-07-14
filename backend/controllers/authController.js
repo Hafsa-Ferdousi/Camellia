@@ -3,6 +3,7 @@ import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 import User from "../models/User.js";
 import { sendEmail, verificationEmailContent, passwordResetEmailContent } from "../utils/email.js";
+import { validatePasswordStrength } from "../utils/validators.js";
 import {
   generateAccessToken,
   generateTwoFactorTempToken,
@@ -57,8 +58,9 @@ export const registerUser = async (req, res) => {
     if (!username || !name || !email || !password) {
       return res.status(400).json({ message: "Username, name, email and password are required." });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
     }
 
     const exists = await User.findOne({ $or: [{ email }, { username }] });
@@ -343,8 +345,9 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
     }
 
     const tokenHash = hashToken(req.params.token);
@@ -380,8 +383,9 @@ export const resetPasswordWithOtp = async (req, res) => {
     if (!email || !otp || !password) {
       return res.status(400).json({ message: "Email, code, and new password are required." });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
     }
 
     const otpHash = hashToken(otp);

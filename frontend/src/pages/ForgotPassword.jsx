@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword, resetPasswordWithOtp } from "../api/auth";
+import PasswordField from "../components/PasswordField";
+import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
+import { isPasswordStrong } from "../utils/passwordRules";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -101,13 +104,15 @@ export default function ForgotPassword() {
               </label>
               <label className="form-label">
                 New Password *
-                <input className="input" type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 6 characters" />
+                <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a strong password" />
               </label>
+              <PasswordStrengthChecklist password={password} />
+
               <label className="form-label">
                 Confirm Password *
-                <input className="input" type="password" required minLength={6} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" />
+                <PasswordField value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" />
               </label>
-              <button className="btn" type="submit" disabled={loading || otp.length < 6} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+              <button className="btn" type="submit" disabled={loading || otp.length < 6 || !isPasswordStrong(password)} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
                 {loading ? "Resetting…" : "Reset Password"}
               </button>
             </form>

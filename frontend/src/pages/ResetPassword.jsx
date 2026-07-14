@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { resetPassword } from "../api/auth";
+import PasswordField from "../components/PasswordField";
+import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
+import { isPasswordStrong } from "../utils/passwordRules";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -10,9 +13,16 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const strong = isPasswordStrong(password);
+  const canSubmit = strong && password === confirm && !loading;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!strong) {
+      setError("Please choose a stronger password — see the requirements below.");
+      return;
+    }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -41,13 +51,16 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit}>
           <label className="form-label">
             New Password *
-            <input className="input" type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 6 characters" />
+            <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a strong password" />
           </label>
+          <PasswordStrengthChecklist password={password} />
+
           <label className="form-label">
             Confirm Password *
-            <input className="input" type="password" required minLength={6} value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Re-enter password" />
+            <PasswordField value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Re-enter password" />
           </label>
-          <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+
+          <button className="btn" type="submit" disabled={!canSubmit} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
             {loading ? "Resetting…" : "Reset Password"}
           </button>
         </form>

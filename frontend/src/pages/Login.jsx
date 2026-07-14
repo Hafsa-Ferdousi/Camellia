@@ -2,19 +2,16 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { resendVerification } from "../api/auth";
+import PasswordField from "../components/PasswordField";
 
 export default function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password,   setPassword]   = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendState, setResendState] = useState("idle"); // idle | sending | sent
 
-  // Two-factor step: once the password checks out on an account with 2FA
-  // enabled, the backend returns a short-lived tempToken instead of logging
-  // us in — we swap the form for a 6-digit code prompt.
   const [tempToken, setTempToken] = useState(null);
   const [code, setCode] = useState("");
 
@@ -167,27 +164,7 @@ export default function Login() {
           </label>
           <label className="form-label">
             Password *
-            <div style={{ position: "relative" }}>
-              <input
-                className="input"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                required
-                minLength={6}
-                style={{ paddingRight: 44 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(s => !s)}
-                style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)" }}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? "🙈" : "👁"}
-              </button>
-            </div>
+            <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" />
           </label>
           <p style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
             <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline" }}>Forgot password?</Link>
@@ -204,8 +181,8 @@ export default function Login() {
 
         <div style={{ marginTop: 24, padding: "12px 14px", background: "var(--cream-dark)", borderRadius: "var(--radius-sm)", fontSize: 12, color: "var(--muted)", border: "1px solid var(--border)" }}>
           <strong style={{ color: "var(--charcoal)" }}>Demo accounts:</strong><br />
-          Admin: admin@camellia.com / admin123<br />
-          Customer: hafsa@example.com / customer123<br />
+          Admin: admin@camellia.com / Admin123!<br />
+          Customer: hafsa@example.com / Customer123!<br />
           <span style={{ fontSize: 11, opacity: 0.7 }}>(Run node seed.js in backend/ first)</span>
         </div>
       </div>
