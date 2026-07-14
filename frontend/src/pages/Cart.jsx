@@ -23,7 +23,7 @@ export default function Cart() {
 
   const handleQty = (item, qty, maxStock) => {
     if (qty < 1 || qty > maxStock) return;
-    updateQty(item.productId, item.variantSku, qty);
+    updateQty(item.productId, qty);
   };
 
   const subtotal = items.reduce((s, i) => s + getPrice(i) * i.quantity, 0);

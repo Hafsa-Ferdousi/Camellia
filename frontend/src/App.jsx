@@ -3,23 +3,18 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import VerifyOtp from "./pages/VerifyOtp";
-import Security from "./pages/Security";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
-import Orders from "./pages/Orders";
+import OrderHistory from "./pages/OrderHistory";
 import Admin from "./pages/Admin";
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 function SiteLayout() {
   return (
     <>
@@ -36,44 +31,19 @@ export default function App() {
       <CartProvider>
         <BrowserRouter>
           <Routes>
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin" element={<Admin />} />
             <Route element={<SiteLayout />}>
               <Route path="/"               element={<Home />} />
               <Route path="/products"        element={<Products />} />
               <Route path="/products/:id"    element={<ProductDetail />} />
               <Route path="/login"           element={<Login />} />
               <Route path="/register"        element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
-              <Route path="/verify-email/:token"   element={<VerifyEmail />} />
-              <Route path="/verify-otp"            element={<VerifyOtp />} />
               <Route path="/cart"            element={<Cart />} />
               <Route path="/checkout"        element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
-              <Route
-                path="/orders"
-                element={
-                  <ProtectedRoute>
-                    <Orders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/account/security"
-                element={
-                  <ProtectedRoute>
-                    <Security />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/orders"          element={<OrderHistory />} />
               <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
             </Route>
           </Routes>
         </BrowserRouter>

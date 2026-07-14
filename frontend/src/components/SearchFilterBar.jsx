@@ -3,7 +3,6 @@ import { useState } from "react";
 export default function SearchFilterBar({
   search, setSearch,
   minPrice, maxPrice, setMinPrice, setMaxPrice,
-  color, setColor,
 }) {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -36,7 +35,7 @@ export default function SearchFilterBar({
       </div>
 
       {showFilters && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div className="filter-panel" style={{ marginTop: 0 }}>
           <label className="form-label">
             Min Price (৳)
             <input className="input" type="number" placeholder="0" value={minPrice} onChange={e => setMinPrice(e.target.value)} />
@@ -44,10 +43,6 @@ export default function SearchFilterBar({
           <label className="form-label">
             Max Price (৳)
             <input className="input" type="number" placeholder="50000" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} />
-          </label>
-          <label className="form-label">
-            Color
-            <input className="input" type="text" placeholder="e.g. gold, silver" value={color} onChange={e => setColor(e.target.value)} />
           </label>
         </div>
       )}

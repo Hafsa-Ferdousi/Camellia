@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   nameSnapshot: String, // product name at time of order (in case product changes later)
-  variantSku: String,
   quantity: Number,
   price: Number, // price at time of order
 });
@@ -17,7 +16,13 @@ const paymentSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false, default: null },
+    isGuest: { type: Boolean, default: false },
+    guestInfo: {
+      name: String,
+      email: String,
+      phone: String,
+    },
     address: {
       label: String,
       addressLine: String,

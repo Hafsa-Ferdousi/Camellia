@@ -46,9 +46,7 @@ export default function Footer() {
           <div>
             <p style={s.colHead}>Information</p>
             <Link to="/about" style={s.link}>About Us</Link>
-            <a href="#site-footer" style={s.link} onClick={(e) => { e.preventDefault(); window.location.href = "mailto:hello@camellia.com"; }}>
-              Contact
-            </a>
+            <Link to="/contact" style={s.link}>Contact</Link>
             <a href="#" style={s.link} onClick={ComingSoon("FAQs")}>FAQs</a>
             <a href="#" style={s.link} onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
             <a href="#" style={s.link} onClick={ComingSoon("Terms of Service")}>Terms of Service</a>
@@ -79,7 +77,7 @@ export default function Footer() {
               client-side routes / non-broken placeholders. */}
           <Link to="/">Home</Link>
           <Link to="/products">Products</Link>
-          <a href="#site-footer" onClick={(e) => { e.preventDefault(); window.location.href = "mailto:hello@camellia.com"; }}>Contact</a>
+          <Link to="/contact">Contact</Link>
           <Link to="/orders">Track Order</Link>
           <a href="#" onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
         </div>

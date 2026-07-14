@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { getOrders } from "../api/cart";
 
 const STATUS_STYLE = {
@@ -12,18 +13,23 @@ const STATUS_STYLE = {
 };
 
 export default function Orders() {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) { navigate("/login", { state: { from: "/orders" } }); return; }
+
     getOrders()
       .then(r => setOrders(r.data))
       .catch(() => setError("Could not load your orders."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, authLoading, navigate]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container" style={{ padding: "60px 0", textAlign: "center", color: "var(--muted)" }}>
         Loading your orders…

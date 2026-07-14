@@ -53,7 +53,11 @@ export default function Home() {
 
   useEffect(() => {
     setLoadingF(true);
-    getProducts({ limit: 4 })
+    // BUG FIX: this used to fetch { limit: 4 } with no featured filter, so the
+    // "Featured Pieces" section just showed the 4 newest products regardless
+    // of the isFeatured flag admins can set. The backend already supports a
+    // featured=true filter (productController.js) — use it.
+    getProducts({ featured: true, limit: 4 })
       .then(r => setFeatured(r.data.slice(0, 4)))
       .catch(() => setFeatured([]))
       .finally(() => setLoadingF(false));
@@ -61,8 +65,8 @@ export default function Home() {
 
   useEffect(() => {
     setLoadingBS(true);
-    getProducts({ limit: 12 })
-      .then(r => setBestSellers(r.data.slice(4, 10)))
+    getProducts({ limit: 16 })
+      .then(r => setBestSellers(r.data.filter(p => !p.isFeatured).slice(0, 6)))
       .catch(() => setBestSellers([]))
       .finally(() => setLoadingBS(false));
   }, []);

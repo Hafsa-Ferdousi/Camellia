@@ -1,19 +1,20 @@
-import { Link, useLocation } from "react-router-dom";
+// frontend/src/pages/OrderConfirmation.jsx
+import React, { useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import './OrderConfirmation.css';
 
 export default function OrderConfirmation() {
   const { state } = useLocation();
   const order = state?.order;
+  const receiptRef = useRef(null);
 
-  // If someone lands here directly (refresh, bookmark) without an order
-  // in router state, send them somewhere useful instead of a dead end.
   if (!order) {
     return (
       <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
-        <span className="eyebrow">No Order Found</span>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 30, margin: "12px 0 16px" }}>
-          We couldn't find that order
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
+          No Order Found
         </h2>
-        <p style={{ color: "var(--muted)", marginBottom: 28 }}>
+        <p style={{ color: "#888", marginBottom: 28 }}>
           Check your order history to view past orders.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
@@ -28,67 +29,167 @@ export default function OrderConfirmation() {
     day: "numeric", month: "long", year: "numeric",
   });
 
-  return (
-    <div className="container" style={{ padding: "48px 24px 64px", maxWidth: 640 }}>
-      <div style={{ textAlign: "center", marginBottom: 36 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: "50%", background: "var(--cream-dark)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 30, margin: "0 auto 18px", border: "1px solid var(--gold)",
-        }}>✓</div>
-        <span className="eyebrow">Thank You</span>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, fontStyle: "italic", margin: "8px 0 8px" }}>
-          Your Order Has Been Placed
-        </h1>
-        <p style={{ color: "var(--muted)", fontSize: 14 }}>
-          Order <strong>#{order._id?.slice(-8).toUpperCase()}</strong> · Placed on {placedDate}
-        </p>
-      </div>
+  const placedTime = new Date(order.createdAt || Date.now()).toLocaleTimeString("en-GB", {
+    hour: "2-digit", minute: "2-digit"
+  });
 
-      <div className="panel" style={{ marginBottom: 20 }}>
-        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 16 }}>
-          Order Summary
-        </p>
-        {order.items?.map((item, i) => (
-          <div key={i} style={{
-            display: "flex", justifyContent: "space-between", fontSize: 14,
-            padding: "10px 0", borderBottom: i < order.items.length - 1 ? "1px solid var(--border)" : "none",
-          }}>
-            <span style={{ color: "var(--charcoal)" }}>
-              {item.nameSnapshot} <span style={{ color: "var(--muted)" }}>× {item.quantity}</span>
-            </span>
-            <span style={{ fontWeight: 600 }}>৳ {(item.price * item.quantity).toLocaleString()}</span>
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadReceipt = () => {
+    const receiptText = `
+═══════════════════════════════════════
+          CAMELLIA - RECEIPT
+═══════════════════════════════════════
+
+Order #: ${order._id || 'N/A'}
+Date: ${placedDate}
+Time: ${placedTime}
+
+───────────────────────────────────────
+ITEMS:
+${order.items?.map((item, i) => 
+  `  ${i+1}. ${item.nameSnapshot || 'Product'} × ${item.quantity || 1}  =  ৳${(item.price * (item.quantity || 1)).toFixed(2)}`
+).join('\n') || '  No items'}
+
+───────────────────────────────────────
+Subtotal:     ৳${(order.subtotal || 0).toFixed(2)}
+VAT (10%):    ৳${(order.vat || 0).toFixed(2)}
+Delivery:     ৳${(order.deliveryCharge || 0).toFixed(2)}
+───────────────────────────────────────
+TOTAL:        ৳${(order.totalAmount || order.total || 0).toFixed(2)}
+───────────────────────────────────────
+
+Payment: ${order.paymentMethod || order.payment?.method || 'N/A'}
+
+Delivery Address:
+${order.address?.streetAddress || order.address?.addressLine || 'N/A'}
+${order.address?.city || 'N/A'}, ${order.address?.district || 'N/A'}
+Phone: ${order.address?.phone || 'N/A'}
+
+───────────────────────────────────────
+Thank you for shopping at Camellia!
+    est. 2019 · Cox's Bazar, Bangladesh
+═══════════════════════════════════════
+    `;
+
+    const blob = new Blob([receiptText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Receipt_${order._id || 'order'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="confirmation-page">
+      <div className="confirmation-container" ref={receiptRef}>
+        <div className="confirmation-header">
+          <div className="success-icon">✓</div>
+          <h1>Thank You!</h1>
+          <p className="confirmation-subtitle">Your order has been placed successfully</p>
+          <div className="order-badge">
+            <span>Order #</span>
+            <strong>{order._id?.slice(-8).toUpperCase() || 'N/A'}</strong>
           </div>
-        ))}
-        <div style={{ borderTop: "1px solid var(--border)", marginTop: 10, paddingTop: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "var(--muted)", marginBottom: 6 }}>
-            <span>Subtotal</span><span>৳ {order.subtotal?.toLocaleString()}</span>
+          <p className="order-date">
+            Placed on {placedDate} at {placedTime}
+          </p>
+        </div>
+
+        <div className="receipt-body">
+          <div className="receipt-section">
+            <h3>Order Summary</h3>
+            <table className="receipt-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th className="text-right">Price</th>
+                  <th className="text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items?.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.nameSnapshot || 'Product'}</td>
+                    <td className="text-center">{item.quantity || 1}</td>
+                    <td className="text-right">৳{(item.price || 0).toFixed(2)}</td>
+                    <td className="text-right">৳{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "var(--muted)", marginBottom: 10 }}>
-            <span>Delivery</span><span>{order.deliveryCharge ? `৳ ${order.deliveryCharge}` : "Free"}</span>
+
+          <div className="receipt-section totals-section">
+            <div className="totals-grid">
+              <div className="total-row">
+                <span>Subtotal</span>
+                <span>৳{(order.subtotal || 0).toFixed(2)}</span>
+              </div>
+              <div className="total-row">
+                <span>VAT (10%)</span>
+                <span>৳{(order.vat || 0).toFixed(2)}</span>
+              </div>
+              <div className="total-row">
+                <span>Delivery Charge</span>
+                <span>৳{(order.deliveryCharge || 0).toFixed(2)}</span>
+              </div>
+              <div className="total-row grand-total">
+                <span>TOTAL</span>
+                <span>৳{(order.totalAmount || order.total || 0).toFixed(2)}</span>
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 18 }}>
-            <span>Total</span>
-            <span style={{ color: "var(--gold-text)" }}>৳ {order.totalAmount?.toLocaleString()}</span>
+
+          <div className="receipt-grid">
+            <div className="receipt-section">
+              <h4>Payment Method</h4>
+              <p className="detail-value">{order.paymentMethod || order.payment?.method || 'N/A'}</p>
+            </div>
+            <div className="receipt-section">
+              <h4>Delivery Address</h4>
+              <p className="detail-value">
+                {order.address?.streetAddress || order.address?.addressLine || 'N/A'}<br />
+                {order.address?.city || 'N/A'}, {order.address?.district || 'N/A'}<br />
+                Phone: {order.address?.phone || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          <div className="receipt-section">
+            <h4>Order Notes</h4>
+            <p className="detail-value" style={{ fontSize: '12px', color: '#888' }}>
+              • Please keep this receipt for your records.<br />
+              • For any queries, contact us within 7 days.<br />
+              • Cash on Delivery: Pay only after receiving the receipt.
+            </p>
+          </div>
+
+          <div className="receipt-footer">
+            <p className="brand-name">Camellia</p>
+            <p className="brand-tagline">est. 2019 · Cox's Bazar, Bangladesh</p>
+            <p className="brand-tagline">Thank you for shopping with us!</p>
           </div>
         </div>
-      </div>
 
-      <div className="panel" style={{ marginBottom: 28 }}>
-        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 14 }}>
-          Delivery Details
-        </p>
-        <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 4 }}>{order.address?.addressLine}</p>
-        <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 4 }}>{order.address?.city}</p>
-        <p style={{ fontSize: 14, color: "var(--muted)" }}>{order.address?.phone}</p>
-        <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 12, textTransform: "capitalize" }}>
-          Payment: {order.payment?.method === "cod" ? "Cash on Delivery" : order.payment?.method}
-        </p>
-      </div>
-
-      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-        <Link to="/orders" className="btn btn-gold">Track This Order</Link>
-        <Link to="/" className="btn">Continue Shopping</Link>
+        <div className="confirmation-actions">
+          <button onClick={handlePrint} className="btn btn-print">
+            🖨️ Print Receipt
+          </button>
+          <button onClick={handleDownloadReceipt} className="btn btn-download">
+            ⬇️ Download Receipt
+          </button>
+          <Link to="/orders" className="btn btn-gold">
+            📦 View My Orders
+          </Link>
+          <Link to="/" className="btn btn-secondary">
+            Continue Shopping
+          </Link>
+        </div>
       </div>
     </div>
   );

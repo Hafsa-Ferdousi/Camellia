@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 
@@ -7,7 +7,6 @@ export default function ProductCard({ product }) {
   const outOfStock = (product.totalStock ?? 0) <= 0;
   const isLowStock = !outOfStock && (product.totalStock ?? 0) <= 5;
   const { addItem } = useCart();
-  const navigate = useNavigate();
   const [added, setAdded] = useState(false);
 
   const handleAddToCart = (e) => {
@@ -15,13 +14,7 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
     if (outOfStock) return;
 
-    // Products with variants need colour selection → go to detail page
-    if (product.variants?.length > 0) {
-      navigate(`/products/${product._id}`);
-      return;
-    }
-
-    addItem(product, 1, null); // no login required
+    addItem(product, 1); // no login required
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -51,11 +44,6 @@ export default function ProductCard({ product }) {
         </div>
         <div className="product-info">
           <p className="product-name">{product.name?.en}</p>
-          {product.variants?.length > 0 && (
-            <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 2 }}>
-              {product.variants.length} colours available
-            </p>
-          )}
           <p className="product-price">৳ {product.basePrice?.toLocaleString()}</p>
         </div>
       </Link>
@@ -67,9 +55,7 @@ export default function ProductCard({ product }) {
           className={`product-add-btn${added ? " added" : ""}`}
           onClick={handleAddToCart}
         >
-          {added ? "✓ Added!"
-            : product.variants?.length > 0 ? "Select Options →"
-            : "Add to Cart"}
+          {added ? "✓ Added!" : "Add to Cart"}
         </button>
       )}
     </div>

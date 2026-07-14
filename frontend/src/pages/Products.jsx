@@ -97,10 +97,10 @@ export default function Products() {
       </div>
 
       <div className="container" style={{ padding: "32px 24px 60px" }}>
-        <div style={s.layout}>
+        <div className="products-layout">
 
           {/* ── LEFT: Filter sidebar ── */}
-          <aside style={s.sidebar}>
+          <aside className="products-sidebar" style={s.sidebar}>
             <p style={s.sidebarHead}>Filter</p>
 
             {/* Category */}
@@ -224,14 +224,11 @@ const s = {
     color: "#FDF6EC", margin: "8px 0 10px", fontWeight: 600,
   },
   pageSub: { fontSize: 14, color: "rgba(232,217,192,0.5)", letterSpacing: "0.04em" },
-  layout: { display: "flex", gap: 32, alignItems: "flex-start" },
   sidebar: {
-    width: 220, flexShrink: 0,
     background: "var(--ivory)",
     border: "1px solid var(--border)",
     borderRadius: "var(--radius-lg)",
     padding: "20px 16px",
-    position: "sticky", top: 80,
   },
   sidebarHead: {
     fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600,

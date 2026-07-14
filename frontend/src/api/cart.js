@@ -5,8 +5,8 @@ import client from "./client";
 
 export const getCart = () => client.get("/cart");
 
-export const addToCart = (productId, quantity = 1, variantSku = null) =>
-  client.post("/cart", { product: productId, variantSku, quantity });
+export const addToCart = (productId, quantity = 1) =>
+  client.post("/cart", { product: productId, quantity });
 
 // BUG FIX #18: updateCartItem was called with (id, qty) but also needs the cart item _id
 export const updateCartItem = (cartItemId, quantity) =>

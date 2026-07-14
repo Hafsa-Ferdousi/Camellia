@@ -15,42 +15,42 @@ function saveCart(items) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
-// A cart line is uniquely identified by productId + variantSku
-const lineKey = (productId, variantSku) => `${productId}__${variantSku || ""}`;
+// A cart line is uniquely identified by productId
+const lineKey = (productId) => `${productId}`;
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
 
   useEffect(() => { saveCart(items); }, [items]);
 
-  const addItem = useCallback((product, quantity = 1, variantSku = null) => {
+  const addItem = useCallback((product, quantity = 1) => {
     setItems(prev => {
-      const key = lineKey(product._id, variantSku);
-      const existing = prev.find(i => lineKey(i.productId, i.variantSku) === key);
+      const key = lineKey(product._id);
+      const existing = prev.find(i => lineKey(i.productId) === key);
       if (existing) {
         return prev.map(i =>
-          lineKey(i.productId, i.variantSku) === key
+          lineKey(i.productId) === key
             ? { ...i, quantity: i.quantity + quantity }
             : i
         );
       }
-      return [...prev, { productId: product._id, variantSku, quantity, product }];
+      return [...prev, { productId: product._id, quantity, product }];
     });
   }, []);
 
-  const updateQty = useCallback((productId, variantSku, quantity) => {
+  const updateQty = useCallback((productId, quantity) => {
     if (quantity < 1) return;
     setItems(prev =>
       prev.map(i =>
-        lineKey(i.productId, i.variantSku) === lineKey(productId, variantSku)
+        lineKey(i.productId) === lineKey(productId)
           ? { ...i, quantity }
           : i
       )
     );
   }, []);
 
-  const removeItem = useCallback((productId, variantSku) => {
-    setItems(prev => prev.filter(i => lineKey(i.productId, i.variantSku) !== lineKey(productId, variantSku)));
+  const removeItem = useCallback((productId) => {
+    setItems(prev => prev.filter(i => lineKey(i.productId) !== lineKey(productId)));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
