@@ -8,6 +8,16 @@ export default function OrderConfirmation() {
   const order = state?.order;
   const receiptRef = useRef(null);
 
+  // Backend stores payment.method as a short code (cod | bkash | nagad | bank)
+  const PAYMENT_LABELS = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', bank: 'Bank Transfer' };
+  const paymentLabel = order
+    ? (order.paymentMethod || PAYMENT_LABELS[order.payment?.method] || order.payment?.method || 'N/A')
+    : 'N/A';
+  const customerName = order
+    ? (order.user?.name || order.guestInfo?.name || [order.firstName, order.lastName].filter(Boolean).join(' ') || 'N/A')
+    : 'N/A';
+  const customerEmail = order ? (order.user?.email || order.guestInfo?.email || order.email || '') : '';
+
   if (!order) {
     return (
       <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
@@ -17,8 +27,9 @@ export default function OrderConfirmation() {
         <p style={{ color: "#888", marginBottom: 28 }}>
           Check your order history to view past orders.
         </p>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <Link to="/orders" className="btn btn-gold">View My Orders</Link>
+          <Link to="/track-order" className="btn">Track a Guest Order</Link>
           <Link to="/" className="btn">Back to Home</Link>
         </div>
       </div>
@@ -46,6 +57,7 @@ export default function OrderConfirmation() {
 Order #: ${order._id || 'N/A'}
 Date: ${placedDate}
 Time: ${placedTime}
+Customer: ${customerName}${customerEmail ? ` (${customerEmail})` : ''}
 
 ───────────────────────────────────────
 ITEMS:
@@ -61,11 +73,11 @@ Delivery:     ৳${(order.deliveryCharge || 0).toFixed(2)}
 TOTAL:        ৳${(order.totalAmount || order.total || 0).toFixed(2)}
 ───────────────────────────────────────
 
-Payment: ${order.paymentMethod || order.payment?.method || 'N/A'}
+Payment: ${paymentLabel}
 
 Delivery Address:
 ${order.address?.streetAddress || order.address?.addressLine || 'N/A'}
-${order.address?.city || 'N/A'}, ${order.address?.district || 'N/A'}
+${order.address?.district ? order.address.district + ', ' : ''}${order.address?.city || 'N/A'}
 Phone: ${order.address?.phone || 'N/A'}
 
 ───────────────────────────────────────
@@ -147,14 +159,21 @@ Thank you for shopping at Camellia!
 
           <div className="receipt-grid">
             <div className="receipt-section">
+              <h4>Customer</h4>
+              <p className="detail-value">
+                {customerName}
+                {customerEmail && <><br />{customerEmail}</>}
+              </p>
+            </div>
+            <div className="receipt-section">
               <h4>Payment Method</h4>
-              <p className="detail-value">{order.paymentMethod || order.payment?.method || 'N/A'}</p>
+              <p className="detail-value">{paymentLabel}</p>
             </div>
             <div className="receipt-section">
               <h4>Delivery Address</h4>
               <p className="detail-value">
                 {order.address?.streetAddress || order.address?.addressLine || 'N/A'}<br />
-                {order.address?.city || 'N/A'}, {order.address?.district || 'N/A'}<br />
+                {order.address?.district ? `${order.address.district}, ` : ''}{order.address?.city || 'N/A'}<br />
                 Phone: {order.address?.phone || 'N/A'}
               </p>
             </div>
@@ -183,8 +202,8 @@ Thank you for shopping at Camellia!
           <button onClick={handleDownloadReceipt} className="btn btn-download">
             ⬇️ Download Receipt
           </button>
-          <Link to="/orders" className="btn btn-gold">
-            📦 View My Orders
+          <Link to={order.user ? "/orders" : `/track-order?orderId=${order._id}`} className="btn btn-gold">
+            📦 {order.user ? "View My Orders" : "Track This Order"}
           </Link>
           <Link to="/" className="btn btn-secondary">
             Continue Shopping

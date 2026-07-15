@@ -4,9 +4,13 @@ import { register } from "../api/auth";
 import PasswordField from "../components/PasswordField";
 import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
 import { isPasswordStrong } from "../utils/passwordRules";
+import { SECURITY_QUESTIONS } from "../utils/securityQuestions";
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", name: "", email: "", password: "", phone: "" });
+  const [form, setForm] = useState({
+    username: "", name: "", email: "", password: "", phone: "",
+    securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
+  });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +22,7 @@ export default function Register() {
 
   const passwordsMatch = confirmPassword.length === 0 || confirmPassword === form.password;
   const strong = isPasswordStrong(form.password);
-  const canSubmit = strong && form.password === confirmPassword && !loading;
+  const canSubmit = strong && form.password === confirmPassword && form.securityAnswer.trim().length > 0 && !loading;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,15 +36,16 @@ export default function Register() {
       setError("Passwords do not match.");
       return;
     }
+    if (!form.securityAnswer.trim()) {
+      setError("Please answer the security question — it's how you'll recover your account.");
+      return;
+    }
 
     setLoading(true);
     // BUG FIX #34: Register was missing username field (required by backend User model)
     try {
       await register(form);
-      // Take them straight to the OTP entry screen — carry the original
-      // destination (e.g. /checkout) forward so Login can bounce them back
-      // there once they've verified and signed in.
-      navigate("/verify-otp", { state: { email: form.email, from } });
+      navigate("/login", { state: { registered: true, from } });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
@@ -95,6 +100,27 @@ export default function Register() {
           {!passwordsMatch && (
             <p style={{ color: "var(--red)", fontSize: 12, marginTop: -10, marginBottom: 16 }}>Passwords do not match.</p>
           )}
+
+          <label className="form-label">
+            Security Question *
+            <select className="input" name="securityQuestion" value={form.securityQuestion} onChange={set}>
+              {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+            </select>
+          </label>
+          <label className="form-label">
+            Your Answer *
+            <input
+              className="input"
+              name="securityAnswer"
+              value={form.securityAnswer}
+              onChange={set}
+              placeholder="Answer used to recover your account"
+              required
+            />
+          </label>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -10, marginBottom: 16 }}>
+            No email is used for account recovery — this answer is how you'll reset a forgotten password.
+          </p>
 
           <button className="btn" type="submit" disabled={!canSubmit} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
             {loading ? "Creating Account…" : "Create Account"}

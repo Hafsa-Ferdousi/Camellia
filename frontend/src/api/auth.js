@@ -28,16 +28,10 @@ export const logout = async () => {
 
 export const getMe = () => client.get("/auth/me");
 
-// --- Email verification ---
-export const verifyEmail = (token) => client.post(`/auth/verify-email/${token}`);
-export const verifyEmailOtp = (email, otp) => client.post("/auth/verify-email-otp", { email, otp });
-export const resendVerification = (email) => client.post("/auth/resend-verification", { email });
-
-// --- Password reset ---
-export const forgotPassword = (email) => client.post("/auth/forgot-password", { email });
-export const resetPassword = (token, password) => client.post(`/auth/reset-password/${token}`, { password });
-export const resetPasswordWithOtp = (email, otp, password) =>
-  client.post("/auth/reset-password-otp", { email, otp, password });
+// --- Password reset (via security question — no email service) ---
+export const getSecurityQuestion = (identifier) => client.post("/auth/forgot-password/question", { identifier });
+export const resetPasswordWithAnswer = (identifier, answer, password) =>
+  client.post("/auth/forgot-password/reset", { identifier, answer, password });
 
 // --- Two-factor management (requires being logged in) ---
 export const setupTwoFactor = () => client.post("/auth/2fa/setup");

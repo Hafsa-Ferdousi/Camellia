@@ -41,7 +41,7 @@ export default function Contact() {
             📞 <a href="tel:+8801700000000" style={{ color: "var(--charcoal)" }}>+880 1700-000000</a>
           </p>
           <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10 }}>
-            ✉️ <a href="mailto:hello@camellia.com" style={{ color: "var(--charcoal)" }}>hello@camellia.com</a>
+            ✉️ <a href="mailto:hello@camellia.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
           </p>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>Sat–Thu, 10am–8pm</p>
 

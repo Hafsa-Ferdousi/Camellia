@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { resendVerification } from "../api/auth";
 import PasswordField from "../components/PasswordField";
 
 export default function Login() {
@@ -9,8 +8,6 @@ export default function Login() {
   const [password,   setPassword]   = useState("");
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [resendState, setResendState] = useState("idle"); // idle | sending | sent
 
   const [tempToken, setTempToken] = useState(null);
   const [code, setCode] = useState("");
@@ -20,23 +17,24 @@ export default function Login() {
   const location   = useLocation();
 
   const registered = location.state?.registered;
-  const from = location.state?.from || "/";
+  const explicitFrom = location.state?.from;
+  // Where to land after a successful login: if the user was bounced here from
+  // a specific protected page, honor that. Otherwise, admins go straight to
+  // the admin panel, everyone else goes to the homepage.
+  const destinationFor = (role) => explicitFrom || (role === "admin" ? "/admin" : "/");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); setNeedsVerification(false); setLoading(true);
+    setError(""); setLoading(true);
     try {
       const data = await login(identifier, password);
       if (data.twoFactorRequired) {
         setTempToken(data.tempToken);
       } else {
-        navigate(from, { replace: true });
+        navigate(destinationFor(data.role), { replace: true });
       }
     } catch (err) {
-      if (err.response?.data?.code === "EMAIL_NOT_VERIFIED") {
-        setNeedsVerification(true);
-        setError(err.response.data.message);
-      } else if (err.response?.status === 423) {
+      if (err.response?.status === 423) {
         setError(err.response.data.message);
       } else {
         setError("Invalid email/username or password.");
@@ -50,21 +48,12 @@ export default function Login() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      await completeTwoFactorLogin(tempToken, code);
-      navigate(from, { replace: true });
+      const data = await completeTwoFactorLogin(tempToken, code);
+      navigate(destinationFor(data.role), { replace: true });
     } catch {
       setError("Incorrect authentication code. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setResendState("sending");
-    try {
-      await resendVerification(identifier);
-    } finally {
-      setResendState("sent");
     }
   };
 
@@ -127,35 +116,11 @@ export default function Login() {
 
         {registered && (
           <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0" }}>
-            ✓ Account created! Please check your email to verify your address, then log in.
+            ✓ Account created! Please log in.
           </div>
         )}
 
-        {error && (
-          <div style={styles.errorBox}>
-            {error}
-            {needsVerification && (
-              <div style={{ marginTop: 8 }}>
-                {resendState === "sent" ? (
-                  <span>✓ Verification email sent — check your inbox.</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={resendState === "sending"}
-                    style={{ background: "none", border: "none", padding: 0, color: "var(--red)", textDecoration: "underline", cursor: "pointer", fontSize: 13 }}
-                  >
-                    {resendState === "sending" ? "Sending…" : "Resend verification email"}
-                  </button>
-                )}
-                {" · "}
-                <Link to="/verify-otp" state={{ email: identifier }} style={{ color: "var(--red)", textDecoration: "underline", fontSize: 13 }}>
-                  Enter code
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
+        {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <label className="form-label">

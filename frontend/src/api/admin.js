@@ -1,11 +1,18 @@
 import client from "./client";
 
 export const getAdminStats  = ()          => client.get("/admin/stats");
+export const getCustomers   = ()          => client.get("/admin/customers");
+export const getCustomerDetail = (userId) => client.get(`/admin/customers/${userId}`);
+export const resetCustomerPassword = (userId, newPassword) =>
+  client.post(`/admin/customers/${userId}/reset-password`, { newPassword });
 export const getAllOrders    = ()          => client.get("/orders/all");
 export const updateOrderStatus = (id, status) =>
   client.patch(`/orders/${id}/status`, { status });
 
-export const getAllProducts  = ()          => client.get("/products");
+export const getAdminSettings = ()        => client.get("/admin/settings");
+export const updateAdminSettings = (data) => client.put("/admin/settings", data);
+
+export const getAllProducts  = ()          => client.get("/products/admin/all");
 export const createProduct   = (data)     => client.post("/products", data);
 export const updateProduct   = (id, data) => client.put(`/products/${id}`, data);
 export const deleteProduct   = (id)       => client.delete(`/products/${id}`);

@@ -26,6 +26,7 @@ const orderSchema = new mongoose.Schema(
     address: {
       label: String,
       addressLine: String,
+      district: String,
       city: String,
       phone: String,
     },
@@ -36,6 +37,7 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
     subtotal: { type: Number, required: true },
+    vat: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 60 },
     totalAmount: { type: Number, required: true },
     payment: paymentSchema,

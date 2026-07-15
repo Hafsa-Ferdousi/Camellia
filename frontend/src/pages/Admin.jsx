@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   getAdminStats,
+  getCustomers,
+  getCustomerDetail,
+  resetCustomerPassword,
   getAllOrders,
   updateOrderStatus,
   getAllProducts,
@@ -13,6 +16,8 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  getAdminSettings,
+  updateAdminSettings,
 } from "../api/admin";
 
 // ── helpers ──────────────────────────────────────────────────
@@ -42,6 +47,69 @@ const StatusBadge = ({ status }) => {
 
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
+const fmtDayLabel = (isoDate) => new Date(isoDate).toLocaleDateString("en-BD", { weekday: "short" });
+
+// Simple dependency-free bar chart — no charting library in this project.
+const RevenueTrendChart = ({ data }) => {
+  const max = Math.max(1, ...data.map(d => d.total));
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 140, padding: "8px 4px 0" }}>
+      {data.map(d => (
+        <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div title={fmt(d.total)} style={{
+            width: "100%", maxWidth: 32,
+            height: `${Math.max(4, (d.total / max) * 100)}px`,
+            background: "var(--gold, #C9A24B)", borderRadius: "4px 4px 0 0",
+            transition: "height 0.2s",
+          }} />
+          <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const StatusBreakdownChart = ({ data }) => {
+  const total = Math.max(1, Object.values(data).reduce((a, b) => a + b, 0));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "8px 4px 0" }}>
+      {Object.entries(data).map(([status, count]) => {
+        const c = STATUS_COLORS[status] || { bg: "#F3F4F6", color: "#374151" };
+        return (
+          <div key={status}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
+              <span style={{ textTransform: "capitalize", color: "var(--muted)" }}>{status}</span>
+              <span style={{ fontWeight: 600 }}>{count}</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 4, background: "var(--cream-dark)", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(count / total) * 100}%`, background: c.color, borderRadius: 4 }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const Pagination = ({ page, totalPages, onChange }) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 16 }}>
+      <button
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        style={{ ...pagBtnStyle, opacity: page === 1 ? 0.4 : 1 }}
+      >← Prev</button>
+      <span style={{ fontSize: 12, color: "var(--muted)" }}>Page {page} of {totalPages}</span>
+      <button
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        style={{ ...pagBtnStyle, opacity: page === totalPages ? 0.4 : 1 }}
+      >Next →</button>
+    </div>
+  );
+};
+const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
 // ── blank product form ────────────────────────────────────────
 const BLANK_PRODUCT = {
@@ -59,7 +127,7 @@ const slugify = (str) =>
 
 // ═══════════════════════════════════════════════════════════════
 export default function Admin() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
 
@@ -71,6 +139,21 @@ export default function Admin() {
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [orderPage, setOrderPage]     = useState(1);
+  const [orderDetail, setOrderDetail] = useState(null); // selected order for detail modal
+
+  // customers
+  const [customers, setCustomers]         = useState([]);
+  const [customersLoading, setCustL]      = useState(false);
+  const [customerFilter, setCustomerFilter] = useState("all"); // all | registered | guest
+  const [customerDetail, setCustomerDetail]   = useState(null); // { user, orders } | null
+  const [customerDetailLoading, setCDL]       = useState(false);
+  const [resetPwUserId, setResetPwUserId]     = useState(null);
+  const [resetPwValue, setResetPwValue]       = useState("");
+  const [resetPwMsg, setResetPwMsg]           = useState("");
+  const [resetPwSaving, setResetPwSaving]     = useState(false);
 
   // products
   const [products, setProducts]       = useState([]);
@@ -82,6 +165,17 @@ export default function Admin() {
   const [formErr, setFormErr]         = useState("");
   const [formSaving, setFormSaving]   = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [productSearch, setProductSearch] = useState("");
+  const [productPage, setProductPage]     = useState(1);
+
+  // settings
+  const [settings, setSettings]           = useState(null);
+  const [settingsLoading, setSTL]         = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMsg, setSettingsMsg]     = useState("");
+  const [settingsErr, setSettingsErr]     = useState("");
+
+  const PAGE_SIZE = 10;
 
   // categories
   const [catLoading, setCL]               = useState(false);
@@ -92,13 +186,6 @@ export default function Admin() {
   const [catFormSaving, setCatFormSaving] = useState(false);
   const [catConfirmDelete, setCatConfirmDelete] = useState(null);
   const [catReordering, setCatReordering] = useState(null); // category _id currently being moved
-
-  // ── auth guard ──────────────────────────────────────────────
-  useEffect(() => {
-    if (!authLoading && (!user || user.role !== "admin")) {
-      navigate("/login");
-    }
-  }, [user, authLoading, navigate]);
 
   // ── data loaders ────────────────────────────────────────────
   const loadStats = useCallback(async () => {
@@ -118,6 +205,14 @@ export default function Admin() {
     } finally { setOL(false); }
   }, []);
 
+  const loadCustomers = useCallback(async () => {
+    setCustL(true);
+    try {
+      const r = await getCustomers();
+      setCustomers(r.data);
+    } finally { setCustL(false); }
+  }, []);
+
   const loadProducts = useCallback(async () => {
     setPL(true);
     try {
@@ -135,12 +230,94 @@ export default function Admin() {
     } finally { setCL(false); }
   }, []);
 
+  const loadSettings = useCallback(async () => {
+    setSTL(true);
+    try {
+      const r = await getAdminSettings();
+      setSettings(r.data);
+    } finally { setSTL(false); }
+  }, []);
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
+    if (tab === "customers")  loadCustomers();
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
-  }, [tab, loadStats, loadOrders, loadProducts, loadCategories]);
+    if (tab === "settings")   loadSettings();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings]);
+
+  // Reset to page 1 whenever the underlying filtered set changes.
+  useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
+  useEffect(() => { setProductPage(1); }, [productSearch]);
+
+  // ── customer detail / admin reset-password ─────────────────────
+  const openCustomerDetail = async (c) => {
+    if (c.type === "guest") return; // no account to drill into
+    setCDL(true);
+    setCustomerDetail({ user: { name: c.name, email: c.email }, orders: [] }); // placeholder while loading
+    try {
+      const r = await getCustomerDetail(c._id);
+      setCustomerDetail(r.data);
+    } catch {
+      setCustomerDetail(null);
+    } finally {
+      setCDL(false);
+    }
+  };
+  const closeCustomerDetail = () => {
+    setCustomerDetail(null);
+    setResetPwUserId(null);
+    setResetPwValue("");
+    setResetPwMsg("");
+  };
+  const handleResetCustomerPassword = async (userId) => {
+    setResetPwSaving(true);
+    setResetPwMsg("");
+    try {
+      await resetCustomerPassword(userId, resetPwValue);
+      setResetPwMsg("✓ Password reset successfully.");
+      setResetPwValue("");
+    } catch (err) {
+      setResetPwMsg(err.response?.data?.message || "Could not reset password.");
+    } finally {
+      setResetPwSaving(false);
+    }
+  };
+
+  // ── settings form helpers ───────────────────────────────────────
+  const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
+  const setDefaultDelivery = (v) => setSettings(s => ({ ...s, defaultDeliveryCharge: Number(v) }));
+  const setDistrictCharge = (idx, field, value) => setSettings(s => ({
+    ...s,
+    districtDeliveryCharges: s.districtDeliveryCharges.map((d, i) =>
+      i === idx ? { ...d, [field]: field === "charge" ? Number(value) : value } : d
+    ),
+  }));
+  const addDistrictCharge = () => setSettings(s => ({
+    ...s,
+    districtDeliveryCharges: [...s.districtDeliveryCharges, { district: "", charge: 0 }],
+  }));
+  const removeDistrictCharge = (idx) => setSettings(s => ({
+    ...s,
+    districtDeliveryCharges: s.districtDeliveryCharges.filter((_, i) => i !== idx),
+  }));
+  const handleSaveSettings = async () => {
+    if (settings.districtDeliveryCharges.some(d => !d.district.trim())) {
+      setSettingsErr("Every district row needs a name (or remove it).");
+      return;
+    }
+    setSettingsErr(""); setSettingsMsg(""); setSettingsSaving(true);
+    try {
+      const r = await updateAdminSettings(settings);
+      setSettings(r.data);
+      setSettingsMsg("✓ Settings saved.");
+    } catch (err) {
+      setSettingsErr(err.response?.data?.message || "Save failed.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   // ── order status update ─────────────────────────────────────
   const handleStatusChange = async (orderId, newStatus) => {
@@ -335,13 +512,15 @@ export default function Admin() {
     <div className="admin-layout">
       {/* SIDEBAR */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-logo">Camellia</div>
+        <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
         <div className="admin-sidebar-role">Admin Panel</div>
         {[
           { id: "overview",   label: "📊  Overview" },
           { id: "orders",     label: "📦  Orders" },
+          { id: "customers",  label: "👥  Customers" },
           { id: "products",   label: "💎  Products" },
           { id: "categories", label: "🏷️  Categories" },
+          { id: "settings",   label: "⚙️  Settings" },
         ].map(t => (
           <button
             key={t.id}
@@ -351,13 +530,20 @@ export default function Admin() {
             {t.label}
           </button>
         ))}
-        <div style={{ marginTop: "auto", padding: "0 20px 20px" }}>
+        <div style={{ marginTop: "auto", padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
           <button
             className="admin-nav-btn"
             onClick={() => navigate("/")}
             style={{ opacity: 0.55, fontSize: 12 }}
           >
             ← Back to Store
+          </button>
+          <button
+            className="admin-nav-btn admin-logout-btn"
+            onClick={async () => { await logout(); navigate("/"); }}
+            style={{ fontSize: 12.5 }}
+          >
+            ⎋  Logout
           </button>
         </div>
       </aside>
@@ -389,6 +575,18 @@ export default function Admin() {
                   ))}
                 </div>
 
+                {/* Charts */}
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginTop: 32 }} className="admin-chart-grid">
+                  <div style={s.chartCard}>
+                    <h3 style={s.sectionTitle}>Revenue — Last 7 Days</h3>
+                    <RevenueTrendChart data={stats.revenueTrend} />
+                  </div>
+                  <div style={s.chartCard}>
+                    <h3 style={s.sectionTitle}>Orders by Status</h3>
+                    <StatusBreakdownChart data={stats.statusCounts} />
+                  </div>
+                </div>
+
                 {/* Recent orders */}
                 <h3 style={{ ...s.sectionTitle, marginTop: 32 }}>Recent Orders</h3>
                 <div style={s.tableWrap}>
@@ -402,7 +600,7 @@ export default function Admin() {
                     </thead>
                     <tbody>
                       {stats.recentOrders.map(o => (
-                        <tr key={o._id} style={s.tr}>
+                        <tr key={o._id} style={{ ...s.tr, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
                           <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
@@ -421,52 +619,172 @@ export default function Admin() {
         {/* ── ORDERS ── */}
         {tab === "orders" && (
           <div>
-            <h2 style={s.pageTitle}>All Orders</h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>All Orders</h2>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder="Search order ID, name, or email…"
+                  value={orderSearch}
+                  onChange={e => setOrderSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={orderStatusFilter} onChange={e => setOrderStatusFilter(e.target.value)} style={{ width: 160 }}>
+                  <option value="all">All statuses</option>
+                  {ORDER_STATUSES.map(st => (
+                    <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             {ordersLoading && <p style={{ color: "var(--muted)" }}>Loading orders…</p>}
-            {!ordersLoading && (
+            {!ordersLoading && (() => {
+              const q = orderSearch.trim().toLowerCase();
+              const filtered = orders.filter(o => {
+                if (orderStatusFilter !== "all" && o.status !== orderStatusFilter) return false;
+                if (!q) return true;
+                const idMatch = o._id.slice(-6).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
+                const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
+                const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
+                return idMatch || name.includes(q) || email.includes(q);
+              });
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+              const page = Math.min(orderPage, totalPages);
+              const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+              return (
+                <>
+                  <div style={s.tableWrap}>
+                    <table style={s.table}>
+                      <thead>
+                        <tr>
+                          {["Order ID","Customer","Date","Items","Amount","Payment","Status","Update"].map(h => (
+                            <th key={h} style={s.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageItems.map(o => (
+                          <tr key={o._id} style={s.tr}>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
+                              <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}</div>
+                              <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
+                            </td>
+                            <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{o.items?.length}</td>
+                            <td style={s.td}>{fmt(o.totalAmount)}</td>
+                            <td style={s.td}>
+                              <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
+                              <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>
+                                {o.payment?.status}
+                              </div>
+                            </td>
+                            <td style={s.td}><StatusBadge status={o.status} /></td>
+                            <td style={s.td}>
+                              <select
+                                value={o.status}
+                                disabled={statusUpdating === o._id}
+                                onChange={e => handleStatusChange(o._id, e.target.value)}
+                                style={s.select}
+                              >
+                                {ORDER_STATUSES.map(st => (
+                                  <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                        {pageItems.length === 0 && (
+                          <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No orders match.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination page={page} totalPages={totalPages} onChange={setOrderPage} />
+                </>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── CUSTOMERS ── */}
+        {tab === "customers" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>Customers</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[
+                  { id: "all", label: `All (${customers.length})` },
+                  { id: "registered", label: `Registered (${customers.filter(c => c.type === "registered" || c.type === "admin").length})` },
+                  { id: "guest", label: `Guest (${customers.filter(c => c.type === "guest").length})` },
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setCustomerFilter(f.id)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20,
+                      border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                      borderColor: customerFilter === f.id ? "var(--charcoal)" : "var(--border)",
+                      background: customerFilter === f.id ? "var(--charcoal)" : "transparent",
+                      color: customerFilter === f.id ? "#fff" : "var(--muted)",
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {customersLoading && <p style={{ color: "var(--muted)" }}>Loading customers…</p>}
+            {!customersLoading && (
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead>
                     <tr>
-                      {["Order ID","Customer","Date","Items","Amount","Payment","Status","Update"].map(h => (
+                      {["Customer", "Type", "Contact", "Orders", "Total Spent", "Joined / Last Order"].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map(o => (
-                      <tr key={o._id} style={s.tr}>
-                        <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
-                        <td style={s.td}>
-                          <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}</div>
-                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
-                        </td>
-                        <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
-                        <td style={{ ...s.td, textAlign: "center" }}>{o.items?.length}</td>
-                        <td style={s.td}>{fmt(o.totalAmount)}</td>
-                        <td style={s.td}>
-                          <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
-                          <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>
-                            {o.payment?.status}
-                          </div>
-                        </td>
-                        <td style={s.td}><StatusBadge status={o.status} /></td>
-                        <td style={s.td}>
-                          <select
-                            value={o.status}
-                            disabled={statusUpdating === o._id}
-                            onChange={e => handleStatusChange(o._id, e.target.value)}
-                            style={s.select}
-                          >
-                            {ORDER_STATUSES.map(st => (
-                              <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                    {orders.length === 0 && (
-                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No orders yet.</td></tr>
+                    {customers
+                      .filter(c => {
+                        if (customerFilter === "all") return true;
+                        if (customerFilter === "registered") return c.type === "registered" || c.type === "admin";
+                        return c.type === customerFilter;
+                      })
+                      .map(c => (
+                        <tr key={c._id} style={{ ...s.tr, cursor: c.type === "guest" ? "default" : "pointer" }} onClick={() => openCustomerDetail(c)}>
+                          <td style={s.td}>
+                            <div style={{ fontWeight: 500 }}>{c.name || "—"}</div>
+                          </td>
+                          <td style={s.td}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+                              textTransform: "uppercase", letterSpacing: "0.03em",
+                              background: c.type === "admin" ? "#EDE9FE" : c.type === "guest" ? "#F3F4F6" : "#DCFCE7",
+                              color: c.type === "admin" ? "#5B21B6" : c.type === "guest" ? "#4B5563" : "#166534",
+                            }}>
+                              {c.type === "admin" ? "Admin" : c.type === "guest" ? "Guest" : "Registered"}
+                            </span>
+                          </td>
+                          <td style={s.td}>
+                            <div style={{ fontSize: 13 }}>{c.email}</div>
+                            {c.phone && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.phone}</div>}
+                          </td>
+                          <td style={{ ...s.td, textAlign: "center" }}>{c.orderCount}</td>
+                          <td style={s.td}>{fmt(c.totalSpent)}</td>
+                          <td style={s.td}>
+                            <div style={{ fontSize: 12 }}>
+                              {c.joinedAt ? `Joined ${fmtDate(c.joinedAt)}` : "No account"}
+                            </div>
+                            {c.lastOrderAt && (
+                              <div style={{ fontSize: 11, color: "var(--muted)" }}>Last order {fmtDate(c.lastOrderAt)}</div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    {customers.length === 0 && (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No customers yet.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -478,60 +796,83 @@ export default function Admin() {
         {/* ── PRODUCTS ── */}
         {tab === "products" && (
           <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <h2 style={s.pageTitle}>Products</h2>
-              <button className="btn" onClick={openAdd}>+ Add Product</button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder="Search products…"
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                  style={{ width: 220 }}
+                />
+                <button className="btn" onClick={openAdd}>+ Add Product</button>
+              </div>
             </div>
             {prodLoading && <p style={{ color: "var(--muted)" }}>Loading products…</p>}
-            {!prodLoading && (
-              <div style={s.tableWrap}>
-                <table style={s.table}>
-                  <thead>
-                    <tr>
-                      {["Image","Name","Category","Price","Stock","Featured","Active","Actions"].map(h => (
-                        <th key={h} style={s.th}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map(p => (
-                      <tr key={p._id} style={s.tr}>
-                        <td style={s.td}>
-                          {p.images?.[0]
-                            ? <img src={p.images[0]} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
-                            : <div style={{ width: 48, height: 48, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>💎</div>
-                          }
-                        </td>
-                        <td style={s.td}>
-                          <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
-                          {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
-                        </td>
-                        <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
-                        <td style={s.td}>{fmt(p.basePrice)}</td>
-                        <td style={{ ...s.td, textAlign: "center" }}>
-                          <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
-                            {p.totalStock}
-                          </span>
-                        </td>
-                        <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? "⭐" : "—"}</td>
-                        <td style={{ ...s.td, textAlign: "center" }}>
-                          <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
-                            {p.isActive ? "Yes" : "No"}
-                          </span>
-                        </td>
-                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                          <button onClick={() => openEdit(p)} style={s.editBtn}>Edit</button>
-                          <button onClick={() => setConfirmDelete(p)} style={s.delBtn}>Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                    {products.length === 0 && (
-                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No products found.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {!prodLoading && (() => {
+              const q = productSearch.trim().toLowerCase();
+              const filtered = !q ? products : products.filter(p =>
+                (p.name?.en || "").toLowerCase().includes(q) ||
+                (p.name?.bn || "").toLowerCase().includes(q) ||
+                (p.category?.name?.en || "").toLowerCase().includes(q)
+              );
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+              const page = Math.min(productPage, totalPages);
+              const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+              return (
+                <>
+                  <div style={s.tableWrap}>
+                    <table style={s.table}>
+                      <thead>
+                        <tr>
+                          {["Image","Name","Category","Price","Stock","Featured","Active","Actions"].map(h => (
+                            <th key={h} style={s.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageItems.map(p => (
+                          <tr key={p._id} style={s.tr}>
+                            <td style={s.td}>
+                              {p.images?.[0]
+                                ? <img src={p.images[0]} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                                : <div style={{ width: 48, height: 48, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>💎</div>
+                              }
+                            </td>
+                            <td style={s.td}>
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
+                              {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
+                            </td>
+                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
+                            <td style={s.td}>{fmt(p.basePrice)}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>
+                              <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
+                                {p.totalStock}
+                              </span>
+                            </td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? "⭐" : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>
+                              <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
+                                {p.isActive ? "Yes" : "No"}
+                              </span>
+                            </td>
+                            <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                              <button onClick={() => openEdit(p)} style={s.editBtn}>Edit</button>
+                              <button onClick={() => setConfirmDelete(p)} style={s.delBtn}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {pageItems.length === 0 && (
+                          <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No products found.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination page={page} totalPages={totalPages} onChange={setProductPage} />
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -604,7 +945,206 @@ export default function Admin() {
             )}
           </div>
         )}
+
+        {/* ── SETTINGS ── */}
+        {tab === "settings" && (
+          <div>
+            <h2 style={s.pageTitle}>Settings</h2>
+            {settingsLoading && <p style={{ color: "var(--muted)" }}>Loading settings…</p>}
+            {!settingsLoading && settings && (
+              <div style={{ ...s.tableWrap, padding: "28px 28px 32px", maxWidth: 640 }}>
+                {settingsErr && <div style={s.formErr}>{settingsErr}</div>}
+                {settingsMsg && <div style={{ background: "#DCFCE7", color: "#166534", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 }}>{settingsMsg}</div>}
+
+                <h3 style={s.sectionTitle}>Pricing</h3>
+                <label style={s.label}>
+                  VAT Rate (%)
+                  <input
+                    className="input"
+                    type="number" min="0" max="100" step="0.1"
+                    value={Math.round(settings.vatRate * 1000) / 10}
+                    onChange={e => setVatRate(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={s.label}>
+                  Default Delivery Charge (৳)
+                  <input
+                    className="input"
+                    type="number" min="0"
+                    value={settings.defaultDeliveryCharge}
+                    onChange={e => setDefaultDelivery(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>District Delivery Charges</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  Districts not listed here use the default delivery charge above.
+                </p>
+                {settings.districtDeliveryCharges.map((d, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                    <input
+                      className="input"
+                      placeholder="District name"
+                      value={d.district}
+                      onChange={e => setDistrictCharge(idx, "district", e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      className="input"
+                      type="number" min="0"
+                      placeholder="Charge"
+                      value={d.charge}
+                      onChange={e => setDistrictCharge(idx, "charge", e.target.value)}
+                      style={{ width: 110 }}
+                    />
+                    <button onClick={() => removeDistrictCharge(idx)} style={s.delBtn}>Remove</button>
+                  </div>
+                ))}
+                <button className="btn btn-outline" onClick={addDistrictCharge} style={{ marginTop: 4, marginBottom: 24 }}>
+                  + Add District
+                </button>
+
+                <div>
+                  <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
+                    {settingsSaving ? "Saving…" : "Save Settings"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* ── ORDER DETAIL MODAL ── */}
+      {orderDetail && (
+        <div style={s.overlay} onClick={() => setOrderDetail(null)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>Order #{orderDetail._id.slice(-6).toUpperCase()}</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <StatusBadge status={orderDetail.status} />
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
+            </div>
+
+            <h4 style={s.modalSubTitle}>Customer</h4>
+            <p style={{ fontSize: 13, marginBottom: 4 }}>
+              {orderDetail.user?.name || orderDetail.guestInfo?.name || "—"}
+              {orderDetail.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>Guest</span>}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+              {orderDetail.user?.email || orderDetail.guestInfo?.email} · {orderDetail.user?.phone || orderDetail.guestInfo?.phone}
+            </p>
+
+            <h4 style={s.modalSubTitle}>Delivery Address</h4>
+            <p style={{ fontSize: 13, color: "var(--charcoal)", marginBottom: 16 }}>
+              {orderDetail.address?.addressLine}, {orderDetail.address?.district}, {orderDetail.address?.city}
+              {orderDetail.address?.phone && <> · 📞 {orderDetail.address.phone}</>}
+            </p>
+
+            <h4 style={s.modalSubTitle}>Items</h4>
+            <div style={{ marginBottom: 16 }}>
+              {orderDetail.items?.map((item, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--border-light)" }}>
+                  <span>{item.nameSnapshot || item.product?.name?.en} × {item.quantity}</span>
+                  <span style={{ fontWeight: 600 }}>{fmt(item.price * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: "var(--parchment)", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
+                <span>Subtotal</span><span>{fmt(orderDetail.subtotal)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
+                <span>VAT</span><span>{fmt(orderDetail.vat)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}>
+                <span>Delivery</span><span>{fmt(orderDetail.deliveryCharge)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                <span>Total</span><span>{fmt(orderDetail.totalAmount)}</span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
+              Payment: {orderDetail.payment?.method?.toUpperCase()} · {orderDetail.payment?.status}
+            </p>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setOrderDetail(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOMER DETAIL MODAL ── */}
+      {customerDetail && (
+        <div style={s.overlay} onClick={closeCustomerDetail}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{customerDetail.user?.name || "Customer"}</h3>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
+              {customerDetail.user?.email} {customerDetail.user?.phone && `· ${customerDetail.user.phone}`}
+            </p>
+
+            {customerDetailLoading && <p style={{ color: "var(--muted)" }}>Loading…</p>}
+
+            {!customerDetailLoading && customerDetail.user?._id && (
+              <>
+                <h4 style={s.modalSubTitle}>Order History ({customerDetail.orders.length})</h4>
+                <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
+                  {customerDetail.orders.map(o => (
+                    <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
+                      <span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span>
+                      <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
+                      <span>{fmt(o.totalAmount)}</span>
+                      <StatusBadge status={o.status} />
+                    </div>
+                  ))}
+                  {customerDetail.orders.length === 0 && (
+                    <p style={{ fontSize: 13, color: "var(--muted)" }}>No orders yet.</p>
+                  )}
+                </div>
+
+                <h4 style={s.modalSubTitle}>Admin: Reset Password</h4>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                  Use this if the customer can't reset their own password (e.g. forgot their security answer too — there's no email service to fall back on).
+                </p>
+                {resetPwUserId !== customerDetail.user._id ? (
+                  <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                    Reset This Customer's Password
+                  </button>
+                ) : (
+                  <div>
+                    {resetPwMsg && <div style={{ fontSize: 12, marginBottom: 8, color: resetPwMsg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{resetPwMsg}</div>}
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <input
+                        className="input"
+                        type="text"
+                        placeholder="New password"
+                        value={resetPwValue}
+                        onChange={e => setResetPwValue(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="btn btn-gold"
+                        disabled={resetPwSaving || !resetPwValue}
+                        onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                      >
+                        {resetPwSaving ? "Saving…" : "Confirm"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCustomerDetail}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── PRODUCT MODAL ── */}
       {modal && (
@@ -777,6 +1317,8 @@ const s = {
   overlay:      { position: "fixed", inset: 0, background: "rgba(28,10,15,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
   modalBox:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "32px 28px", maxWidth: 580, width: "100%", boxShadow: "var(--shadow-lg)", maxHeight: "90vh", overflowY: "auto" },
   modalTitle:   { fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", marginBottom: 20, color: "var(--charcoal)" },
+  modalSubTitle:{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 },
+  chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
   formGrid:     { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" },
   label:        { display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5, color: "var(--muted)", marginBottom: 14, fontWeight: 500 },
   formErr:      { background: "#FEE2E2", color: "var(--red)", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 },

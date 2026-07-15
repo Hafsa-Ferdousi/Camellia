@@ -1,20 +1,10 @@
 // src/pages/Home.jsx
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { getProducts, getCategories } from "../api/products";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
-
-const CATEGORY_ICONS = {
-  kalira: "💛",
-  chura: "🔴",
-  bangles: "✨",
-  necklace: "📿",
-  "diamond-cut": "💎",
-  "wedding-accessories": "👑",
-  jhumka: "✨",
-  "wedding-sets": "👑",
-};
+import CategorySection from "../components/CategorySection";
 
 const TESTIMONIALS = [
   { name: "Nusrat A.", role: "Bride, Chattogram", quote: "The kalira set was even more beautiful in person. Delivery was fast and the packaging felt like a gift in itself.", stars: 5 },
@@ -41,6 +31,7 @@ function SkeletonCard() {
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [featured,    setFeatured]    = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [categories,  setCategories]  = useState([]);
@@ -50,6 +41,28 @@ export default function Home() {
   useEffect(() => {
     getCategories().then(r => setCategories(r.data)).catch(() => {});
   }, []);
+
+  // If we arrived here from the navbar's "Categories" link on another page,
+  // scroll to that section once it exists. It only renders after the
+  // categories API call above resolves, so retry briefly instead of a single
+  // fixed-delay attempt that could fire too early and silently do nothing.
+  useEffect(() => {
+    const targetId = location.state?.scrollTo;
+    if (!targetId) return;
+    let attemptsLeft = 20;
+    const tryScroll = () => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      } else if (attemptsLeft > 0) {
+        attemptsLeft -= 1;
+        setTimeout(tryScroll, 100);
+      }
+    };
+    tryScroll();
+    // Clear the state so refreshing or navigating back doesn't re-trigger it.
+    navigate(".", { replace: true, state: {} });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setLoadingF(true);
@@ -146,32 +159,7 @@ export default function Home() {
       <Hero onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)} />
 
       {/* ── Category tiles ── */}
-      {categories.length > 0 && (
-        <section id="categories-section" className="category-showcase">
-          <div className="container">
-            <div style={{ textAlign: "center", marginBottom: 32 }}>
-              <span className="eyebrow">Browse by Collection</span>
-              <h2 className="section-heading" style={{ fontSize: 30, marginTop: 6 }}>
-                Our Jewellery Collections
-              </h2>
-              <div className="divider-gold" style={{ justifyContent: "center" }}>✦</div>
-            </div>
-            <div className="category-grid">
-              {categories.map(cat => (
-                <button
-                  key={cat._id}
-                  className="category-tile"
-                  onClick={() => goToCategory(cat)}
-                  title={`Browse ${cat.name?.en}`}
-                >
-                  <span className="category-tile-icon">{CATEGORY_ICONS[cat.slug] || "💍"}</span>
-                  <span className="category-tile-name">{cat.name?.en}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <CategorySection categories={categories} onSelect={goToCategory} />
 
       {/* ── Featured picks ── */}
       <section id="products-section" className="container" style={{ padding: "60px 24px 48px" }}>

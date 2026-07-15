@@ -23,8 +23,8 @@ export default function Footer() {
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
               {[
-                { name: "Facebook", href: "https://facebook.com" },
-                { name: "Instagram", href: "https://instagram.com" },
+                { name: "Facebook", href: "https://facebook.com/camelliabyanandi" },
+                { name: "Instagram", href: "https://instagram.com/camelliabyanandi" },
                 { name: "WhatsApp", href: "https://wa.me/8801700000000" },
               ].map(n => (
                 <a key={n.name} href={n.href} target="_blank" rel="noopener noreferrer" style={s.social}>
@@ -55,7 +55,7 @@ export default function Footer() {
           {/* Customer Care */}
           <div>
             <p style={s.colHead}>Customer Care</p>
-            <Link to="/orders" style={s.link}>Track Order</Link>
+            <Link to="/track-order" style={s.link}>Track Order</Link>
             <a href="#" style={s.link} onClick={ComingSoon("Returns & Exchanges")}>Returns &amp; Exchanges</a>
             <a href="#" style={s.link} onClick={ComingSoon("Size Guide")}>Size Guide</a>
             <div style={{ marginTop: 20 }}>
@@ -78,7 +78,7 @@ export default function Footer() {
           <Link to="/">Home</Link>
           <Link to="/products">Products</Link>
           <Link to="/contact">Contact</Link>
-          <Link to="/orders">Track Order</Link>
+          <Link to="/track-order">Track Order</Link>
           <a href="#" onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
         </div>
       </div>

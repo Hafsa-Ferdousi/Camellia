@@ -37,6 +37,18 @@ export const getProducts = async (req, res) => {
   }
 };
 
+// GET /api/products/admin/all (admin only) — includes inactive/soft-deleted products
+export const getAllProductsAdmin = async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // GET /api/products/:id
 export const getProductById = async (req, res) => {
   try {

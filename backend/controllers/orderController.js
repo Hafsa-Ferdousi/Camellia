@@ -1,62 +1,74 @@
 import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Setting from "../models/Setting.js";
 
-const DELIVERY_CHARGE = 80; // 80tk for COD, free for online payment
+const getDeliveryCharge = (settings, district) => {
+  const match = settings.districtDeliveryCharges.find((d) => d.district === district);
+  return match ? match.charge : settings.defaultDeliveryCharge;
+};
 
 // ── POST /api/orders/checkout ──────────────────────────────────────────────
 export const checkout = async (req, res) => {
-  const { address, paymentMethod = "cod" } = req.body;
+  const { address, paymentMethod = "cod", items } = req.body;
 
-  if (!address || !address.addressLine || !address.city || !address.phone) {
-    return res.status(400).json({ message: "Delivery address is required (addressLine, city, phone)." });
+  if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
+    return res.status(400).json({ message: "Delivery address is required (addressLine, district, city, phone)." });
   }
 
-  const cartItems = await CartItem.find({ user: req.user._id }).populate("product");
-  if (cartItems.length === 0) {
+  // Cart lives client-side (localStorage); the client sends its current lines
+  // directly, the same shape as guestCheckout, rather than relying on CartItem
+  // records that would need to be synced to the backend first.
+  if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: "Cart is empty." });
   }
 
   try {
+    const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
     const productsToSave = [];
 
-    for (const item of cartItems) {
-      const product = item.product;
-
-      if (!product || !product.isActive) {
-        return res.status(400).json({ message: `A product in your cart is no longer available. Please refresh your cart.` });
+    for (const line of items) {
+      const quantity = Number(line.quantity) || 0;
+      const productId = line.productId || line.product;
+      if (!productId || quantity < 1) {
+        return res.status(400).json({ message: "Invalid item in cart." });
       }
 
-      const price = product.basePrice;
-
-      if (product.totalStock < item.quantity) {
+      const product = await Product.findById(productId);
+      if (!product || !product.isActive) {
+        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      }
+      if (product.totalStock < quantity) {
         throw new Error(`Not enough stock for ${product.name.en}`);
       }
 
-      product.totalStock = Math.max(0, product.totalStock - item.quantity);
+      const price = product.basePrice;
+      product.totalStock = Math.max(0, product.totalStock - quantity);
       productsToSave.push(product);
 
-      subtotal += price * item.quantity;
+      subtotal += price * quantity;
       orderItems.push({
         product: product._id,
         nameSnapshot: product.name.en,
-        quantity: item.quantity,
+        quantity,
         price,
       });
     }
 
     await Promise.all(productsToSave.map((p) => p.save()));
 
-    const deliveryCharge = paymentMethod === "cod" ? DELIVERY_CHARGE : 0;
-    const totalAmount = subtotal + deliveryCharge;
+    const deliveryCharge = getDeliveryCharge(settings, address.district);
+    const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
+    const totalAmount = subtotal + vat + deliveryCharge;
 
     const order = await Order.create({
       user: req.user._id,
       address,
       items: orderItems,
       subtotal,
+      vat,
       deliveryCharge,
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
@@ -74,8 +86,8 @@ export const checkout = async (req, res) => {
 export const guestCheckout = async (req, res) => {
   const { items, address, paymentMethod = "cod", guestInfo } = req.body;
 
-  if (!address || !address.addressLine || !address.city || !address.phone) {
-    return res.status(400).json({ message: "Delivery address is required (addressLine, city, phone)." });
+  if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
+    return res.status(400).json({ message: "Delivery address is required (addressLine, district, city, phone)." });
   }
   if (!guestInfo || !guestInfo.name || !guestInfo.email || !guestInfo.phone) {
     return res.status(400).json({ message: "Guest name, email, and phone are required." });
@@ -85,6 +97,7 @@ export const guestCheckout = async (req, res) => {
   }
 
   try {
+    const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
     const productsToSave = [];
@@ -118,8 +131,9 @@ export const guestCheckout = async (req, res) => {
 
     await Promise.all(productsToSave.map((p) => p.save()));
 
-    const deliveryCharge = paymentMethod === "cod" ? DELIVERY_CHARGE : 0;
-    const totalAmount = subtotal + deliveryCharge;
+    const deliveryCharge = getDeliveryCharge(settings, address.district);
+    const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
+    const totalAmount = subtotal + vat + deliveryCharge;
 
     const order = await Order.create({
       user: null,
@@ -128,6 +142,7 @@ export const guestCheckout = async (req, res) => {
       address,
       items: orderItems,
       subtotal,
+      vat,
       deliveryCharge,
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
@@ -136,6 +151,35 @@ export const guestCheckout = async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// ── POST /api/orders/guest-lookup  (public — no account required) ──────────
+// Guests have no login, so they can't hit the normal /orders endpoint. Instead
+// they look an order up with the two things only they (and the order) would
+// know: the order ID from their confirmation page/receipt, and the email
+// they checked out with.
+export const guestLookupOrder = async (req, res) => {
+  try {
+    const { orderId, email } = req.body;
+    if (!orderId || !email) {
+      return res.status(400).json({ message: "Order ID and email are required." });
+    }
+
+    // A malformed/garbage ID should look the same as a valid-but-not-found one.
+    const notFound = () => res.status(404).json({ message: "No order found for that order ID and email." });
+    if (!orderId.match(/^[0-9a-fA-F]{24}$/)) return notFound();
+
+    const order = await Order.findOne({
+      _id: orderId,
+      isGuest: true,
+      "guestInfo.email": new RegExp(`^${email.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+    }).populate("items.product", "name images");
+
+    if (!order) return notFound();
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to look up order." });
   }
 };
 

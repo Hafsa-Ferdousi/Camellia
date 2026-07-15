@@ -6,12 +6,8 @@ import {
   refreshAccessToken,
   logoutUser,
   getMe,
-  verifyEmail,
-  verifyEmailOtp,
-  resendVerification,
-  forgotPassword,
-  resetPassword,
-  resetPasswordWithOtp,
+  getSecurityQuestion,
+  resetPasswordWithAnswer,
   setupTwoFactor,
   verifyTwoFactorSetup,
   disableTwoFactor,
@@ -29,15 +25,9 @@ router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.get("/me", protect, getMe);
 
-// Email verification — link (click) and OTP (type a code) both work
-router.post("/verify-email/:token", verifyEmail);
-router.post("/verify-email-otp", sensitiveActionLimiter, verifyEmailOtp);
-router.post("/resend-verification", sensitiveActionLimiter, resendVerification);
-
-// Password reset — link (click) and OTP (type a code) both work
-router.post("/forgot-password", sensitiveActionLimiter, forgotPassword);
-router.post("/reset-password/:token", sensitiveActionLimiter, resetPassword);
-router.post("/reset-password-otp", sensitiveActionLimiter, resetPasswordWithOtp);
+// Password reset — via the security question chosen at registration (no email service)
+router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);
+router.post("/forgot-password/reset", sensitiveActionLimiter, resetPasswordWithAnswer);
 
 // 2FA management (requires being logged in)
 router.post("/2fa/setup", protect, setupTwoFactor);

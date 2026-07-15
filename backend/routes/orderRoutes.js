@@ -2,6 +2,7 @@ import express from "express";
 import {
   checkout,
   guestCheckout,
+  guestLookupOrder,
   getOrders,
   getOrderById,
   updateOrderStatus,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // Public — no account required.
 router.post("/guest-checkout", guestCheckout);
+router.post("/guest-lookup", guestLookupOrder);
 
 router.use(protect);
 

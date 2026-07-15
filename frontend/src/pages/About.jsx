@@ -35,7 +35,7 @@ export default function About() {
         <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 14 }}>Contact Us</p>
         <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6 }}>📍 Cox's Bazar, Bangladesh</p>
         <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6 }}>📞 +880 1700-000000</p>
-        <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6 }}>✉️ hello@camellia.com</p>
+        <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6 }}>✉️ camelliabyanandi@gmail.com</p>
         <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 10 }}>Sat–Thu, 10am–8pm</p>
       </div>
     </div>

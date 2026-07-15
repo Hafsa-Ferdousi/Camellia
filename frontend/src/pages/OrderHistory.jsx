@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getOrders } from "../api/cart";
 
@@ -16,8 +16,7 @@ const STATUS_STYLE = {
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
 export default function OrderHistory() {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { loading: authLoading } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,15 +25,11 @@ export default function OrderHistory() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      navigate("/login", { state: { from: "/orders" } });
-      return;
-    }
     getOrders()
       .then(r => setOrders(r.data))
       .catch(() => setError("Could not load your orders. Please try again."))
       .finally(() => setLoading(false));
-  }, [user, authLoading, navigate]);
+  }, [authLoading]);
 
   // Filter orders by status
   const filteredOrders = filterStatus === "all"

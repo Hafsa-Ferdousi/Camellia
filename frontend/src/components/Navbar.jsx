@@ -26,15 +26,24 @@ export default function Navbar() {
     </Link>
   );
 
-  // Scrolls to an in-page section; if not on the homepage, navigates home first.
-  const scrollToSection = (id) => (e) => {
+  // Scrolls to the categories section on the homepage. If we're not already
+  // there, navigate there first (client-side, no full page reload) and pass
+  // along which section to scroll to once Home has mounted and loaded data.
+  const scrollToId = (id, attemptsLeft = 20) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else if (attemptsLeft > 0) {
+      setTimeout(() => scrollToId(id, attemptsLeft - 1), 100);
+    }
+  };
+
+  const goToCategories = () => {
     close();
     if (location.pathname === "/") {
-      e.preventDefault();
-      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 60);
+      scrollToId("categories-section");
     } else {
-      // let the <a href="/#id"> handle navigation, then scroll once loaded
-      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 300);
+      navigate("/", { state: { scrollTo: "categories-section" } });
     }
   };
 
@@ -47,9 +56,9 @@ export default function Navbar() {
           <nav className="navbar-links">
             {navLink("/", "Home")}
             {navLink("/products", "Products")}
-            <a href="/#categories-section" className="navbar-link" onClick={scrollToSection("categories-section")}>
+            <button type="button" className="navbar-link navbar-link-btn" onClick={goToCategories}>
               Categories
-            </a>
+            </button>
             {navLink("/about", "About")}
             {navLink("/contact", "Contact")}
           </nav>
@@ -133,9 +142,9 @@ export default function Navbar() {
           </form>
           <Link to="/" className="mobile-nav-link" onClick={close}>Home</Link>
           <Link to="/products" className="mobile-nav-link" onClick={close}>Products</Link>
-          <a href="/#categories-section" className="mobile-nav-link" onClick={scrollToSection("categories-section")}>
+          <button type="button" className="mobile-nav-link navbar-link-btn" onClick={goToCategories}>
             Categories
-          </a>
+          </button>
           <Link to="/about" className="mobile-nav-link" onClick={close}>About</Link>
           <Link to="/contact" className="mobile-nav-link" onClick={close}>Contact</Link>
           <div className="mobile-nav-divider" />

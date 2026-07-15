@@ -1,24 +1,19 @@
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 import User from "../models/User.js";
-import { sendEmail, verificationEmailContent, passwordResetEmailContent } from "../utils/email.js";
 import { validatePasswordStrength } from "../utils/validators.js";
+import { SECURITY_QUESTIONS, normalizeAnswer } from "../utils/securityQuestions.js";
 import {
   generateAccessToken,
   generateTwoFactorTempToken,
   generateRawToken,
   hashToken,
-  generateOTP,
-  OTP_TTL_MS,
   REFRESH_TOKEN_TTL_MS,
-  EMAIL_VERIFY_TTL_MS,
-  PASSWORD_RESET_TTL_MS,
   REFRESH_COOKIE_NAME,
   refreshCookieOptions,
 } from "../utils/tokens.js";
-
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const publicUser = (user) => ({
   _id: user._id,
@@ -27,7 +22,6 @@ const publicUser = (user) => ({
   email: user.email,
   role: user.role,
   phone: user.phone,
-  isEmailVerified: user.isEmailVerified,
   twoFactorEnabled: user.twoFactorEnabled,
   preferredLanguage: user.preferredLanguage,
 });
@@ -53,10 +47,15 @@ async function issueSession(user, req, res) {
 // ─────────────────────────────── Register ───────────────────────────────
 export const registerUser = async (req, res) => {
   try {
-    const { username, name, email, password, phone } = req.body;
+    const { username, name, email, password, phone, securityQuestion, securityAnswer } = req.body;
 
-    if (!username || !name || !email || !password) {
-      return res.status(400).json({ message: "Username, name, email and password are required." });
+    if (!username || !name || !email || !password || !securityQuestion || !securityAnswer) {
+      return res.status(400).json({
+        message: "Username, name, email, password, security question and answer are required.",
+      });
+    }
+    if (!SECURITY_QUESTIONS.includes(securityQuestion)) {
+      return res.status(400).json({ message: "Please choose a valid security question." });
     }
     const strength = validatePasswordStrength(password);
     if (!strength.valid) {
@@ -68,107 +67,13 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User with this email or username already exists" });
     }
 
-    const user = await User.create({ username, name, email, password, phone });
-
-    const rawToken = generateRawToken();
-    const otp = generateOTP();
-    user.emailVerificationTokenHash = hashToken(rawToken);
-    user.emailVerificationExpires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
-    user.emailVerificationOtpHash = hashToken(otp);
-    user.emailVerificationOtpExpires = new Date(Date.now() + OTP_TTL_MS);
-    await user.save({ validateBeforeSave: false });
-
-    const link = `${FRONTEND_URL}/verify-email/${rawToken}`;
-    await sendEmail({ to: user.email, ...verificationEmailContent(link, otp) });
+    const securityAnswerHash = await bcrypt.hash(normalizeAnswer(securityAnswer), 10);
+    await User.create({ username, name, email, password, phone, securityQuestion, securityAnswerHash });
 
     res.status(201).json({
-      message: "Account created. Please check your email to verify your address before logging in.",
-      email: user.email,
-      // Convenience for local dev when no SMTP is configured — never sent in production.
-      ...(process.env.NODE_ENV !== "production" ? { devVerifyLink: link, devOtp: otp } : {}),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// ──────────────────────────── Email verification ────────────────────────
-export const verifyEmail = async (req, res) => {
-  try {
-    const tokenHash = hashToken(req.params.token);
-    const user = await User.findOne({
-      emailVerificationTokenHash: tokenHash,
-      emailVerificationExpires: { $gt: new Date() },
-    }).select("+emailVerificationTokenHash +emailVerificationExpires");
-
-    if (!user) {
-      return res.status(400).json({ message: "Verification link is invalid or has expired." });
-    }
-
-    user.isEmailVerified = true;
-    user.emailVerificationTokenHash = undefined;
-    user.emailVerificationExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    res.json({ message: "Email verified! You can now log in." });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const verifyEmailOtp = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ message: "Email and code are required." });
-    }
-
-    const otpHash = hashToken(otp);
-    const user = await User.findOne({
+      message: "Account created. You can now log in.",
       email,
-      emailVerificationOtpHash: otpHash,
-      emailVerificationOtpExpires: { $gt: new Date() },
-    }).select("+emailVerificationOtpHash +emailVerificationOtpExpires");
-
-    if (!user) {
-      return res.status(400).json({ message: "Code is invalid or has expired." });
-    }
-
-    user.isEmailVerified = true;
-    user.emailVerificationTokenHash = undefined;
-    user.emailVerificationExpires = undefined;
-    user.emailVerificationOtpHash = undefined;
-    user.emailVerificationOtpExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    res.json({ message: "Email verified! You can now log in." });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const resendVerification = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    // Same response whether or not the account exists / is already verified,
-    // so this endpoint can't be used to enumerate registered emails.
-    const genericResponse = { message: "If that account exists and isn't verified yet, a new email has been sent." };
-    if (!user || user.isEmailVerified) return res.json(genericResponse);
-
-    const rawToken = generateRawToken();
-    const otp = generateOTP();
-    user.emailVerificationTokenHash = hashToken(rawToken);
-    user.emailVerificationExpires = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
-    user.emailVerificationOtpHash = hashToken(otp);
-    user.emailVerificationOtpExpires = new Date(Date.now() + OTP_TTL_MS);
-    await user.save({ validateBeforeSave: false });
-
-    const link = `${FRONTEND_URL}/verify-email/${rawToken}`;
-    await sendEmail({ to: user.email, ...verificationEmailContent(link, otp) });
-
-    res.json({ ...genericResponse, ...(process.env.NODE_ENV !== "production" ? { devVerifyLink: link, devOtp: otp } : {}) });
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -206,13 +111,6 @@ export const loginUser = async (req, res) => {
       return invalidCreds();
     }
     await user.resetLoginAttempts();
-
-    if (!user.isEmailVerified) {
-      return res.status(403).json({
-        message: "Please verify your email address before logging in.",
-        code: "EMAIL_NOT_VERIFIED",
-      });
-    }
 
     if (user.twoFactorEnabled) {
       return res.json({
@@ -315,95 +213,55 @@ export const logoutUser = async (req, res) => {
   }
 };
 
-// ────────────────────────────  Password reset  ───────────────────────────
-export const forgotPassword = async (req, res) => {
+// ──────────────────────  Password reset (security question)  ─────────────
+// No email service is configured for this project, so "forgot password" is
+// self-service via the secret question/answer chosen at registration
+// instead of a mailed link/code.
+export const getSecurityQuestion = async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
+    const { identifier } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ message: "Email or username is required." });
+    }
 
-    // Always return the same message — don't reveal whether the email exists.
-    const genericResponse = { message: "If an account with that email exists, a reset link has been sent." };
-    if (!user) return res.json(genericResponse);
+    const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
+    if (!user) {
+      return res.status(404).json({ message: "No account found with that email or username." });
+    }
 
-    const rawToken = generateRawToken();
-    const otp = generateOTP();
-    user.passwordResetTokenHash = hashToken(rawToken);
-    user.passwordResetExpires = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
-    user.passwordResetOtpHash = hashToken(otp);
-    user.passwordResetOtpExpires = new Date(Date.now() + OTP_TTL_MS);
-    await user.save({ validateBeforeSave: false });
-
-    const link = `${FRONTEND_URL}/reset-password/${rawToken}`;
-    await sendEmail({ to: user.email, ...passwordResetEmailContent(link, otp) });
-
-    res.json({ ...genericResponse, ...(process.env.NODE_ENV !== "production" ? { devResetLink: link, devOtp: otp } : {}) });
+    res.json({ question: user.securityQuestion });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const resetPassword = async (req, res) => {
+export const resetPasswordWithAnswer = async (req, res) => {
   try {
-    const { password } = req.body;
+    const { identifier, answer, password } = req.body;
+    if (!identifier || !answer || !password) {
+      return res.status(400).json({ message: "Identifier, security answer, and new password are required." });
+    }
     const strength = validatePasswordStrength(password);
     if (!strength.valid) {
       return res.status(400).json({ message: strength.message });
     }
 
-    const tokenHash = hashToken(req.params.token);
     const user = await User.findOne({
-      passwordResetTokenHash: tokenHash,
-      passwordResetExpires: { $gt: new Date() },
-    }).select("+passwordResetTokenHash +passwordResetExpires +refreshTokens");
+      $or: [{ email: identifier }, { username: identifier }],
+    }).select("+securityAnswerHash +refreshTokens");
 
-    if (!user) {
-      return res.status(400).json({ message: "Reset link is invalid or has expired." });
-    }
+    // Same message whether the account doesn't exist or the answer is
+    // wrong, so this endpoint can't be used to enumerate accounts or
+    // confirm/deny a guessed answer.
+    const incorrect = () => res.status(400).json({ message: "Incorrect answer. Please try again." });
+    if (!user) return incorrect();
+
+    const match = await bcrypt.compare(normalizeAnswer(answer), user.securityAnswerHash);
+    if (!match) return incorrect();
 
     user.password = password; // re-hashed by the pre-save hook
-    user.passwordResetTokenHash = undefined;
-    user.passwordResetExpires = undefined;
-    user.passwordResetOtpHash = undefined;
-    user.passwordResetOtpExpires = undefined;
     // Changing the password invalidates every existing session everywhere —
     // in case the account was compromised.
-    user.refreshTokens = [];
-    await user.save();
-
-    res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
-    res.json({ message: "Password reset successfully. Please log in with your new password." });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-export const resetPasswordWithOtp = async (req, res) => {
-  try {
-    const { email, otp, password } = req.body;
-    if (!email || !otp || !password) {
-      return res.status(400).json({ message: "Email, code, and new password are required." });
-    }
-    const strength = validatePasswordStrength(password);
-    if (!strength.valid) {
-      return res.status(400).json({ message: strength.message });
-    }
-
-    const otpHash = hashToken(otp);
-    const user = await User.findOne({
-      email,
-      passwordResetOtpHash: otpHash,
-      passwordResetOtpExpires: { $gt: new Date() },
-    }).select("+passwordResetOtpHash +passwordResetOtpExpires +refreshTokens");
-
-    if (!user) {
-      return res.status(400).json({ message: "Code is invalid or has expired." });
-    }
-
-    user.password = password; // re-hashed by the pre-save hook
-    user.passwordResetTokenHash = undefined;
-    user.passwordResetExpires = undefined;
-    user.passwordResetOtpHash = undefined;
-    user.passwordResetOtpExpires = undefined;
     user.refreshTokens = [];
     await user.save();
 

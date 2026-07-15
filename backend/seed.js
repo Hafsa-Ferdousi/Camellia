@@ -3,6 +3,7 @@
 // ============================================================
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import connectDB from "./config/db.js";
 import User from "./models/User.js";
 import Category from "./models/Category.js";
@@ -26,9 +27,12 @@ async function seed() {
 
   // ── Users ──
   console.log("👤 Creating users...");
+  const demoAnswerHash = await bcrypt.hash("demo", 10);
+  const securityQuestion = "What is the name of your first pet?";
+
   await Promise.all([
-    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "Admin123!",    role: "admin",    phone: "+8801700000001" }),
-    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "Customer123!", role: "customer", phone: "+8801700000002" }),
+    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "Admin123!",    role: "admin",    phone: "+8801700000001", securityQuestion, securityAnswerHash: demoAnswerHash }),
+    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "Customer123!", role: "customer", phone: "+8801700000002", securityQuestion, securityAnswerHash: demoAnswerHash }),
   ]);
 
   // ── Categories ──
@@ -253,6 +257,7 @@ async function seed() {
   console.log("👤 Login credentials:");
   console.log("   Admin    → admin@camellia.com   / Admin123!");
   console.log("   Customer → hafsa@example.com    / Customer123!");
+  console.log("   (forgot-password security answer for both demo accounts: \"demo\")");
   console.log("💍 27 products across 6 categories.");
   await mongoose.disconnect();
   process.exit(0);

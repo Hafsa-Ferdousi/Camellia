@@ -19,7 +19,7 @@ export const loginLimiter = rateLimit({
   message: { message: "Too many login attempts. Please try again in a few minutes." },
 });
 
-// Shared by register / forgot-password / resend-verification — all of
+// Shared by register / forgot-password — all of
 // these can be used to spam a victim's inbox or enumerate accounts.
 export const sensitiveActionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

@@ -1,7 +1,18 @@
 // frontend/src/pages/Checkout.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Checkout.css';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
+import { getPricing } from '../api/settings';
+
+const PAYMENT_METHOD_MAP = {
+  'Cash on Delivery': 'cod',
+  'bKash': 'bkash',
+  'Nagad': 'nagad',
+  'Bank Transfer': 'bank',
+};
 
 // Helper to safely get string value from object or string
 const getString = (value) => {
@@ -12,7 +23,7 @@ const getString = (value) => {
   return JSON.stringify(value);
 };
 
-// ✅ NEW: Helper to safely get a number from any price format
+//  NEW: Helper to safely get a number from any price format
 const getNumber = (value) => {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value;
@@ -33,47 +44,32 @@ const getNumber = (value) => {
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { items: cartItems, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
 
-  const [cartItems, setCartItems] = useState([]);
+  // Falls back to the store's current defaults until the live settings load.
+  const [pricing, setPricing] = useState({ vatRate: 0.10, defaultDeliveryCharge: 150, districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }] });
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('camellia_guest_cart');
-    if (savedCart) {
-      try {
-        const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setCartItems(parsed);
-        } else {
-          setCartItems([]);
-        }
-      } catch (e) {
-        setCartItems([]);
-      }
-    } else {
-      setCartItems([]);
-    }
+    getPricing().then(({ data }) => setPricing(data)).catch(() => {});
   }, []);
 
   const deliveryCharges = {
-    "Cox's Bazar": 80,
-    'default': 150
+    ...Object.fromEntries(pricing.districtDeliveryCharges.map(d => [d.district, d.charge])),
+    default: pricing.defaultDeliveryCharge,
   };
 
   const calculateTotals = () => {
     const subtotal = cartItems.reduce((sum, item) => {
-      // ✅ Use getNumber to extract price safely
-      const price = getNumber(item.product?.price) || getNumber(item.price) || 0;
+      //  Use getNumber to extract price safely
+      const price = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
       const qty = item.quantity || 1;
       return sum + (price * qty);
     }, 0);
-    const vat = subtotal * 0.10;
+    const vat = subtotal * pricing.vatRate;
     return { subtotal, vat };
   };
 
@@ -94,20 +90,25 @@ const Checkout = () => {
     total: subtotal + vat
   });
 
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+  // Prefill the greeting/name fields once we know who's actually logged in.
+  useEffect(() => {
+    if (user) {
+      const [firstName, ...rest] = (user.name || '').split(' ');
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        firstName: firstName || '',
+        lastName: rest.join(' '),
+      }));
+    }
+  }, [user]);
 
-  const handleCityChange = (e) => {
-    const city = e.target.value;
-    const charge = deliveryCharges[city] || deliveryCharges['default'];
+  const handleDistrictChange = (e) => {
+    const district = e.target.value;
+    const charge = deliveryCharges[district] || deliveryCharges['default'];
     setFormData({
       ...formData,
-      city: city,
+      district: district,
       deliveryCharge: charge,
       total: subtotal + vat + charge
     });
@@ -118,52 +119,51 @@ const Checkout = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setLoading(true);
-    try {
-      setIsLoggedIn(true);
-      setShowLogin(false);
-      setIsGuest(false);
-      setFormData(prev => ({ ...prev, email: loginData.email }));
-    } catch (err) {
-      setAuthError('Login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    if (registerData.password !== registerData.confirmPassword) {
-      setAuthError('Passwords do not match');
-      return;
-    }
-    setLoading(true);
-    try {
-      setIsLoggedIn(true);
-      setIsRegistering(false);
-      setShowLogin(false);
-      setIsGuest(false);
-      setFormData(prev => ({
-        ...prev,
-        email: registerData.email,
-        firstName: registerData.name.split(' ')[0] || '',
-        lastName: registerData.name.split(' ').slice(1).join(' ') || ''
-      }));
-    } catch (err) {
-      setAuthError('Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGuestCheckout = () => {
     setIsGuest(true);
-    setIsLoggedIn(false);
-    setShowLogin(false);
+  };
+
+  const submitGuestOrder = async () => {
+    const items = cartItems.map((item) => ({
+      productId: item.productId || item.product?._id,
+      quantity: item.quantity || 1,
+    }));
+
+    const addressLine = [formData.streetAddress, formData.zipCode]
+      .filter(Boolean)
+      .join(', ');
+    const paymentMethod = PAYMENT_METHOD_MAP[formData.paymentMethod] || 'cod';
+
+    const { data: order } = await guestCheckoutApi(
+      items,
+      { addressLine, district: formData.district, city: formData.city, phone: formData.mobileNumber },
+      paymentMethod,
+      {
+        name: `${formData.firstName} ${formData.lastName}`.trim() || 'Guest',
+        email: formData.email,
+        phone: formData.mobileNumber,
+      }
+    );
+    return order;
+  };
+
+  const submitLoggedInOrder = async () => {
+    const items = cartItems.map((item) => ({
+      productId: item.productId || item.product?._id,
+      quantity: item.quantity || 1,
+    }));
+
+    const addressLine = [formData.streetAddress, formData.zipCode]
+      .filter(Boolean)
+      .join(', ');
+    const paymentMethod = PAYMENT_METHOD_MAP[formData.paymentMethod] || 'cod';
+
+    const { data: order } = await checkoutApi(
+      items,
+      { addressLine, district: formData.district, city: formData.city, phone: formData.mobileNumber },
+      paymentMethod
+    );
+    return order;
   };
 
   const handleSubmit = async (e) => {
@@ -172,56 +172,18 @@ const Checkout = () => {
     setError('');
 
     try {
-      const { subtotal, vat } = calculateTotals();
-      
-      const orderItems = cartItems.map(item => ({
-        nameSnapshot: getString(item.product?.name || item.name || 'Product'),
-        quantity: item.quantity || 1,
-        price: getNumber(item.product?.price) || getNumber(item.price) || 0,
-        details: getString(item.product?.description || item.details || '')
-      }));
+      const order = isGuest ? await submitGuestOrder() : await submitLoggedInOrder();
 
-      const orderData = {
-        _id: 'ORD-' + Date.now(),
-        items: orderItems,
-        subtotal: subtotal,
-        vat: vat,
-        deliveryCharge: formData.deliveryCharge,
-        totalAmount: subtotal + vat + formData.deliveryCharge,
-        address: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.mobileNumber,
-          streetAddress: formData.streetAddress,
-          country: formData.country,
-          district: formData.district,
-          city: formData.city,
-          zipCode: formData.zipCode
-        },
-        payment: {
-          method: formData.paymentMethod === 'Cash on Delivery' ? 'cod' : formData.paymentMethod.toLowerCase()
-        },
-        createdAt: new Date().toISOString(),
-        paymentMethod: formData.paymentMethod,
-        isGuest: isGuest,
-        isLoggedIn: isLoggedIn
-      };
-
-      const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-      savedOrders.push(orderData);
-      localStorage.setItem('orders', JSON.stringify(savedOrders));
-      localStorage.removeItem('camellia_guest_cart');
-      setCartItems([]);
-      navigate('/order-confirmation', { state: { order: orderData } });
+      clearCart();
+      navigate('/order-confirmation', { state: { order } });
     } catch (err) {
-      setError('Order failed. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Order failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const showAuthPrompt = !isLoggedIn && !isGuest;
+  const showAuthPrompt = !user && !isGuest;
 
   if (cartItems.length === 0) {
     return (
@@ -246,134 +208,39 @@ const Checkout = () => {
         <p className="checkout-subtitle">Please fill in the fields below and place order to complete your purchase!</p>
 
         {error && <div className="error-message">{error}</div>}
-        {authError && <div className="error-message">{authError}</div>}
 
         {showAuthPrompt ? (
           <div className="auth-section-top">
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${!isRegistering ? 'active' : ''}`}
-                onClick={() => { setIsRegistering(false); setAuthError(''); }}
-              >
-                Login
-              </button>
-              <button
-                className={`auth-tab ${isRegistering ? 'active' : ''}`}
-                onClick={() => { setIsRegistering(true); setAuthError(''); }}
-              >
-                Register
-              </button>
+            <p style={{ textAlign: 'center', marginBottom: 12 }}>
+              Please log in, create an account, or continue as a guest to complete your purchase.
+            </p>
+            <div className="auth-row" style={{ justifyContent: 'center', gap: 12 }}>
+              <Link to="/login" state={{ from: '/checkout' }} className="auth-submit-btn">Login</Link>
+              <Link to="/register" state={{ from: '/checkout' }} className="auth-submit-btn">Register</Link>
             </div>
-
-            <div className="auth-form-top">
-              {!isRegistering ? (
-                <form onSubmit={handleLogin} className="auth-form-inline">
-                  <div className="auth-row">
-                    <div className="auth-field">
-                      <input
-                        type="email"
-                        placeholder="Email Address"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field">
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        value={loginData.password}
-                        onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field auth-btn-field">
-                      <button type="submit" disabled={loading} className="auth-submit-btn">
-                        {loading ? 'Logging in...' : 'Login'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="auth-divider"><span>or</span></div>
-                  <div className="auth-guest-option">
-                    <button type="button" className="guest-link" onClick={handleGuestCheckout}>
-                      🛒 Continue as Guest (No Login Required)
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleRegister} className="auth-form-inline">
-                  <div className="auth-row">
-                    <div className="auth-field">
-                      <input
-                        type="text"
-                        placeholder="Full Name"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field">
-                      <input
-                        type="email"
-                        placeholder="Email Address"
-                        value={registerData.email}
-                        onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field">
-                      <input
-                        type="password"
-                        placeholder="Password"
-                        value={registerData.password}
-                        onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field">
-                      <input
-                        type="password"
-                        placeholder="Confirm Password"
-                        value={registerData.confirmPassword}
-                        onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="auth-field auth-btn-field">
-                      <button type="submit" disabled={loading} className="auth-submit-btn">
-                        {loading ? 'Creating...' : 'Create Account'}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="auth-divider"><span>or</span></div>
-                  <div className="auth-guest-option">
-                    <button type="button" className="guest-link" onClick={handleGuestCheckout}>
-                      🛒 Continue as Guest (No Login Required)
-                    </button>
-                  </div>
-                </form>
-              )}
+            <div className="auth-divider"><span>or</span></div>
+            <div className="auth-guest-option">
+              <button type="button" className="guest-link" onClick={handleGuestCheckout}>
+                🛒 Continue as Guest (No Login Required)
+              </button>
             </div>
           </div>
         ) : (
           <div className={`user-info-bar ${isGuest ? 'guest-mode' : ''}`}>
             <span>
-              {isLoggedIn ? `👋 Welcome, ${formData.firstName || 'User'}!` : '🛒 You are checking out as a Guest'}
+              {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
             </span>
             <div>
               {isGuest && (
-                <button className="login-link" onClick={() => { setIsGuest(false); setShowLogin(true); setIsLoggedIn(false); }}>
+                <Link to="/login" state={{ from: '/checkout' }} className="login-link">
                   Login instead?
+                </Link>
+              )}
+              {user && (
+                <button className="logout-btn" onClick={async () => { await logout(); navigate('/login', { state: { from: '/checkout' } }); }}>
+                  Logout
                 </button>
               )}
-              <button className="logout-btn" onClick={() => {
-                setIsLoggedIn(false);
-                setIsGuest(false);
-                setShowLogin(true);
-                setFormData({ ...formData, email: '', firstName: '', lastName: '' });
-              }}>
-                {isGuest ? 'Switch to Login' : 'Logout'}
-              </button>
             </div>
           </div>
         )}
@@ -462,10 +329,11 @@ const Checkout = () => {
                 <select
                   name="district"
                   value={formData.district}
-                  onChange={handleChange}
+                  onChange={handleDistrictChange}
                   required
                 >
                   <option value="">Select District</option>
+                  <option value="Cox's Bazar">Cox's Bazar</option>
                   <option value="Dhaka">Dhaka</option>
                   <option value="Chattogram">Chattogram</option>
                   <option value="Rajshahi">Rajshahi</option>
@@ -475,6 +343,7 @@ const Checkout = () => {
                   <option value="Rangpur">Rangpur</option>
                   <option value="Mymensingh">Mymensingh</option>
                 </select>
+                <small className="field-hint">Delivery charge is based on district.</small>
               </div>
 
               <div className="form-group">
@@ -482,7 +351,7 @@ const Checkout = () => {
                 <select
                   name="city"
                   value={formData.city}
-                  onChange={handleCityChange}
+                  onChange={handleChange}
                   required
                 >
                   <option value="">Select city or area</option>
@@ -543,15 +412,15 @@ const Checkout = () => {
                     />
                     <span>Bank Transfer</span>
                   </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Credit Card' ? 'selected' : ''}`}>
+                  <label className={`payment-option ${formData.paymentMethod === 'Nagad' ? 'selected' : ''}`}>
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="Credit Card"
-                      checked={formData.paymentMethod === 'Credit Card'}
+                      value="Nagad"
+                      checked={formData.paymentMethod === 'Nagad'}
                       onChange={handleChange}
                     />
-                    <span>Credit / Debit Card</span>
+                    <span>Nagad</span>
                   </label>
                 </div>
               </div>
@@ -564,7 +433,7 @@ const Checkout = () => {
                 {cartItems.map((item, index) => {
                   // ✅ Use getString and getNumber safely
                   const productName = getString(item.product?.name || item.name || 'Product');
-                  const productPrice = getNumber(item.product?.price) || getNumber(item.price) || 0;
+                  const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
                   const productDetails = getString(item.product?.description || item.details || '');
 
@@ -607,7 +476,10 @@ const Checkout = () => {
               {isGuest && (
                 <p className="guest-note">
                   🔒 You are ordering as a guest. <br />
-                  <span className="guest-note-small">Create an account after checkout to track your orders.</span>
+                  <span className="guest-note-small">
+                    Save your Order ID from the confirmation page — you can look up your order anytime at{" "}
+                    <Link to="/track-order">Track Order</Link>, no account needed.
+                  </span>
                 </p>
               )}
             </div>

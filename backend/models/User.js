@@ -32,18 +32,9 @@ const userSchema = new mongoose.Schema(
     addresses: [addressSchema],
     preferredLanguage: { type: String, enum: ["en", "bn"], default: "en" },
 
-    // --- Email verification ---
-    isEmailVerified: { type: Boolean, default: false },
-    emailVerificationTokenHash: { type: String, select: false },
-    emailVerificationExpires: { type: Date, select: false },
-    emailVerificationOtpHash: { type: String, select: false },
-    emailVerificationOtpExpires: { type: Date, select: false },
-
-    // --- Password reset ---
-    passwordResetTokenHash: { type: String, select: false },
-    passwordResetExpires: { type: Date, select: false },
-    passwordResetOtpHash: { type: String, select: false },
-    passwordResetOtpExpires: { type: Date, select: false },
+    // --- Password reset (via security question — no email service available) ---
+    securityQuestion: { type: String, required: true },
+    securityAnswerHash: { type: String, required: true, select: false },
 
     // --- Account lockout (brute-force protection) ---
     loginAttempts: { type: Number, default: 0, select: false },
