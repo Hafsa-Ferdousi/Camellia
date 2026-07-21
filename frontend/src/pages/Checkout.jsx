@@ -1,9 +1,13 @@
 // frontend/src/pages/Checkout.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ShoppingCart, Lock } from 'lucide-react';
 import './Checkout.css';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
+import { localized } from '../utils/localized';
 import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
 import { getPricing } from '../api/settings';
 
@@ -43,6 +47,8 @@ const getNumber = (value) => {
 };
 
 const Checkout = () => {
+  const { t } = useTranslation('checkout');
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { items: cartItems, clearCart } = useCart();
@@ -177,7 +183,7 @@ const Checkout = () => {
       clearCart();
       navigate('/order-confirmation', { state: { order } });
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Order failed. Please try again.');
+      setError(err.response?.data?.message || err.message || t('orderFailed'));
     } finally {
       setLoading(false);
     }
@@ -189,12 +195,13 @@ const Checkout = () => {
     return (
       <div className="checkout-page">
         <div className="checkout-container">
-          <h1 className="checkout-title">CHECKOUT</h1>
-          <p className="checkout-subtitle">Please fill in the fields below and place order to complete your purchase!</p>
+          <h1 className="checkout-title">{t('title')}</h1>
+          <p className="checkout-subtitle">{t('subtitle')}</p>
           <div className="empty-cart-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <h2>🛒 Your cart is empty</h2>
-            <p style={{ color: '#888', marginBottom: 20 }}>Add some products to your cart before checking out.</p>
-            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>Browse Products</button>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, opacity: 0.5 }}><ShoppingCart size={32} /></div>
+            <h2>{t('emptyCart')}</h2>
+            <p style={{ color: '#888', marginBottom: 20 }}>{t('emptyCartSub')}</p>
+            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
           </div>
         </div>
       </div>
@@ -204,41 +211,41 @@ const Checkout = () => {
   return (
     <div className="checkout-page">
       <div className="checkout-container">
-        <h1 className="checkout-title">CHECKOUT</h1>
-        <p className="checkout-subtitle">Please fill in the fields below and place order to complete your purchase!</p>
+        <h1 className="checkout-title">{t('title')}</h1>
+        <p className="checkout-subtitle">{t('subtitle')}</p>
 
         {error && <div className="error-message">{error}</div>}
 
         {showAuthPrompt ? (
           <div className="auth-section-top">
             <p style={{ textAlign: 'center', marginBottom: 12 }}>
-              Please log in, create an account, or continue as a guest to complete your purchase.
+              {t('authPrompt')}
             </p>
             <div className="auth-row" style={{ justifyContent: 'center', gap: 12 }}>
-              <Link to="/login" state={{ from: '/checkout' }} className="auth-submit-btn">Login</Link>
-              <Link to="/register" state={{ from: '/checkout' }} className="auth-submit-btn">Register</Link>
+              <Link to="/login" state={{ from: '/checkout' }} className="auth-submit-btn">{t('login')}</Link>
+              <Link to="/register" state={{ from: '/checkout' }} className="auth-submit-btn">{t('register')}</Link>
             </div>
-            <div className="auth-divider"><span>or</span></div>
+            <div className="auth-divider"><span>{t('or')}</span></div>
             <div className="auth-guest-option">
-              <button type="button" className="guest-link" onClick={handleGuestCheckout}>
-                🛒 Continue as Guest (No Login Required)
+              <button type="button" className="guest-link" onClick={handleGuestCheckout} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <ShoppingCart size={14} /> {t('continueAsGuest')}
               </button>
             </div>
           </div>
         ) : (
           <div className={`user-info-bar ${isGuest ? 'guest-mode' : ''}`}>
-            <span>
-              {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {!user && <ShoppingCart size={14} />} {user ? t('welcome', { name: user.name?.split(' ')[0] || 'User' }) : t('checkingOutAsGuest')}
             </span>
             <div>
               {isGuest && (
                 <Link to="/login" state={{ from: '/checkout' }} className="login-link">
-                  Login instead?
+                  {t('loginInstead')}
                 </Link>
               )}
               {user && (
                 <button className="logout-btn" onClick={async () => { await logout(); navigate('/login', { state: { from: '/checkout' } }); }}>
-                  Logout
+                  {t('logout')}
                 </button>
               )}
             </div>
@@ -248,10 +255,10 @@ const Checkout = () => {
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="checkout-grid">
             <div className="shipping-section">
-              <h2>SHIPPING ADDRESS</h2>
+              <h2>{t('shippingAddress')}</h2>
 
               <div className="form-group">
-                <label>Email Address *</label>
+                <label>{t('emailAddress')}</label>
                 <input
                   type="email"
                   name="email"
@@ -261,13 +268,13 @@ const Checkout = () => {
                   required
                 />
                 <small className="field-hint">
-                  {isGuest ? 'We will send order confirmation to this email' : 'Your account email'}
+                  {isGuest ? t('guestEmailHint') : t('accountEmailHint')}
                 </small>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>First Name *</label>
+                  <label>{t('firstName')}</label>
                   <input
                     type="text"
                     name="firstName"
@@ -277,7 +284,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Last Name *</label>
+                  <label>{t('lastName')}</label>
                   <input
                     type="text"
                     name="lastName"
@@ -289,7 +296,7 @@ const Checkout = () => {
               </div>
 
               <div className="form-group">
-                <label>Mobile Number *</label>
+                <label>{t('mobileNumber')}</label>
                 <input
                   type="tel"
                   name="mobileNumber"
@@ -301,7 +308,7 @@ const Checkout = () => {
               </div>
 
               <div className="form-group">
-                <label>Street Address *</label>
+                <label>{t('streetAddress')}</label>
                 <input
                   type="text"
                   name="streetAddress"
@@ -313,7 +320,7 @@ const Checkout = () => {
               </div>
 
               <div className="form-group">
-                <label>Country *</label>
+                <label>{t('country')}</label>
                 <select
                   name="country"
                   value={formData.country}
@@ -325,14 +332,14 @@ const Checkout = () => {
               </div>
 
               <div className="form-group">
-                <label>District/State *</label>
+                <label>{t('district')}</label>
                 <select
                   name="district"
                   value={formData.district}
                   onChange={handleDistrictChange}
                   required
                 >
-                  <option value="">Select District</option>
+                  <option value="">{t('selectDistrict')}</option>
                   <option value="Cox's Bazar">Cox's Bazar</option>
                   <option value="Dhaka">Dhaka</option>
                   <option value="Chattogram">Chattogram</option>
@@ -343,18 +350,18 @@ const Checkout = () => {
                   <option value="Rangpur">Rangpur</option>
                   <option value="Mymensingh">Mymensingh</option>
                 </select>
-                <small className="field-hint">Delivery charge is based on district.</small>
+                <small className="field-hint">{t('districtHint')}</small>
               </div>
 
               <div className="form-group">
-                <label>City/Area *</label>
+                <label>{t('city')}</label>
                 <select
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select city or area</option>
+                  <option value="">{t('selectCity')}</option>
                   <option value="Cox's Bazar">Cox's Bazar</option>
                   <option value="Dhaka">Dhaka</option>
                   <option value="Chattogram">Chattogram</option>
@@ -364,12 +371,12 @@ const Checkout = () => {
                   <option value="Sylhet">Sylhet</option>
                   <option value="Rangpur">Rangpur</option>
                   <option value="Mymensingh">Mymensingh</option>
-                  <option value="Other">Other</option>
+                  <option value="Other">{t('other')}</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label>Zip/Postal Code *</label>
+                <label>{t('zipCode')}</label>
                 <input
                   type="text"
                   name="zipCode"
@@ -380,7 +387,7 @@ const Checkout = () => {
               </div>
 
               <div className="payment-section">
-                <h3>Payment Method</h3>
+                <h3>{t('paymentMethod')}</h3>
                 <div className="payment-options">
                   <label className={`payment-option ${formData.paymentMethod === 'Cash on Delivery' ? 'selected' : ''}`}>
                     <input
@@ -390,7 +397,7 @@ const Checkout = () => {
                       checked={formData.paymentMethod === 'Cash on Delivery'}
                       onChange={handleChange}
                     />
-                    <span>Cash on Delivery</span>
+                    <span>{t('cashOnDelivery')}</span>
                   </label>
                   <label className={`payment-option ${formData.paymentMethod === 'bKash' ? 'selected' : ''}`}>
                     <input
@@ -410,7 +417,7 @@ const Checkout = () => {
                       checked={formData.paymentMethod === 'Bank Transfer'}
                       onChange={handleChange}
                     />
-                    <span>Bank Transfer</span>
+                    <span>{t('bankTransfer')}</span>
                   </label>
                   <label className={`payment-option ${formData.paymentMethod === 'Nagad' ? 'selected' : ''}`}>
                     <input
@@ -427,22 +434,21 @@ const Checkout = () => {
             </div>
 
             <div className="order-review-section">
-              <h2>ORDER REVIEW</h2>
+              <h2>{t('orderReview')}</h2>
 
               <div className="order-items">
                 {cartItems.map((item, index) => {
-                  // ✅ Use getString and getNumber safely
-                  const productName = getString(item.product?.name || item.name || 'Product');
+                  const productName = localized(item.product?.name, language) || getString(item.name || 'Product');
                   const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
-                  const productDetails = getString(item.product?.description || item.details || '');
+                  const productDetails = localized(item.product?.description, language) || getString(item.details || '');
 
                   return (
                     <div key={index} className="order-item">
                       <div className="order-item-info">
                         <div className="order-item-name">{productName}</div>
                         {productDetails && <div className="order-item-details">{productDetails}</div>}
-                        <div className="order-item-quantity">Quantity: {productQty}</div>
+                        <div className="order-item-quantity">{t('quantity', { count: productQty })}</div>
                       </div>
                       <div className="order-item-price">Tk {productPrice.toFixed(2)}</div>
                     </div>
@@ -452,33 +458,33 @@ const Checkout = () => {
 
               <div className="order-summary">
                 <div className="summary-row">
-                  <span>SUBTOTAL</span>
+                  <span>{t('subtotal')}</span>
                   <span>Tk {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="summary-row">
-                  <span>SHIPPING</span>
-                  <span>{formData.deliveryCharge > 0 ? `Tk ${formData.deliveryCharge.toFixed(2)}` : 'Not yet calculated'}</span>
+                  <span>{t('shipping')}</span>
+                  <span>{formData.deliveryCharge > 0 ? `Tk ${formData.deliveryCharge.toFixed(2)}` : t('notYetCalculated')}</span>
                 </div>
                 <div className="summary-row">
-                  <span>VAT</span>
+                  <span>{t('vat')}</span>
                   <span>Tk {vat.toFixed(2)}</span>
                 </div>
                 <div className="summary-row total">
-                  <span>TOTAL</span>
+                  <span>{t('total')}</span>
                   <span>Tk {(subtotal + vat + formData.deliveryCharge).toFixed(2)}</span>
                 </div>
               </div>
 
-              <button type="submit" className="place-order-btn" disabled={loading}>
-                {loading ? 'Processing...' : '🛒 PLACE ORDER'}
+              <button type="submit" className="place-order-btn" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {loading ? t('processing') : <><ShoppingCart size={16} /> {t('placeOrder')}</>}
               </button>
 
               {isGuest && (
                 <p className="guest-note">
-                  🔒 You are ordering as a guest. <br />
+                  <Lock size={12} style={{ verticalAlign: '-1px' }} /> {t('guestNote')} <br />
                   <span className="guest-note-small">
-                    Save your Order ID from the confirmation page — you can look up your order anytime at{" "}
-                    <Link to="/track-order">Track Order</Link>, no account needed.
+                    {t('guestNoteSmall')}{" "}
+                    <Link to="/track-order">{t('trackOrder')}</Link>{t('noAccountNeeded')}
                   </span>
                 </p>
               )}

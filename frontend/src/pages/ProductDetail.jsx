@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Truck, Gift, RotateCcw, Heart, Check } from "lucide-react";
 import { getProductById } from "../api/products";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
 import ImageGallery from "../components/ImageGallery";
 
 export default function ProductDetail() {
+  const { t } = useTranslation("products");
+  const { language } = useLanguage();
   const { id } = useParams();
   const { addItem } = useCart();
   const navigate = useNavigate();
@@ -25,7 +31,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     addItem(product, quantity);
-    setMsg({ text: "Added to your cart ✓", type: "ok" });
+    setMsg({ text: t("addedToCart"), type: "ok" });
     setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
   };
 
@@ -53,12 +59,12 @@ export default function ProductDetail() {
     <div className="container" style={{ padding: "28px 0 64px" }}>
       {/* Breadcrumb */}
       <nav className="breadcrumb">
-        <Link to="/">Home</Link>
+        <Link to="/">{t("home")}</Link>
         <span>/</span>
-        <Link to="/products">Products</Link>
-        {product.category?.name?.en && <><span>/</span><span>{product.category.name.en}</span></>}
+        <Link to="/products">{t("products")}</Link>
+        {product.category?.name && <><span>/</span><span>{localized(product.category.name, language)}</span></>}
         <span>/</span>
-        <span style={{ color: "var(--charcoal)" }}>{product.name?.en}</span>
+        <span style={{ color: "var(--charcoal)" }}>{localized(product.name, language)}</span>
       </nav>
 
       <div className="detail-grid">
@@ -67,19 +73,19 @@ export default function ProductDetail() {
 
         {/* Info */}
         <div>
-          {product.category?.name?.en && (
+          {product.category?.name && (
             <span className="eyebrow" style={{ marginBottom: 8, display: "block" }}>
-              {product.category.name.en}
+              {localized(product.category.name, language)}
             </span>
           )}
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 600, marginBottom: 10 }}>
-            {product.name?.en}
+            {localized(product.name, language)}
           </h1>
 
           {/* Stars */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <span style={{ color: "#D4A017", fontSize: 15, letterSpacing: 2 }}>★★★★☆</span>
-            <span style={{ fontSize: 12, color: "var(--muted)" }}>4.2 (24 reviews)</span>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("reviewsCount")}</span>
           </div>
 
           {/* Price */}
@@ -90,23 +96,23 @@ export default function ProductDetail() {
           {/* Stock */}
           <p style={{ fontSize: 13, fontWeight: 600, color: outOfStock ? "var(--red)" : "var(--green)", marginBottom: 20, display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: outOfStock ? "var(--red)" : "var(--green)" }} />
-            {outOfStock ? "Out of stock" : `In Stock — ${stock} available`}
+            {outOfStock ? t("outOfStock") : t("inStockCount", { count: stock })}
           </p>
 
           {/* Divider */}
           <div style={{ borderTop: "1px solid var(--border)", margin: "0 0 20px" }} />
 
           {/* Description */}
-          {product.description?.en && (
+          {localized(product.description, language) && (
             <div style={{ marginBottom: 22 }}>
-              <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 8 }}>Description</p>
-              <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>{product.description.en}</p>
+              <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 8 }}>{t("description")}</p>
+              <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.7 }}>{localized(product.description, language)}</p>
             </div>
           )}
 
           {/* Quantity */}
           <div style={{ marginBottom: 24 }}>
-            <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>Quantity</p>
+            <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>{t("quantity")}</p>
             <div className="qty-stepper">
               <button className="qty-btn" onClick={() => setQuantity(q => Math.max(1, q - 1))}>−</button>
               <span style={{ fontSize: 15, minWidth: 36, textAlign: "center", padding: "0 6px", fontWeight: 500 }}>{quantity}</span>
@@ -122,7 +128,7 @@ export default function ProductDetail() {
               onClick={handleAddToCart}
               style={{ flex: 2, fontSize: 13 }}
             >
-              {outOfStock ? "Out of Stock" : "Add to Cart"}
+              {outOfStock ? t("outOfStock") : t("addToCart")}
             </button>
             <button
               onClick={() => setWishlisted(w => !w)}
@@ -137,35 +143,38 @@ export default function ProductDetail() {
                 color: wishlisted ? "var(--red)" : "var(--muted)",
                 fontFamily: "var(--font-body)",
                 transition: "all 0.15s",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              {wishlisted ? "♥ Saved" : "Wishlist ♡"}
+              <Heart size={14} fill={wishlisted ? "var(--red)" : "none"} /> {wishlisted ? t("wishlistSaved") : t("wishlist")}
             </button>
           </div>
 
           {msg.text && (
-            <p style={{ fontSize: 13, color: msg.type === "ok" ? "var(--green)" : "var(--red)", marginBottom: 12, padding: "10px 14px", background: msg.type === "ok" ? "#F0FDF4" : "#FEF2F2", borderRadius: "var(--radius-sm)", border: `1px solid ${msg.type === "ok" ? "#BBF7D0" : "#FECACA"}` }}>
-              {msg.text}
+            <p style={{ fontSize: 13, color: msg.type === "ok" ? "var(--green)" : "var(--red)", marginBottom: 12, padding: "10px 14px", background: msg.type === "ok" ? "#F0FDF4" : "#FEF2F2", borderRadius: "var(--radius-sm)", border: `1px solid ${msg.type === "ok" ? "#BBF7D0" : "#FECACA"}`, display: "flex", alignItems: "center", gap: 6 }}>
+              {msg.type === "ok" && <Check size={14} />} {msg.text}
             </p>
           )}
 
           {/* Delivery info */}
           <div style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "14px 16px", marginTop: 16 }}>
-            {[["🚚", "Free delivery across Bangladesh"],["🎁", "Beautiful gift packaging included"],["↩️", "Easy returns within 7 days"]].map(([icon, text]) => (
+            {[[Truck, t("freeDelivery")],[Gift, t("giftPackaging")],[RotateCcw, t("easyReturns")]].map(([Icon, text]) => (
               <div key={text} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6, fontSize: 13, color: "var(--muted)" }}>
-                <span>{icon}</span><span>{text}</span>
+                <Icon size={15} /><span>{text}</span>
               </div>
             ))}
           </div>
 
           {/* Reviews */}
           <div style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 14 }}>Customer Reviews</p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 14 }}>{t("customerReviews")}</p>
             <p style={{ fontSize: 13, color: "var(--faint)", marginBottom: 14 }}>
-              No reviews yet. Be the first to share your experience!
+              {t("noReviewsYet")}
             </p>
             <button className="btn-outline btn" style={{ fontSize: 12, padding: "8px 20px" }}>
-              Write a Review
+              {t("writeReview")}
             </button>
           </div>
         </div>

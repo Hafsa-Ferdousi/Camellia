@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { register } from "../api/auth";
 import PasswordField from "../components/PasswordField";
 import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
@@ -7,6 +8,7 @@ import { isPasswordStrong } from "../utils/passwordRules";
 import { SECURITY_QUESTIONS } from "../utils/securityQuestions";
 
 export default function Register() {
+  const { t } = useTranslation("auth");
   const [form, setForm] = useState({
     username: "", name: "", email: "", password: "", phone: "",
     securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
@@ -29,15 +31,15 @@ export default function Register() {
     setError("");
 
     if (!strong) {
-      setError("Please choose a stronger password — see the requirements below.");
+      setError(t("weakPassword"));
       return;
     }
     if (form.password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("passwordMismatch"));
       return;
     }
     if (!form.securityAnswer.trim()) {
-      setError("Please answer the security question — it's how you'll recover your account.");
+      setError(t("answerRequired"));
       return;
     }
 
@@ -47,7 +49,7 @@ export default function Register() {
       await register(form);
       navigate("/login", { state: { registered: true, from } });
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(err.response?.data?.message || t("registerFailed"));
     } finally {
       setLoading(false);
     }
@@ -57,8 +59,8 @@ export default function Register() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>Join Camellia</p>
-          <p style={{ fontSize: 13, color: "var(--muted)" }}>Create your account to start shopping</p>
+          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("joinCamellia")}</p>
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("createAccountSub")}</p>
         </div>
 
         <div className="divider-gold" style={{ justifyContent: "center", marginBottom: 28 }}>✦</div>
@@ -67,29 +69,29 @@ export default function Register() {
 
         <form onSubmit={handleSubmit}>
           <label className="form-label">
-            Full Name *
+            {t("fullName")}
             <input className="input" name="name" value={form.name} onChange={set} placeholder="Your Full Name" required />
           </label>
           <label className="form-label">
-            Username *
+            {t("username")}
              <input className="input" name="username" value={form.username} onChange={set} placeholder="Choose a username" required />
           </label>
           <label className="form-label">
-            Email Address *
+            {t("emailAddress")}
             <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder="your@email.com" required />
           </label>
           <label className="form-label">
-            Phone Number
+            {t("phoneNumber")}
             <input className="input" name="phone" value={form.phone} onChange={set} placeholder="01XXXXXXXXX" />
           </label>
           <label className="form-label">
-            Password *
+            {t("password")}
             <PasswordField name="password" value={form.password} onChange={set} placeholder="Create a strong password" />
           </label>
           <PasswordStrengthChecklist password={form.password} />
 
           <label className="form-label">
-            Confirm Password *
+            {t("confirmPassword")}
             <PasswordField
               name="confirmPassword"
               value={confirmPassword}
@@ -98,17 +100,17 @@ export default function Register() {
             />
           </label>
           {!passwordsMatch && (
-            <p style={{ color: "var(--red)", fontSize: 12, marginTop: -10, marginBottom: 16 }}>Passwords do not match.</p>
+            <p style={{ color: "var(--red)", fontSize: 12, marginTop: -10, marginBottom: 16 }}>{t("passwordMismatch")}</p>
           )}
 
           <label className="form-label">
-            Security Question *
+            {t("securityQuestion")}
             <select className="input" name="securityQuestion" value={form.securityQuestion} onChange={set}>
               {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
             </select>
           </label>
           <label className="form-label">
-            Your Answer *
+            {t("yourAnswer")}
             <input
               className="input"
               name="securityAnswer"
@@ -119,17 +121,17 @@ export default function Register() {
             />
           </label>
           <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -10, marginBottom: 16 }}>
-            No email is used for account recovery — this answer is how you'll reset a forgotten password.
+            {t("recoveryNote")}
           </p>
 
           <button className="btn" type="submit" disabled={!canSubmit} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
-            {loading ? "Creating Account…" : "Create Account"}
+            {loading ? t("creatingAccount") : t("createAccount")}
           </button>
         </form>
 
         <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 20 }}>
-          Already have an account?{" "}
-          <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>Login</Link>
+          {t("haveAccount")}{" "}
+          <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("login")}</Link>
         </p>
       </div>
     </div>

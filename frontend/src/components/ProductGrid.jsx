@@ -1,3 +1,4 @@
+import { Gem } from "lucide-react";
 import ProductCard from "./ProductCard";
 
 export default function ProductGrid({ products, loading }) {
@@ -26,7 +27,7 @@ export default function ProductGrid({ products, loading }) {
   if (!products.length) {
     return (
       <div style={{ padding: "56px 0", textAlign: "center", color: "var(--muted)" }}>
-        <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.3 }}>💍</div>
+        <div style={{ marginBottom: 14, opacity: 0.3, display: "flex", justifyContent: "center" }}><Gem size={40} /></div>
         <p style={{ fontFamily: "var(--font-display)", fontSize: 20, marginBottom: 8, color: "var(--charcoal)" }}>
           No products found
         </p>

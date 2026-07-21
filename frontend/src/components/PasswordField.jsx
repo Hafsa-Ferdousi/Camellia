@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 export default function PasswordField({
   value,
   onChange,
@@ -29,12 +30,12 @@ export default function PasswordField({
         onClick={() => setVisible((v) => !v)}
         style={{
           position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-          background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "var(--muted)",
+          background: "none", border: "none", cursor: "pointer", display: "inline-flex", color: "var(--muted)",
         }}
         aria-label={visible ? "Hide password" : "Show password"}
         tabIndex={-1}
       >
-        {visible ? "🙈" : "👁"}
+        {visible ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
     </div>
   );
