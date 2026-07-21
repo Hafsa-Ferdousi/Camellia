@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
 import { getPricing } from '../api/settings';
+import { validateCoupon } from '../api/coupons';
 
 const PAYMENT_METHOD_MAP = {
   'Cash on Delivery': 'cod',
@@ -50,6 +51,19 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
 
+  // Coupon
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // { code, discount, newTotal }
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message }
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    window.clearTimeout(showToast._t);
+    showToast._t = window.setTimeout(() => setToast(null), 3000);
+  };
+
   // Falls back to the store's current defaults until the live settings load.
   const [pricing, setPricing] = useState({ vatRate: 0.10, defaultDeliveryCharge: 150, districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }] });
 
@@ -74,6 +88,50 @@ const Checkout = () => {
   };
 
   const { subtotal, vat } = calculateTotals();
+  const discount = appliedCoupon?.discount || 0;
+
+  // If the cart changes after a coupon was applied (item added/removed,
+  // quantity changed), the previously-validated discount no longer reflects
+  // reality — clear it rather than show a stale number. The server
+  // re-validates from scratch at checkout regardless, but the UI shouldn't
+  // promise a discount it can't guarantee.
+  const cartSignature = cartItems.map(i => `${i.productId || i.product?._id}:${i.quantity}`).join('|');
+  useEffect(() => {
+    if (appliedCoupon) {
+      setAppliedCoupon(null);
+      setCouponError('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartSignature]);
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const items = cartItems.map((item) => ({
+        product: item.productId || item.product?._id,
+        category: item.product?.category?._id || item.product?.category,
+      }));
+      const { data } = await validateCoupon(code, subtotal, items, isGuest ? formData.email : undefined);
+      setAppliedCoupon({ code: data.coupon, discount: data.discount, newTotal: data.newTotal });
+      showToast('success', data.message || 'Coupon Applied Successfully');
+    } catch (err) {
+      setAppliedCoupon(null);
+      const msg = err.response?.data?.message || 'Could not apply coupon.';
+      setCouponError(msg);
+      showToast('error', msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  };
 
   const [formData, setFormData] = useState({
     email: '',
@@ -142,7 +200,8 @@ const Checkout = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim() || 'Guest',
         email: formData.email,
         phone: formData.mobileNumber,
-      }
+      },
+      appliedCoupon?.code
     );
     return order;
   };
@@ -161,7 +220,8 @@ const Checkout = () => {
     const { data: order } = await checkoutApi(
       items,
       { addressLine, district: formData.district, city: formData.city, phone: formData.mobileNumber },
-      paymentMethod
+      paymentMethod,
+      appliedCoupon?.code
     );
     return order;
   };
@@ -203,6 +263,11 @@ const Checkout = () => {
 
   return (
     <div className="checkout-page">
+      {toast && (
+        <div className={`checkout-toast checkout-toast-${toast.type}`}>
+          {toast.type === 'success' ? '✓ ' : '⚠ '}{toast.message}
+        </div>
+      )}
       <div className="checkout-container">
         <h1 className="checkout-title">CHECKOUT</h1>
         <p className="checkout-subtitle">Please fill in the fields below and place order to complete your purchase!</p>
@@ -450,6 +515,42 @@ const Checkout = () => {
                 })}
               </div>
 
+              <div className="coupon-section">
+                <label className="coupon-label">Coupon Code</label>
+                {!appliedCoupon ? (
+                  <div className="coupon-input-row">
+                    <input
+                      type="text"
+                      className="coupon-input"
+                      placeholder="Enter coupon code"
+                      value={couponInput}
+                      onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                      disabled={couponLoading}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                    />
+                    <button
+                      type="button"
+                      className="coupon-apply-btn"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                    >
+                      {couponLoading ? <span className="coupon-spinner" /> : 'Apply Coupon'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="coupon-applied-box">
+                    <div className="coupon-applied-info">
+                      <span className="coupon-applied-check">✓ Coupon Applied</span>
+                      <span className="coupon-applied-code">Coupon: {appliedCoupon.code}</span>
+                    </div>
+                    <button type="button" className="coupon-remove-btn" onClick={handleRemoveCoupon}>
+                      Remove
+                    </button>
+                  </div>
+                )}
+                {couponError && <div className="coupon-error">{couponError}</div>}
+              </div>
+
               <div className="order-summary">
                 <div className="summary-row">
                   <span>SUBTOTAL</span>
@@ -463,9 +564,15 @@ const Checkout = () => {
                   <span>VAT</span>
                   <span>Tk {vat.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="summary-row discount-row">
+                    <span>DISCOUNT ({appliedCoupon.code})</span>
+                    <span>- Tk {discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="summary-row total">
                   <span>TOTAL</span>
-                  <span>Tk {(subtotal + vat + formData.deliveryCharge).toFixed(2)}</span>
+                  <span>Tk {Math.max(0, subtotal + vat + formData.deliveryCharge - discount).toFixed(2)}</span>
                 </div>
               </div>
 
