@@ -13,6 +13,7 @@ import cartRoutes     from "./routes/cartRoutes.js";
 import orderRoutes    from "./routes/orderRoutes.js";
 import adminRoutes    from "./routes/adminRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
+import contactRoutes  from "./routes/contactRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 
 dotenv.config();
@@ -46,6 +47,7 @@ app.use("/api/cart",       cartRoutes);
 app.use("/api/orders",     orderRoutes);
 app.use("/api/admin",      adminRoutes);
 app.use("/api/settings",   settingsRoutes);
+app.use("/api/contact",    contactRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
