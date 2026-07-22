@@ -31,12 +31,13 @@ router.get("/:productId", async (req, res) => {
 });
 
 // ── POST /api/reviews/:productId ────────────────────────────────────────────
-// Protected — create a new review (user must be logged in)
-router.post("/:productId", protect, async (req, res) => {
+// 🔓 PUBLIC — ANYONE can post a review (logged-in OR guest)
+router.post("/:productId", async (req, res) => {
   try {
     const { productId } = req.params;
-    const { rating, comment } = req.body;
+    const { rating, comment, guestName, guestEmail } = req.body;
 
+    // 1. Validate input
     if (!rating || !comment) {
       return res.status(400).json({ message: "Rating and comment are required." });
     }
@@ -44,28 +45,68 @@ router.post("/:productId", protect, async (req, res) => {
       return res.status(400).json({ message: "Rating must be between 1 and 5." });
     }
 
+    // 2. Check if product exists
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
     }
 
-    const alreadyReviewed = await Review.findOne({
-      product: productId,
-      user: req.user._id,
-    });
-    if (alreadyReviewed) {
-      return res.status(400).json({ message: "You have already reviewed this product." });
+    // 3. Determine if user is logged in or guest
+    let user = null;
+    let userName = "";
+    let guestEmailToCheck = null;
+
+    if (req.user) {
+      // LOGGED-IN USER
+      user = req.user._id;
+      userName = req.user.name || "User";
+
+      // Check if logged-in user already reviewed this product
+      const alreadyReviewed = await Review.findOne({
+        product: productId,
+        user: req.user._id,
+      });
+      if (alreadyReviewed) {
+        return res.status(400).json({ message: "You have already reviewed this product." });
+      }
+    } else {
+      // GUEST USER
+      if (!guestName || !guestEmail) {
+        return res.status(400).json({ message: "Guest name and email are required." });
+      }
+
+      // Simple email format validation
+      if (!guestEmail.includes("@") || !guestEmail.includes(".")) {
+        return res.status(400).json({ message: "Please enter a valid email address." });
+      }
+
+      userName = guestName.trim();
+      guestEmailToCheck = guestEmail.trim().toLowerCase();
+
+      // Check if this guest email already reviewed this product
+      const alreadyReviewed = await Review.findOne({
+        product: productId,
+        guestEmail: guestEmailToCheck,
+      });
+      if (alreadyReviewed) {
+        return res.status(400).json({
+          message: "You have already reviewed this product with this email.",
+        });
+      }
     }
 
+    // 4. Create the review
     const review = await Review.create({
       product: productId,
-      user: req.user._id,
-      userName: req.user.name || "User",
+      user: user, // null for guests
+      guestName: guestEmailToCheck || null,
+      guestEmail: guestEmailToCheck || null,
+      userName: userName,
       rating: Number(rating),
       comment: comment.trim(),
     });
 
-    // Update product average rating
+    // 5. Update product's average rating and total reviews
     const allReviews = await Review.find({ product: productId });
     const total = allReviews.reduce((acc, item) => acc + item.rating, 0);
     const average = total / allReviews.length;
@@ -82,7 +123,9 @@ router.post("/:productId", protect, async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already reviewed this product." });
+      return res.status(400).json({
+        message: "You have already reviewed this product.",
+      });
     }
     res.status(500).json({ message: error.message });
   }

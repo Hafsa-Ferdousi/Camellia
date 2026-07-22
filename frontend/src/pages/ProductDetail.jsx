@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { getProductById } from "../api/products";
 import { useCart } from "../context/CartContext";
 import ImageGallery from "../components/ImageGallery";
-import StarRating from "../components/StarRating"; // 👈 NEW IMPORT
+import StarRating from "../components/StarRating";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -25,6 +25,10 @@ export default function ProductDetail() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // 👇 NEW STATES FOR GUEST REVIEW
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
 
   // ===== CHECK LOGIN STATUS =====
   useEffect(() => {
@@ -52,7 +56,6 @@ export default function ProductDetail() {
           setAverageRating(data.averageRating || 0);
           setTotalReviews(data.totalReviews || 0);
         } else {
-          // Backend not ready — use mock data for testing UI
           setMockReviews();
         }
       } catch (error) {
@@ -91,35 +94,56 @@ export default function ProductDetail() {
     if (id) fetchReviews();
   }, [id]);
 
-  // ===== SUBMIT REVIEW =====
+  // ===== SUBMIT REVIEW (NOW SUPPORTS GUESTS) =====
   const submitReview = async (e) => {
     e.preventDefault();
+
+    // Validate
     if (!userRating || !userComment.trim()) {
       alert("Please select a rating and write a comment.");
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Please login to leave a review.");
-      return;
+    // Prepare payload
+    const payload = {
+      rating: userRating,
+      comment: userComment.trim(),
+    };
+
+    // If NOT logged in, send guest details
+    if (!isLoggedIn) {
+      if (!guestName.trim() || !guestEmail.trim()) {
+        alert("Please enter your name and email to leave a review.");
+        return;
+      }
+      payload.guestName = guestName.trim();
+      payload.guestEmail = guestEmail.trim();
     }
 
     setReviewLoading(true);
     try {
+      // No Authorization header needed anymore!
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      // If logged in, add token
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(`/api/reviews/${id}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ rating: userRating, comment: userComment.trim() }),
+        headers: headers,
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setReviewSubmitted(true);
         setUserRating(0);
         setUserComment("");
+        setGuestName("");
+        setGuestEmail("");
         // Refresh reviews
         const updatedRes = await fetch(`/api/reviews/${id}`);
         const data = await updatedRes.json();
@@ -199,7 +223,7 @@ export default function ProductDetail() {
             {product.name?.en}
           </h1>
 
-          {/* Stars - NOW DYNAMIC */}
+          {/* Stars - DYNAMIC */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <StarRating rating={averageRating} totalReviews={totalReviews} />
           </div>
@@ -368,7 +392,7 @@ export default function ProductDetail() {
             ))}
           </div>
 
-          {/* ===== REVIEWS SECTION - UPDATED ===== */}
+          {/* ===== REVIEWS SECTION - UPDATED WITH GUEST SUPPORT ===== */}
           <div style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
             <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
               Customer Reviews
@@ -413,29 +437,68 @@ export default function ProductDetail() {
               )}
             </div>
 
-            {/* Write a Review Form */}
+            {/* ===== WRITE A REVIEW FORM - ALWAYS VISIBLE ===== */}
             <div style={{ background: "#f8f5f0", padding: "20px", borderRadius: "8px" }}>
               <h4 style={{ marginBottom: 12, fontSize: 16 }}>Write a Review</h4>
-              {!isLoggedIn ? (
-                <p>
-                  <Link to="/login" style={{ color: "#c9a84c", fontWeight: 600 }}>
-                    Login
-                  </Link>{" "}
-                  to leave a review.
-                </p>
-              ) : reviewSubmitted ? (
+
+              {reviewSubmitted ? (
                 <p style={{ color: "#2e7d32" }}>✅ Thank you for your review!</p>
               ) : (
                 <form onSubmit={submitReview}>
+                  {/* Show Name & Email fields ONLY for guests */}
+                  {!isLoggedIn && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                      <div>
+                        <label style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
+                          Your Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
+                          placeholder="Enter your name"
+                          required
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            border: "1px solid #ddd",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
+                          Your Email *
+                        </label>
+                        <input
+                          type="email"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          required
+                          style={{
+                            width: "100%",
+                            padding: "8px 12px",
+                            border: "1px solid #ddd",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
-                      Your Rating
+                      Your Rating *
                     </label>
                     <StarRating rating={userRating} onRatingChange={setUserRating} interactive={true} />
                   </div>
+
                   <div style={{ marginBottom: 12 }}>
                     <label style={{ display: "block", marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
-                      Your Comment
+                      Your Comment *
                     </label>
                     <textarea
                       value={userComment}
@@ -455,6 +518,7 @@ export default function ProductDetail() {
                       }}
                     />
                   </div>
+
                   <button
                     type="submit"
                     disabled={reviewLoading}
