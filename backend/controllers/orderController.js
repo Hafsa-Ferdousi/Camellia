@@ -3,6 +3,16 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
 
+// Generate unique invoice number
+const generateInvoiceNumber = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `INV-${year}${month}${day}-${random}`;
+};
+
 const getDeliveryCharge = (settings, district) => {
   const match = settings.districtDeliveryCharges.find((d) => d.district === district);
   return match ? match.charge : settings.defaultDeliveryCharge;
@@ -64,15 +74,16 @@ export const checkout = async (req, res) => {
     const totalAmount = subtotal + vat + deliveryCharge;
 
     const order = await Order.create({
-      user: req.user._id,
-      address,
-      items: orderItems,
-      subtotal,
-      vat,
-      deliveryCharge,
-      totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
-    });
+  user: req.user._id,
+  address,
+  items: orderItems,
+  subtotal,
+  vat,
+  deliveryCharge,
+  totalAmount,
+  payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
+  invoiceNumber: generateInvoiceNumber(), 
+});
 
     await CartItem.deleteMany({ user: req.user._id });
 
@@ -136,17 +147,18 @@ export const guestCheckout = async (req, res) => {
     const totalAmount = subtotal + vat + deliveryCharge;
 
     const order = await Order.create({
-      user: null,
-      isGuest: true,
-      guestInfo: { name: guestInfo.name, email: guestInfo.email, phone: guestInfo.phone },
-      address,
-      items: orderItems,
-      subtotal,
-      vat,
-      deliveryCharge,
-      totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
-    });
+  user: null,
+  isGuest: true,
+  guestInfo: { name: guestInfo.name, email: guestInfo.email, phone: guestInfo.phone },
+  address,
+  items: orderItems,
+  subtotal,
+  vat,
+  deliveryCharge,
+  totalAmount,
+  payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
+  invoiceNumber: generateInvoiceNumber(), //
+});
 
     res.status(201).json(order);
   } catch (error) {

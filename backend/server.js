@@ -14,6 +14,7 @@ import orderRoutes    from "./routes/orderRoutes.js";
 import adminRoutes    from "./routes/adminRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -46,6 +47,14 @@ app.use("/api/cart",       cartRoutes);
 app.use("/api/orders",     orderRoutes);
 app.use("/api/admin",      adminRoutes);
 app.use("/api/settings",   settingsRoutes);
+app.use("/api/auth",       authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products",   productRoutes);
+app.use("/api/cart",       cartRoutes);
+app.use("/api/orders",     orderRoutes);
+app.use("/api/admin",      adminRoutes);
+app.use("/api/settings",   settingsRoutes);
+app.use("/api/reviews",    reviewRoutes); // 👈 ADD THIS LINE
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
