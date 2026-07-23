@@ -23,7 +23,7 @@ const getString = (value) => {
   return JSON.stringify(value);
 };
 
-//  NEW: Helper to safely get a number from any price format
+// Helper to safely get a number from any price format
 const getNumber = (value) => {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value;
@@ -32,10 +32,8 @@ const getNumber = (value) => {
     return isNaN(parsed) ? 0 : parsed;
   }
   if (typeof value === 'object') {
-    // If it's multilingual { en: ..., bn: ... }
     if (value.en !== undefined) return getNumber(value.en);
     if (value.bn !== undefined) return getNumber(value.bn);
-    // If it's nested like { amount: ... } or { value: ... }
     if (value.amount !== undefined) return getNumber(value.amount);
     if (value.value !== undefined) return getNumber(value.value);
   }
@@ -50,8 +48,12 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
 
-  // Falls back to the store's current defaults until the live settings load.
-  const [pricing, setPricing] = useState({ vatRate: 0.10, defaultDeliveryCharge: 150, districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }] });
+  // Pricing settings
+  const [pricing, setPricing] = useState({
+    vatRate: 0.10,
+    defaultDeliveryCharge: 150,
+    districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }]
+  });
 
   useEffect(() => {
     getPricing().then(({ data }) => setPricing(data)).catch(() => {});
@@ -64,7 +66,6 @@ const Checkout = () => {
 
   const calculateTotals = () => {
     const subtotal = cartItems.reduce((sum, item) => {
-      //  Use getNumber to extract price safely
       const price = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
       const qty = item.quantity || 1;
       return sum + (price * qty);
@@ -90,7 +91,7 @@ const Checkout = () => {
     total: subtotal + vat
   });
 
-  // Prefill the greeting/name fields once we know who's actually logged in.
+  // Prefill user data if logged in
   useEffect(() => {
     if (user) {
       const [firstName, ...rest] = (user.name || '').split(' ');
@@ -100,6 +101,13 @@ const Checkout = () => {
         firstName: firstName || '',
         lastName: rest.join(' '),
       }));
+    }
+  }, [user]);
+
+  // ✅ AUTO-GUEST: If not logged in, automatically enable guest mode
+  useEffect(() => {
+    if (!user) {
+      setIsGuest(true);
     }
   }, [user]);
 
@@ -119,9 +127,7 @@ const Checkout = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleGuestCheckout = () => {
-    setIsGuest(true);
-  };
+  // ---- SUBMIT FUNCTIONS ----
 
   const submitGuestOrder = async () => {
     const items = cartItems.map((item) => ({
@@ -166,13 +172,15 @@ const Checkout = () => {
     return order;
   };
 
+  // ✅ HANDLE SUBMIT – automatically chooses guest or logged-in endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const order = isGuest ? await submitGuestOrder() : await submitLoggedInOrder();
+      // If user exists → logged-in checkout, else → guest checkout
+      const order = user ? await submitLoggedInOrder() : await submitGuestOrder();
 
       clearCart();
       navigate('/order-confirmation', { state: { order } });
@@ -183,8 +191,7 @@ const Checkout = () => {
     }
   };
 
-  const showAuthPrompt = !user && !isGuest;
-
+  // Empty cart check
   if (cartItems.length === 0) {
     return (
       <div className="checkout-page">
@@ -194,7 +201,9 @@ const Checkout = () => {
           <div className="empty-cart-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <h2>🛒 Your cart is empty</h2>
             <p style={{ color: '#888', marginBottom: 20 }}>Add some products to your cart before checking out.</p>
-            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>Browse Products</button>
+            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>
+              Browse Products
+            </button>
           </div>
         </div>
       </div>
@@ -209,41 +218,41 @@ const Checkout = () => {
 
         {error && <div className="error-message">{error}</div>}
 
-        {showAuthPrompt ? (
-          <div className="auth-section-top">
-            <p style={{ textAlign: 'center', marginBottom: 12 }}>
-              Please log in, create an account, or continue as a guest to complete your purchase.
-            </p>
-            <div className="auth-row" style={{ justifyContent: 'center', gap: 12 }}>
-              <Link to="/login" state={{ from: '/checkout' }} className="auth-submit-btn">Login</Link>
-              <Link to="/register" state={{ from: '/checkout' }} className="auth-submit-btn">Register</Link>
-            </div>
-            <div className="auth-divider"><span>or</span></div>
-            <div className="auth-guest-option">
-              <button type="button" className="guest-link" onClick={handleGuestCheckout}>
-                🛒 Continue as Guest (No Login Required)
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className={`user-info-bar ${isGuest ? 'guest-mode' : ''}`}>
-            <span>
-              {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
-            </span>
-            <div>
-              {isGuest && (
-                <Link to="/login" state={{ from: '/checkout' }} className="login-link">
-                  Login instead?
+        {/* ===== USER INFO BAR WITH LOGIN/REGISTER LINKS ===== */}
+        <div className={`user-info-bar ${!user ? 'guest-mode' : ''}`}>
+          <span>
+            {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* 👇 LOGIN / REGISTER LINKS FOR GUESTS */}
+            {!user && (
+              <>
+                <Link to="/login" state={{ from: '/checkout' }} className="login-link" style={{ marginRight: '8px' }}>
+                  Login
                 </Link>
-              )}
-              {user && (
-                <button className="logout-btn" onClick={async () => { await logout(); navigate('/login', { state: { from: '/checkout' } }); }}>
-                  Logout
-                </button>
-              )}
-            </div>
+                <span style={{ color: '#ccc' }}>|</span>
+                <Link to="/register" state={{ from: '/checkout' }} className="login-link" style={{ marginLeft: '8px', marginRight: '12px' }}>
+                  Register
+                </Link>
+                <span style={{ color: '#999', fontSize: '13px', marginRight: '12px' }}>
+                  (or continue as guest)
+                </span>
+              </>
+            )}
+            {/* 👇 LOGOUT BUTTON FOR LOGGED-IN USERS */}
+            {user && (
+              <button
+                className="logout-btn"
+                onClick={async () => {
+                  await logout();
+                  navigate('/login', { state: { from: '/checkout' } });
+                }}
+              >
+                Logout
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="checkout-grid">
@@ -261,7 +270,7 @@ const Checkout = () => {
                   required
                 />
                 <small className="field-hint">
-                  {isGuest ? 'We will send order confirmation to this email' : 'Your account email'}
+                  {!user ? 'We will send order confirmation to this email' : 'Your account email'}
                 </small>
               </div>
 
@@ -431,7 +440,6 @@ const Checkout = () => {
 
               <div className="order-items">
                 {cartItems.map((item, index) => {
-                  // ✅ Use getString and getNumber safely
                   const productName = getString(item.product?.name || item.name || 'Product');
                   const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
@@ -473,11 +481,11 @@ const Checkout = () => {
                 {loading ? 'Processing...' : '🛒 PLACE ORDER'}
               </button>
 
-              {isGuest && (
+              {!user && (
                 <p className="guest-note">
                   🔒 You are ordering as a guest. <br />
                   <span className="guest-note-small">
-                    Save your Order ID from the confirmation page — you can look up your order anytime at{" "}
+                    Save your Order ID from the confirmation page — you can look up your order anytime at{' '}
                     <Link to="/track-order">Track Order</Link>, no account needed.
                   </span>
                 </p>
