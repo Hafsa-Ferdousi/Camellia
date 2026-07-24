@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Legal from "./pages/Legal";
+import WishlistPage from "./pages/Wishlist";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function SiteLayout() {
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/about"               element={<About />} />
               <Route path="/contact"             element={<Contact />} />
               <Route path="/legal/:page"         element={<Legal />} />
+              <Route path="/wishlist"            element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

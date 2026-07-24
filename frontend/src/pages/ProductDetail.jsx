@@ -3,17 +3,18 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { getProductById } from "../api/products";
 import { useCart } from "../context/CartContext";
 import ImageGallery from "../components/ImageGallery";
+import { addToWishlist, removeFromWishlist } from "../api/wishlist";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const { addItem } = useCart();
   const navigate = useNavigate();
 
-  const [product,         setProduct]         = useState(null);
-  const [quantity,        setQuantity]        = useState(1);
-  const [msg,             setMsg]             = useState({ text: "", type: "ok" });
-  const [loading,         setLoading]         = useState(true);
-  const [wishlisted,      setWishlisted]      = useState(false);
+  const [product,    setProduct]    = useState(null);
+  const [quantity,   setQuantity]   = useState(1);
+  const [msg,        setMsg]        = useState({ text: "", type: "ok" });
+  const [loading,    setLoading]    = useState(true);
+  const [wishlisted, setWishlisted] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -27,6 +28,21 @@ export default function ProductDetail() {
     addItem(product, quantity);
     setMsg({ text: "Added to your cart ✓", type: "ok" });
     setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
+  };
+
+  const handleWishlist = async () => {
+    try {
+      if (wishlisted) {
+        await removeFromWishlist(product._id);
+        setWishlisted(false);
+      } else {
+        await addToWishlist(product._id);
+        setWishlisted(true);
+      }
+    } catch {
+      setMsg({ text: "Please login to use wishlist!", type: "err" });
+      setTimeout(() => setMsg({ text: "", type: "ok" }), 2500);
+    }
   };
 
   if (loading) {
@@ -125,7 +141,7 @@ export default function ProductDetail() {
               {outOfStock ? "Out of Stock" : "Add to Cart"}
             </button>
             <button
-              onClick={() => setWishlisted(w => !w)}
+              onClick={handleWishlist}
               style={{
                 flex: 1,
                 padding: "11px 14px",

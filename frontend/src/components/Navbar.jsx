@@ -26,9 +26,6 @@ export default function Navbar() {
     </Link>
   );
 
-  // Scrolls to the categories section on the homepage. If we're not already
-  // there, navigate there first (client-side, no full page reload) and pass
-  // along which section to scroll to once Home has mounted and loaded data.
   const scrollToId = (id, attemptsLeft = 20) => {
     const el = document.getElementById(id);
     if (el) {
@@ -68,11 +65,11 @@ export default function Navbar() {
               e.preventDefault();
               if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
             }}
-            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px", flex: "0 1 220px" }}
+            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px", flex: "0 1 140px" }}
           >
             <input
               type="text"
-              placeholder="Search products…"
+              placeholder="Search…"
               value={q}
               onChange={e => setQ(e.target.value)}
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 13, padding: "6px 4px" }}
@@ -86,6 +83,7 @@ export default function Navbar() {
               <>
                 {user.role === "admin" && <Link to="/admin" className="navbar-btn-login" onClick={close}>Admin</Link>}
                 <Link to="/orders" className="navbar-link" onClick={close}>My Orders</Link>
+                <Link to="/wishlist" className="navbar-link" onClick={close}>Wishlist 🤍</Link>
                 <span style={{ color: "rgba(232,217,192,0.5)", fontSize: 12 }}>
                   Hi, {user.name?.split(" ")[0] || user.username}
                 </span>
@@ -151,6 +149,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/orders" className="mobile-nav-link" onClick={close}>My Orders</Link>
+              <Link to="/wishlist" className="mobile-nav-link" onClick={close}>Wishlist 🤍</Link>
               {user.role === "admin" && <Link to="/admin" className="mobile-nav-link" onClick={close}>Admin Panel</Link>}
               <button className="mobile-nav-btn" onClick={handleLogout}>Logout</button>
             </>
