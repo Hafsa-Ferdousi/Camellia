@@ -2,6 +2,7 @@ import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
+import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
 
 const getDeliveryCharge = (settings, district) => {
   const match = settings.districtDeliveryCharges.find((d) => d.district === district);
@@ -10,7 +11,7 @@ const getDeliveryCharge = (settings, district) => {
 
 // ── POST /api/orders/checkout ──────────────────────────────────────────────
 export const checkout = async (req, res) => {
-  const { address, paymentMethod = "cod", items } = req.body;
+  const { address, paymentMethod = "cod", items, couponCode } = req.body;
 
   if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
     return res.status(400).json({ message: "Delivery address is required (addressLine, district, city, phone)." });
@@ -28,6 +29,7 @@ export const checkout = async (req, res) => {
     let subtotal = 0;
     const orderItems = [];
     const productsToSave = [];
+    const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
@@ -55,13 +57,30 @@ export const checkout = async (req, res) => {
         quantity,
         price,
       });
+      couponLines.push({ product: product._id, category: product.category });
+    }
+
+    // Coupons are re-validated from scratch here — the discount amount the
+    // client showed on the checkout page is never trusted directly.
+    let coupon = null;
+    let discountAmount = 0;
+    if (couponCode) {
+      const result = await findAndValidateCoupon({
+        code: couponCode,
+        cartTotal: subtotal,
+        items: couponLines,
+        userId: req.user._id,
+      });
+      coupon = result.coupon;
+      discountAmount = result.discount;
     }
 
     await Promise.all(productsToSave.map((p) => p.save()));
 
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
-    const totalAmount = subtotal + vat + deliveryCharge;
+    const originalTotal = subtotal + vat + deliveryCharge;
+    const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
     const order = await Order.create({
       user: req.user._id,
@@ -70,9 +89,16 @@ export const checkout = async (req, res) => {
       subtotal,
       vat,
       deliveryCharge,
+      couponCode: coupon ? coupon.code : null,
+      discountAmount,
+      originalTotal,
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
     });
+
+    if (coupon) {
+      await recordCouponUsage(coupon, { userId: req.user._id });
+    }
 
     await CartItem.deleteMany({ user: req.user._id });
 
@@ -84,7 +110,7 @@ export const checkout = async (req, res) => {
 
 // ── POST /api/orders/guest-checkout  (no account required) ─────────────────
 export const guestCheckout = async (req, res) => {
-  const { items, address, paymentMethod = "cod", guestInfo } = req.body;
+  const { items, address, paymentMethod = "cod", guestInfo, couponCode } = req.body;
 
   if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
     return res.status(400).json({ message: "Delivery address is required (addressLine, district, city, phone)." });
@@ -101,6 +127,7 @@ export const guestCheckout = async (req, res) => {
     let subtotal = 0;
     const orderItems = [];
     const productsToSave = [];
+    const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
@@ -127,13 +154,28 @@ export const guestCheckout = async (req, res) => {
         quantity,
         price,
       });
+      couponLines.push({ product: product._id, category: product.category });
+    }
+
+    let coupon = null;
+    let discountAmount = 0;
+    if (couponCode) {
+      const result = await findAndValidateCoupon({
+        code: couponCode,
+        cartTotal: subtotal,
+        items: couponLines,
+        guestEmail: guestInfo.email,
+      });
+      coupon = result.coupon;
+      discountAmount = result.discount;
     }
 
     await Promise.all(productsToSave.map((p) => p.save()));
 
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
-    const totalAmount = subtotal + vat + deliveryCharge;
+    const originalTotal = subtotal + vat + deliveryCharge;
+    const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
     const order = await Order.create({
       user: null,
@@ -144,9 +186,16 @@ export const guestCheckout = async (req, res) => {
       subtotal,
       vat,
       deliveryCharge,
+      couponCode: coupon ? coupon.code : null,
+      discountAmount,
+      originalTotal,
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: paymentMethod === "cod" ? "pending" : "paid" },
     });
+
+    if (coupon) {
+      await recordCouponUsage(coupon, { guestEmail: guestInfo.email });
+    }
 
     res.status(201).json(order);
   } catch (error) {
