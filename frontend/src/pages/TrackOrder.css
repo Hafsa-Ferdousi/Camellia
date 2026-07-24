@@ -1,0 +1,152 @@
+/* frontend/src/pages/TrackOrder.css */
+
+.track-order-page {
+  background: #f8f5f0;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.track-order-container {
+  max-width: 700px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 40px 50px;
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+}
+
+.track-order-container h1 {
+  font-family: 'Georgia', serif;
+  font-size: 28px;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.track-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.track-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.track-form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.track-form input {
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  background: #fafafa;
+}
+
+.track-form input:focus {
+  outline: none;
+  border-color: #c9a84c;
+  background: #fff;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.track-btn {
+  padding: 14px;
+  background: #c9a84c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 10px;
+}
+
+.track-btn:hover {
+  background: #b8953a;
+}
+
+.track-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-top: 15px;
+  border: 1px solid #ef9a9a;
+}
+
+.orders-list {
+  margin-top: 30px;
+  border-top: 2px solid #e8e0d8;
+  padding-top: 20px;
+}
+
+.orders-list h3 {
+  margin-bottom: 16px;
+  font-family: 'Georgia', serif;
+  font-size: 20px;
+}
+
+.order-card {
+  border: 1px solid #e8e0d8;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: #faf8f5;
+  transition: 0.2s;
+}
+
+.order-card:hover {
+  border-color: #c9a84c;
+}
+
+.status-badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge.pending { background: #fff3e0; color: #e65100; }
+.status-badge.confirmed { background: #e3f2fd; color: #0d47a1; }
+.status-badge.processing { background: #e8f5e9; color: #1b5e20; }
+.status-badge.shipped { background: #e0f7fa; color: #00695c; }
+.status-badge.delivered { background: #e8f5e9; color: #2e7d32; }
+.status-badge.cancelled { background: #ffebee; color: #c62828; }
+
+.view-details-link {
+  color: #c9a84c;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.view-details-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .track-order-container {
+    padding: 20px;
+  }
+  .track-order-container h1 {
+    font-size: 22px;
+  }
+}

@@ -10,6 +10,15 @@ const productSchema = new mongoose.Schema(
       en: { type: String },
       bn: { type: String },
     },
+    // Rating
+averageRating: {
+  type: Number,
+  default: 0,
+},
+totalReviews: {
+  type: Number,
+  default: 0,
+},
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     basePrice: { type: Number, required: true },
     images: [String],

@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './OrderConfirmation.css';
+import Invoice from '../components/Invoice';
 
 export default function OrderConfirmation() {
   const { state } = useLocation();
@@ -49,12 +50,13 @@ export default function OrderConfirmation() {
   };
 
   const handleDownloadReceipt = () => {
+    const invoiceNumberDisplay = order.invoiceNumber || order._id || 'N/A';
     const receiptText = `
 ═══════════════════════════════════════
           CAMELLIA - RECEIPT
 ═══════════════════════════════════════
 
-Order #: ${order._id || 'N/A'}
+Invoice #: ${invoiceNumberDisplay}
 Date: ${placedDate}
 Time: ${placedTime}
 Customer: ${customerName}${customerEmail ? ` (${customerEmail})` : ''}
@@ -90,7 +92,7 @@ Thank you for shopping at Camellia!
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Receipt_${order._id || 'order'}.txt`;
+    a.download = `Receipt_${invoiceNumberDisplay}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -103,8 +105,8 @@ Thank you for shopping at Camellia!
           <h1>Thank You!</h1>
           <p className="confirmation-subtitle">Your order has been placed successfully</p>
           <div className="order-badge">
-            <span>Order #</span>
-            <strong>{order._id?.slice(-8).toUpperCase() || 'N/A'}</strong>
+            <span>Invoice #</span>
+            <strong>{order.invoiceNumber || order._id?.slice(-8).toUpperCase() || 'N/A'}</strong>
           </div>
           <p className="order-date">
             Placed on {placedDate} at {placedTime}
@@ -196,6 +198,7 @@ Thank you for shopping at Camellia!
         </div>
 
         <div className="confirmation-actions">
+          <Invoice order={order} />
           <button onClick={handlePrint} className="btn btn-print">
             🖨️ Print Receipt
           </button>

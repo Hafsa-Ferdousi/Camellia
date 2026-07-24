@@ -15,11 +15,14 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderHistory from "./pages/OrderHistory";
-import TrackOrder from "./pages/TrackOrder";
+import TrackOrder from "./pages/TrackOrder";        // ✅ KEEP THIS ONE
 import Admin from "./pages/Admin";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ProtectedRoute from "./components/ProtectedRoute";
+// ❌ DELETE THE DUPLICATE LINE BELOW:
+// import TrackOrder from './pages/TrackOrder';
+
 function SiteLayout() {
   return (
     <>
