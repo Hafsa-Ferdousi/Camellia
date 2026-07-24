@@ -17,13 +17,13 @@ export const removeCartItem = (cartItemId) => client.delete(`/cart/${cartItemId}
 
 // BUG FIX #20: checkout was in cart.js but should hit /orders/checkout
 // items: [{ productId, quantity }] — cart lives client-side, sent directly (same shape as guestCheckout)
-export const checkout = (items, address, paymentMethod) =>
-  client.post("/orders/checkout", { items, address, paymentMethod });
+export const checkout = (items, address, paymentMethod, couponCode) =>
+  client.post("/orders/checkout", { items, address, paymentMethod, couponCode: couponCode || undefined });
 
 export const getOrders = () => client.get("/orders");
 // Guest checkout — no account required. items: [{ productId, quantity }]
-export const guestCheckout = (items, address, paymentMethod, guestInfo) =>
-  client.post("/orders/guest-checkout", { items, address, paymentMethod, guestInfo });
+export const guestCheckout = (items, address, paymentMethod, guestInfo, couponCode) =>
+  client.post("/orders/guest-checkout", { items, address, paymentMethod, guestInfo, couponCode: couponCode || undefined });
 
 // Guest order tracking — no account required. Looks an order up by its ID
 // plus the email used at checkout.
