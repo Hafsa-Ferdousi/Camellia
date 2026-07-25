@@ -217,6 +217,18 @@ export const logoutUser = async (req, res) => {
 // No email service is configured for this project, so "forgot password" is
 // self-service via the secret question/answer chosen at registration
 // instead of a mailed link/code.
+// Deterministically picks a question from the fixed list based on the
+// identifier string, so an unknown account gets a stable-looking (but fake)
+// question instead of a 404 — see note below on why that matters.
+const fakeQuestionFor = (identifier) => {
+  let hash = 0;
+  for (let i = 0; i < identifier.length; i++) {
+    hash = (hash * 31 + identifier.charCodeAt(i)) | 0;
+  }
+  const index = Math.abs(hash) % SECURITY_QUESTIONS.length;
+  return SECURITY_QUESTIONS[index];
+};
+
 export const getSecurityQuestion = async (req, res) => {
   try {
     const { identifier } = req.body;
@@ -225,11 +237,15 @@ export const getSecurityQuestion = async (req, res) => {
     }
 
     const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
-    if (!user) {
-      return res.status(404).json({ message: "No account found with that email or username." });
-    }
 
-    res.json({ question: user.securityQuestion });
+    // Always respond 200 with a question, whether or not the account exists —
+    // a 404 here would let an attacker enumerate valid emails/usernames one
+    // request at a time. The subsequent answer-check step already gives the
+    // same "Incorrect answer" response for both wrong answers and unknown
+    // accounts, so a made-up (but consistent) question for unknown accounts
+    // keeps this step just as non-revealing.
+    const question = user ? user.securityQuestion : fakeQuestionFor(identifier);
+    res.json({ question });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -28,3 +28,14 @@ export const sensitiveActionLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many requests. Please try again later." },
 });
+
+// Guest order lookup accepts an email + order ID/phone with no account —
+// without a tight limiter, an attacker could iterate guesses to find valid
+// combinations and pull someone else's order details.
+export const guestLookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many lookup attempts. Please try again later." },
+});
