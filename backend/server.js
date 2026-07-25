@@ -14,6 +14,8 @@ import orderRoutes    from "./routes/orderRoutes.js";
 import adminRoutes    from "./routes/adminRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import couponRoutes, { adminCouponRouter } from "./routes/couponRoutes.js";
+import contactRoutes  from "./routes/contactRoutes.js";
+import wishlistRoutes from "./routes/wishlistRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 
@@ -36,6 +38,17 @@ const frontendPublic = path.join(__dirname, "../frontend/public");
 app.use(express.static(frontendPublic));
 
 app.get("/health", (req, res) => res.send("Camellia API ✓"));
+app.use("/api/auth",          authRoutes);
+app.use("/api/categories",    categoryRoutes);
+app.use("/api/products",      productRoutes);
+app.use("/api/cart",          cartRoutes);
+app.use("/api/orders",        orderRoutes);
+app.use("/api/admin",         adminRoutes);
+app.use("/api/admin/coupons", adminCouponRouter);
+app.use("/api/settings",      settingsRoutes);
+app.use("/api/coupons",       couponRoutes);
+app.use("/api/contact",       contactRoutes);
+app.use("/api/wishlist",      wishlistRoutes);
 
 // ✅ Routes – combined from both branches
 app.use("/api/auth",       authRoutes);

@@ -205,6 +205,7 @@ export default function Navbar() {
               <>
                 {user.role === "admin" && <Link to="/admin" className="navbar-btn-login" onClick={close}>Admin</Link>}
                 <Link to="/orders" className="navbar-link" onClick={close}>My Orders</Link>
+                <Link to="/wishlist" className="navbar-link" onClick={close}>Wishlist 🤍</Link>
                 <span style={{ color: "rgba(232,217,192,0.5)", fontSize: 12 }}>
                   Hi, {user.name?.split(" ")[0] || user.username}
                 </span>
@@ -270,6 +271,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/orders" className="mobile-nav-link" onClick={close}>My Orders</Link>
+              <Link to="/wishlist" className="mobile-nav-link" onClick={close}>Wishlist 🤍</Link>
               {user.role === "admin" && <Link to="/admin" className="mobile-nav-link" onClick={close}>Admin Panel</Link>}
               <button className="mobile-nav-btn" onClick={handleLogout}>Logout</button>
             </>
