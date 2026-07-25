@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  nameSnapshot: String, // product name at time of order (in case product changes later)
+  nameSnapshot: String,
   quantity: Number,
-  price: Number, // price at time of order
+  price: Number,
 });
 
 const paymentSchema = new mongoose.Schema({
@@ -39,8 +39,19 @@ const orderSchema = new mongoose.Schema(
     subtotal: { type: Number, required: true },
     vat: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 60 },
-    totalAmount: { type: Number, required: true },
+    // Coupon snapshot at time of order — the discount is a flat amount off
+    // the subtotal, computed and re-validated server-side at checkout.
+    couponCode: { type: String, default: null },
+    discountAmount: { type: Number, default: 0 },
+    originalTotal: { type: Number, default: null }, // subtotal + vat + delivery, before discount
+    totalAmount: { type: Number, required: true }, // final total, after discount
     payment: paymentSchema,
+
+    //  INVOICE NUMBER FIELD ADDED HERE
+    invoiceNumber: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true }
 );

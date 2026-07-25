@@ -37,7 +37,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Shop — now real category filters instead of dead links */}
+          {/* Shop */}
           <div>
             <p style={s.colHead}>{t("footer:shop")}</p>
             {["Kalira", "Chura", "Jhumka", "Necklace Sets", "Diamond Cut", "Wedding Sets"].map(c => (
@@ -53,6 +53,12 @@ export default function Footer() {
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:faqs"))}>{t("footer:faqs")}</a>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:termsOfService"))}>{t("footer:termsOfService")}</a>
+            <p style={s.colHead}>Information</p>
+            <Link to="/about" style={s.link}>About Us</Link>
+            <Link to="/contact" style={s.link}>Contact</Link>
+            <Link to="/legal/terms" style={s.link}>Terms of Service</Link>
+            <Link to="/legal/privacy" style={s.link}>Privacy Policy</Link>
+            <Link to="/legal/refund" style={s.link}>Returns &amp; Exchanges</Link>
           </div>
 
           {/* Customer Care */}
@@ -61,6 +67,9 @@ export default function Footer() {
             <Link to="/track-order" style={s.link}>{t("footer:trackOrder")}</Link>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:returnsExchanges"))}>{t("footer:returnsExchanges")}</a>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:sizeGuide"))}>{t("footer:sizeGuide")}</a>
+            <p style={s.colHead}>Customer Care</p>
+            <Link to="/track-order" style={s.link}>Track Order</Link>
+            <Link to="/legal/refund" style={s.link}>Returns &amp; Exchanges</Link>
             <div style={{ marginTop: 20 }}>
               <p style={{ ...s.colHead, marginBottom: 6 }}>{t("footer:callUs")}</p>
               <a href="tel:+8801700000000" style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</a>
@@ -83,6 +92,11 @@ export default function Footer() {
           <Link to="/contact">{t("footer:contact")}</Link>
           <Link to="/track-order">{t("footer:trackOrder")}</Link>
           <a href="#" onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
+          <Link to="/">Home</Link>
+          <Link to="/products">Products</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/track-order">Track Order</Link>
+          <Link to="/legal/privacy">Privacy Policy</Link>
         </div>
       </div>
     </footer>

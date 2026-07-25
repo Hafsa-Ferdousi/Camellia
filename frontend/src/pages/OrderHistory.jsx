@@ -36,12 +36,10 @@ export default function OrderHistory() {
       .finally(() => setLoading(false));
   }, [authLoading]);
 
-  // Filter orders by status
   const filteredOrders = filterStatus === "all"
     ? orders
     : orders.filter(o => o.status === filterStatus);
 
-  // Toggle order details expansion
   const toggleExpand = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
@@ -60,6 +58,7 @@ export default function OrderHistory() {
 
       {/* Header */}
       <span className="eyebrow">{t("yourAccount")}</span>
+      <span className="eyebrow">Your Account</span>
       <h1 style={{
         fontFamily: "var(--font-display)",
         fontSize: 32,
@@ -71,7 +70,6 @@ export default function OrderHistory() {
       </h1>
       <div className="divider-gold">✦</div>
 
-      {/* Error message */}
       {error && (
         <div style={{
           background: "#FEF2F2", border: "1px solid #FECACA",
@@ -82,7 +80,6 @@ export default function OrderHistory() {
         </div>
       )}
 
-      {/* Summary Bar */}
       {orders.length > 0 && (
         <div style={{
           display: "flex", gap: 12, flexWrap: "wrap",
@@ -120,7 +117,6 @@ export default function OrderHistory() {
         </div>
       )}
 
-      {/* Filter Tabs */}
       {orders.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           {["all", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled"].map(status => (
@@ -147,7 +143,6 @@ export default function OrderHistory() {
         </div>
       )}
 
-      {/* Empty State */}
       {filteredOrders.length === 0 && !error ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
           <div style={{ marginBottom: 16, opacity: 0.25, display: "flex", justifyContent: "center" }}><Package size={48} /></div>
@@ -167,6 +162,7 @@ export default function OrderHistory() {
             const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
             const isExpanded = expandedOrder === order._id;
             const stepIndex = STATUS_STEPS.indexOf(order.status);
+            const isPaid = order.payment?.status === 'paid';
 
             return (
               <div key={order._id} className="panel" style={{ overflow: "hidden" }}>
@@ -349,6 +345,25 @@ export default function OrderHistory() {
                     {order.payment?.method === "cod" ? t("cashOnDelivery") : order.payment?.method}
                     {" · "}{order.payment?.status}
                   </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 13, color: "var(--muted)", textTransform: "capitalize" }}>
+                      {order.payment?.method === "cod" ? "Cash on Delivery" : order.payment?.method}
+                    </span>
+
+                    {/* ✅ NEW PAYMENT STATUS BADGE */}
+                    <span style={{
+                      padding: "2px 12px",
+                      borderRadius: 12,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: isPaid ? "#E8F5E9" : "#FFF3E0",
+                      color: isPaid ? "#2E7D32" : "#E65100",
+                      textTransform: "capitalize",
+                    }}>
+                      {isPaid ? "✅ Paid" : "⏳ Unpaid"}
+                    </span>
+                  </div>
+
                   <span style={{
                     fontFamily: "var(--font-display)", fontSize: 18,
                     fontWeight: 700, color: "var(--gold-text)",

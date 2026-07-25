@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { localized } from '../utils/localized';
 import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
 import { getPricing } from '../api/settings';
+import { validateCoupon } from '../api/coupons';
 
 const PAYMENT_METHOD_MAP = {
   'Cash on Delivery': 'cod',
@@ -27,7 +28,7 @@ const getString = (value) => {
   return JSON.stringify(value);
 };
 
-//  NEW: Helper to safely get a number from any price format
+// Helper to safely get a number from any price format
 const getNumber = (value) => {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value;
@@ -36,10 +37,8 @@ const getNumber = (value) => {
     return isNaN(parsed) ? 0 : parsed;
   }
   if (typeof value === 'object') {
-    // If it's multilingual { en: ..., bn: ... }
     if (value.en !== undefined) return getNumber(value.en);
     if (value.bn !== undefined) return getNumber(value.bn);
-    // If it's nested like { amount: ... } or { value: ... }
     if (value.amount !== undefined) return getNumber(value.amount);
     if (value.value !== undefined) return getNumber(value.value);
   }
@@ -56,8 +55,27 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
 
-  // Falls back to the store's current defaults until the live settings load.
-  const [pricing, setPricing] = useState({ vatRate: 0.10, defaultDeliveryCharge: 150, districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }] });
+
+
+// ✅ Coupon state (from develop/HEAD)
+const [couponInput, setCouponInput] = useState('');
+const [appliedCoupon, setAppliedCoupon] = useState(null);
+const [couponLoading, setCouponLoading] = useState(false);
+const [couponError, setCouponError] = useState('');
+const [toast, setToast] = useState(null);
+
+const showToast = (type, message) => {
+  setToast({ type, message });
+  window.clearTimeout(showToast._t);
+  showToast._t = window.setTimeout(() => setToast(null), 3000);
+};
+
+// ✅ Pricing settings (from your jamie branch)
+const [pricing, setPricing] = useState({
+  vatRate: 0.10,
+  defaultDeliveryCharge: 150,
+  districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }]
+});
 
   useEffect(() => {
     getPricing().then(({ data }) => setPricing(data)).catch(() => {});
@@ -70,7 +88,6 @@ const Checkout = () => {
 
   const calculateTotals = () => {
     const subtotal = cartItems.reduce((sum, item) => {
-      //  Use getNumber to extract price safely
       const price = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
       const qty = item.quantity || 1;
       return sum + (price * qty);
@@ -80,6 +97,50 @@ const Checkout = () => {
   };
 
   const { subtotal, vat } = calculateTotals();
+  const discount = appliedCoupon?.discount || 0;
+
+  // If the cart changes after a coupon was applied (item added/removed,
+  // quantity changed), the previously-validated discount no longer reflects
+  // reality — clear it rather than show a stale number. The server
+  // re-validates from scratch at checkout regardless, but the UI shouldn't
+  // promise a discount it can't guarantee.
+  const cartSignature = cartItems.map(i => `${i.productId || i.product?._id}:${i.quantity}`).join('|');
+  useEffect(() => {
+    if (appliedCoupon) {
+      setAppliedCoupon(null);
+      setCouponError('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartSignature]);
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const items = cartItems.map((item) => ({
+        product: item.productId || item.product?._id,
+        category: item.product?.category?._id || item.product?.category,
+      }));
+      const { data } = await validateCoupon(code, subtotal, items, isGuest ? formData.email : undefined);
+      setAppliedCoupon({ code: data.coupon, discount: data.discount, newTotal: data.newTotal });
+      showToast('success', data.message || 'Coupon Applied Successfully');
+    } catch (err) {
+      setAppliedCoupon(null);
+      const msg = err.response?.data?.message || 'Could not apply coupon.';
+      setCouponError(msg);
+      showToast('error', msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError('');
+  };
 
   const [formData, setFormData] = useState({
     email: '',
@@ -96,7 +157,7 @@ const Checkout = () => {
     total: subtotal + vat
   });
 
-  // Prefill the greeting/name fields once we know who's actually logged in.
+  // Prefill user data if logged in
   useEffect(() => {
     if (user) {
       const [firstName, ...rest] = (user.name || '').split(' ');
@@ -106,6 +167,13 @@ const Checkout = () => {
         firstName: firstName || '',
         lastName: rest.join(' '),
       }));
+    }
+  }, [user]);
+
+  // ✅ AUTO-GUEST: If not logged in, automatically enable guest mode
+  useEffect(() => {
+    if (!user) {
+      setIsGuest(true);
     }
   }, [user]);
 
@@ -125,9 +193,7 @@ const Checkout = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleGuestCheckout = () => {
-    setIsGuest(true);
-  };
+  // ---- SUBMIT FUNCTIONS ----
 
   const submitGuestOrder = async () => {
     const items = cartItems.map((item) => ({
@@ -148,7 +214,8 @@ const Checkout = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim() || 'Guest',
         email: formData.email,
         phone: formData.mobileNumber,
-      }
+      },
+      appliedCoupon?.code
     );
     return order;
   };
@@ -167,18 +234,21 @@ const Checkout = () => {
     const { data: order } = await checkoutApi(
       items,
       { addressLine, district: formData.district, city: formData.city, phone: formData.mobileNumber },
-      paymentMethod
+      paymentMethod,
+      appliedCoupon?.code
     );
     return order;
   };
 
+  // ✅ HANDLE SUBMIT – automatically chooses guest or logged-in endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const order = isGuest ? await submitGuestOrder() : await submitLoggedInOrder();
+      // If user exists → logged-in checkout, else → guest checkout
+      const order = user ? await submitLoggedInOrder() : await submitGuestOrder();
 
       clearCart();
       navigate('/order-confirmation', { state: { order } });
@@ -189,8 +259,7 @@ const Checkout = () => {
     }
   };
 
-  const showAuthPrompt = !user && !isGuest;
-
+  // Empty cart check
   if (cartItems.length === 0) {
     return (
       <div className="checkout-page">
@@ -202,6 +271,11 @@ const Checkout = () => {
             <h2>{t('emptyCart')}</h2>
             <p style={{ color: '#888', marginBottom: 20 }}>{t('emptyCartSub')}</p>
             <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
+            <h2>🛒 Your cart is empty</h2>
+            <p style={{ color: '#888', marginBottom: 20 }}>Add some products to your cart before checking out.</p>
+            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>
+              Browse Products
+            </button>
           </div>
         </div>
       </div>
@@ -210,6 +284,11 @@ const Checkout = () => {
 
   return (
     <div className="checkout-page">
+      {toast && (
+        <div className={`checkout-toast checkout-toast-${toast.type}`}>
+          {toast.type === 'success' ? '✓ ' : '⚠ '}{toast.message}
+        </div>
+      )}
       <div className="checkout-container">
         <h1 className="checkout-title">{t('title')}</h1>
         <p className="checkout-subtitle">{t('subtitle')}</p>
@@ -249,8 +328,41 @@ const Checkout = () => {
                 </button>
               )}
             </div>
+        {/* ===== USER INFO BAR WITH LOGIN/REGISTER LINKS ===== */}
+        <div className={`user-info-bar ${!user ? 'guest-mode' : ''}`}>
+          <span>
+            {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* 👇 LOGIN / REGISTER LINKS FOR GUESTS */}
+            {!user && (
+              <>
+                <Link to="/login" state={{ from: '/checkout' }} className="login-link" style={{ marginRight: '8px' }}>
+                  Login
+                </Link>
+                <span style={{ color: '#ccc' }}>|</span>
+                <Link to="/register" state={{ from: '/checkout' }} className="login-link" style={{ marginLeft: '8px', marginRight: '12px' }}>
+                  Register
+                </Link>
+                <span style={{ color: '#999', fontSize: '13px', marginRight: '12px' }}>
+                  (or continue as guest)
+                </span>
+              </>
+            )}
+            {/* 👇 LOGOUT BUTTON FOR LOGGED-IN USERS */}
+            {user && (
+              <button
+                className="logout-btn"
+                onClick={async () => {
+                  await logout();
+                  navigate('/login', { state: { from: '/checkout' } });
+                }}
+              >
+                Logout
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="checkout-form">
           <div className="checkout-grid">
@@ -269,6 +381,7 @@ const Checkout = () => {
                 />
                 <small className="field-hint">
                   {isGuest ? t('guestEmailHint') : t('accountEmailHint')}
+                  {!user ? 'We will send order confirmation to this email' : 'Your account email'}
                 </small>
               </div>
 
@@ -439,6 +552,7 @@ const Checkout = () => {
               <div className="order-items">
                 {cartItems.map((item, index) => {
                   const productName = localized(item.product?.name, language) || getString(item.name || 'Product');
+                  const productName = getString(item.product?.name || item.name || 'Product');
                   const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
                   const productDetails = localized(item.product?.description, language) || getString(item.details || '');
@@ -456,6 +570,42 @@ const Checkout = () => {
                 })}
               </div>
 
+              <div className="coupon-section">
+                <label className="coupon-label">Coupon Code</label>
+                {!appliedCoupon ? (
+                  <div className="coupon-input-row">
+                    <input
+                      type="text"
+                      className="coupon-input"
+                      placeholder="Enter coupon code"
+                      value={couponInput}
+                      onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                      disabled={couponLoading}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                    />
+                    <button
+                      type="button"
+                      className="coupon-apply-btn"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                    >
+                      {couponLoading ? <span className="coupon-spinner" /> : 'Apply Coupon'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="coupon-applied-box">
+                    <div className="coupon-applied-info">
+                      <span className="coupon-applied-check">✓ Coupon Applied</span>
+                      <span className="coupon-applied-code">Coupon: {appliedCoupon.code}</span>
+                    </div>
+                    <button type="button" className="coupon-remove-btn" onClick={handleRemoveCoupon}>
+                      Remove
+                    </button>
+                  </div>
+                )}
+                {couponError && <div className="coupon-error">{couponError}</div>}
+              </div>
+
               <div className="order-summary">
                 <div className="summary-row">
                   <span>{t('subtotal')}</span>
@@ -469,9 +619,17 @@ const Checkout = () => {
                   <span>{t('vat')}</span>
                   <span>Tk {vat.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="summary-row discount-row">
+                    <span>DISCOUNT ({appliedCoupon.code})</span>
+                    <span>- Tk {discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="summary-row total">
                   <span>{t('total')}</span>
                   <span>Tk {(subtotal + vat + formData.deliveryCharge).toFixed(2)}</span>
+                  <span>TOTAL</span>
+                  <span>Tk {Math.max(0, subtotal + vat + formData.deliveryCharge - discount).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -479,12 +637,14 @@ const Checkout = () => {
                 {loading ? t('processing') : <><ShoppingCart size={16} /> {t('placeOrder')}</>}
               </button>
 
-              {isGuest && (
+              {!user && (
                 <p className="guest-note">
                   <Lock size={12} style={{ verticalAlign: '-1px' }} /> {t('guestNote')} <br />
                   <span className="guest-note-small">
                     {t('guestNoteSmall')}{" "}
                     <Link to="/track-order">{t('trackOrder')}</Link>{t('noAccountNeeded')}
+                    Save your Order ID from the confirmation page — you can look up your order anytime at{' '}
+                    <Link to="/track-order">Track Order</Link>, no account needed.
                   </span>
                 </p>
               )}

@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, Printer, Download, Package } from 'lucide-react';
 import './OrderConfirmation.css';
+import Invoice from '../components/Invoice';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
@@ -52,12 +53,13 @@ export default function OrderConfirmation() {
   };
 
   const handleDownloadReceipt = () => {
+    const invoiceNumberDisplay = order.invoiceNumber || order._id || 'N/A';
     const receiptText = `
 ═══════════════════════════════════════
           CAMELLIA - RECEIPT
 ═══════════════════════════════════════
 
-Order #: ${order._id || 'N/A'}
+Invoice #: ${invoiceNumberDisplay}
 Date: ${placedDate}
 Time: ${placedTime}
 Customer: ${customerName}${customerEmail ? ` (${customerEmail})` : ''}
@@ -93,7 +95,7 @@ Thank you for shopping at Camellia!
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Receipt_${order._id || 'order'}.txt`;
+    a.download = `Receipt_${invoiceNumberDisplay}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -108,6 +110,8 @@ Thank you for shopping at Camellia!
           <div className="order-badge">
             <span>{t('orderHash')}</span>
             <strong>{order._id?.slice(-8).toUpperCase() || t('notAvailable')}</strong>
+            <span>Invoice #</span>
+            <strong>{order.invoiceNumber || order._id?.slice(-8).toUpperCase() || 'N/A'}</strong>
           </div>
           <p className="order-date">
             {t('placedOn', { date: placedDate, time: placedTime })}
@@ -201,6 +205,9 @@ Thank you for shopping at Camellia!
         <div className="confirmation-actions">
           <button onClick={handlePrint} className="btn btn-print" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Printer size={15} /> {t('printReceipt')}
+          <Invoice order={order} />
+          <button onClick={handlePrint} className="btn btn-print">
+            🖨️ Print Receipt
           </button>
           <button onClick={handleDownloadReceipt} className="btn btn-download" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Download size={15} /> {t('downloadReceipt')}
