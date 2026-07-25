@@ -1,7 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Search, X } from "lucide-react";
 import { getProducts, getCategories } from "../api/products";
 import ProductGrid from "../components/ProductGrid";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
 
 const CATEGORY_ICONS = {
   kalira: "💛",
@@ -16,6 +20,8 @@ const CATEGORY_ICONS = {
 };
 
 export default function Products() {
+  const { t } = useTranslation("products");
+  const { language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [products,    setProducts]    = useState([]);
@@ -52,7 +58,7 @@ export default function Products() {
 
       getProducts(params)
         .then(r => setProducts(r.data))
-        .catch(() => { setProducts([]); setError("Could not load products."); })
+        .catch(() => { setProducts([]); setError(t("loadError")); })
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
@@ -77,21 +83,21 @@ export default function Products() {
 
   const hasFilters   = search || minPrice || maxPrice || selectedCat;
   const activeCat    = categories.find(c => c._id === selectedCat);
-  const activeCatName = activeCat?.name?.en || "";
+  const activeCatName = activeCat ? localized(activeCat.name, language) : "";
 
   return (
     <div>
       {/* ── Page header ── */}
       <div style={s.pageHeader}>
         <div className="container">
-          <span className="eyebrow" style={{ color: "rgba(212,160,23,0.7)" }}>Camellia Collection</span>
+          <span className="eyebrow" style={{ color: "rgba(212,160,23,0.7)" }}>{t("collection")}</span>
           <h1 style={s.pageTitle}>
-            {activeCatName ? activeCatName : "All Jewellery"}
+            {activeCatName ? activeCatName : t("allJewellery")}
           </h1>
           <p style={s.pageSub}>
             {activeCatName
-              ? activeCat?.description?.en || "Handcrafted bridal jewellery"
-              : "Handcrafted bridal jewellery — Kalira, Chura, Bangles, Necklace Sets & more"}
+              ? localized(activeCat?.description, language) || t("defaultTagline")
+              : t("defaultTagline")}
           </p>
         </div>
       </div>
@@ -101,16 +107,16 @@ export default function Products() {
 
           {/* ── LEFT: Filter sidebar ── */}
           <aside className="products-sidebar" style={s.sidebar}>
-            <p style={s.sidebarHead}>Filter</p>
+            <p style={s.sidebarHead}>{t("filter")}</p>
 
             {/* Category */}
             <div style={s.filterGroup}>
-              <p style={s.filterLabel}>Category</p>
+              <p style={s.filterLabel}>{t("category")}</p>
               <button
                 style={{ ...s.catBtn, ...(selectedCat === "" ? s.catBtnActive : {}) }}
                 onClick={() => selectCategory("")}
               >
-                💍 All Collections
+                💍 {t("allCollections")}
               </button>
               {categories.map(c => (
                 <button
@@ -118,27 +124,27 @@ export default function Products() {
                   style={{ ...s.catBtn, ...(selectedCat === c._id ? s.catBtnActive : {}) }}
                   onClick={() => selectCategory(c._id)}
                 >
-                  {CATEGORY_ICONS[c.slug] || "💍"} {c.name?.en}
+                  {CATEGORY_ICONS[c.slug] || "💍"} {localized(c.name, language)}
                 </button>
               ))}
             </div>
 
             {/* Price range */}
             <div style={s.filterGroup}>
-              <p style={s.filterLabel}>Price Range (৳)</p>
+              <p style={s.filterLabel}>{t("priceRange")}</p>
               <input
-                className="input" type="number" placeholder="Min"
+                className="input" type="number" placeholder={t("min")}
                 value={minPrice} onChange={e => setMinPrice(e.target.value)}
                 style={{ marginBottom: 8 }}
               />
               <input
-                className="input" type="number" placeholder="Max"
+                className="input" type="number" placeholder={t("max")}
                 value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
               />
             </div>
 
             {hasFilters && (
-              <button onClick={clearAll} style={s.clearBtn}>Clear all filters ✕</button>
+              <button onClick={clearAll} style={{ ...s.clearBtn, display: "inline-flex", alignItems: "center", gap: 4 }}>{t("clearFilters")} <X size={12} /></button>
             )}
           </aside>
 
@@ -148,22 +154,22 @@ export default function Products() {
             {/* Search + result count bar */}
             <div style={s.topBar}>
               <div style={{ position: "relative", flex: 1, maxWidth: 380 }}>
-                <span style={s.searchIcon}>🔍</span>
+                <span style={s.searchIcon}><Search size={15} /></span>
                 <input
                   className="input"
-                  placeholder="Search by name…"
+                  placeholder={t("searchPlaceholder")}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   style={{ paddingLeft: 34 }}
                 />
                 {search && (
-                  <button style={s.clearX} onClick={() => setSearch("")}>✕</button>
+                  <button style={s.clearX} onClick={() => setSearch("")}><X size={14} /></button>
                 )}
               </div>
               {!loading && (
                 <p style={s.count}>
-                  {products.length} {products.length === 1 ? "product" : "products"}
-                  {activeCatName ? ` in ${activeCatName}` : ""}
+                  {products.length} {t(products.length === 1 ? "product_one" : "product_other")}
+                  {activeCatName ? ` ${t("inCategory", { category: activeCatName })}` : ""}
                 </p>
               )}
             </div>
@@ -173,26 +179,26 @@ export default function Products() {
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
                 {search && (
                   <span style={s.chip}>
-                    Search: "{search}"
-                    <button style={s.chipX} onClick={() => setSearch("")}>✕</button>
+                    {t("search")}: "{search}"
+                    <button style={s.chipX} onClick={() => setSearch("")}><X size={11} /></button>
                   </span>
                 )}
                 {activeCatName && (
                   <span style={s.chip}>
                     {activeCatName}
-                    <button style={s.chipX} onClick={() => selectCategory("")}>✕</button>
+                    <button style={s.chipX} onClick={() => selectCategory("")}><X size={11} /></button>
                   </span>
                 )}
                 {minPrice && (
                   <span style={s.chip}>
-                    Min ৳{minPrice}
-                    <button style={s.chipX} onClick={() => setMinPrice("")}>✕</button>
+                    {t("min")} ৳{minPrice}
+                    <button style={s.chipX} onClick={() => setMinPrice("")}><X size={11} /></button>
                   </span>
                 )}
                 {maxPrice && (
                   <span style={s.chip}>
-                    Max ৳{maxPrice}
-                    <button style={s.chipX} onClick={() => setMaxPrice("")}>✕</button>
+                    {t("max")} ৳{maxPrice}
+                    <button style={s.chipX} onClick={() => setMaxPrice("")}><X size={11} /></button>
                   </span>
                 )}
               </div>
@@ -200,7 +206,7 @@ export default function Products() {
 
             {error && (
               <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "var(--radius)", padding: "14px 18px", marginBottom: 20, fontSize: 13, color: "var(--red)" }}>
-                {error} Make sure the backend is running and you have run <code>node seed.js</code>.
+                {error} {t("loadErrorHint")} <code>node seed.js</code>.
               </div>
             )}
 

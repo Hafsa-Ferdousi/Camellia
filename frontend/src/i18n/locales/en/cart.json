@@ -1,0 +1,17 @@
+{
+  "shopping": "Shopping",
+  "yourCart": "Your Cart",
+  "item_one": "item",
+  "item_other": "items",
+  "empty": "Your cart is empty",
+  "emptySub": "Discover our beautiful jewellery collections",
+  "continueShopping": "Continue Shopping",
+  "variant": "Variant: {{sku}}",
+  "remove": "Remove",
+  "orderSummary": "Order Summary",
+  "subtotal": "Subtotal ({{count}} {{label}})",
+  "deliveryCod": "Delivery (COD)",
+  "estimatedTotal": "Estimated Total",
+  "deliveryNote": "* Delivery charge waived for online payments (bKash / Bank)",
+  "proceedToCheckout": "Proceed to Checkout →"
+}

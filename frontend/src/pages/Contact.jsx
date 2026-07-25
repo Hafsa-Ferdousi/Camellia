@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 export default function Contact() {
+  const { t } = useTranslation("pages");
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,15 +41,14 @@ export default function Contact() {
 
   return (
     <div className="container" style={{ padding: "48px 24px 64px", maxWidth: 860 }}>
-      <span className="eyebrow">Get In Touch</span>
+      <span className="eyebrow">{t("getInTouch")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 36, fontStyle: "italic", marginTop: 6 }}>
-        Contact Us
+        {t("contactUs")}
       </h1>
       <div className="divider-gold">✦</div>
 
       <p style={{ fontSize: 15, lineHeight: 1.8, color: "var(--charcoal)", marginBottom: 32, maxWidth: 640 }}>
-        Have a question about an order, a custom piece, or just want to say hello?
-        Reach out any way that's convenient — we usually reply within a few hours.
+        {t("contactIntro")}
       </p>
 
       <div className="about-grid" style={{ gap: 32, alignItems: "start" }}>
@@ -54,16 +56,18 @@ export default function Contact() {
         {/* Contact details */}
         <div className="panel">
           <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 14 }}>
-            Reach Us Directly
+            {t("reachUsDirectly")}
           </p>
-          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10 }}>📍 Cox's Bazar, Bangladesh</p>
-          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10 }}>
-            📞 <a href="tel:+8801700000000" style={{ color: "var(--charcoal)" }}>+880 1700-000000</a>
+          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}><MapPin size={14} /> {t("address")}</p>
+          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <Phone size={14} /> <a href="tel:+8801700000000" style={{ color: "var(--charcoal)" }}>+880 1700-000000</a>
           </p>
+          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <Mail size={14} /> <a href="mailto:hello@camellia.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
           <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10 }}>
             ✉️ <a href="mailto:camelliabyanandi@gmail.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
           </p>
-          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>Sat–Thu, 10am–8pm</p>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>{t("hours")}</p>
 
           <div style={{ display: "flex", gap: 14, marginTop: 24 }}>
             {[
@@ -87,11 +91,13 @@ export default function Contact() {
         {/* Contact form */}
         <div className="panel">
           <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 14 }}>
-            Send a Message
+            {t("sendMessage")}
           </p>
 
           {/* Success message */}
           {sent && (
+            <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0" }}>
+              {t("emailOpened")}
             <div style={{
               background: "#ECFDF5", color: "#065F46",
               padding: "10px 14px", borderRadius: "var(--radius-sm)",
@@ -116,6 +122,12 @@ export default function Contact() {
 
           <form onSubmit={handleSubmit}>
             <label className="form-label">
+              {t("yourName")}
+              <input className="input" name="name" value={form.name} onChange={set} placeholder="Your Full Name" required />
+            </label>
+            <label className="form-label">
+              {t("emailAddress")}
+              <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder="your@email.com" required />
               Your Name *
               <input
                 className="input"
@@ -139,18 +151,20 @@ export default function Contact() {
               />
             </label>
             <label className="form-label">
-              Message *
+              {t("message")}
               <textarea
                 className="input"
                 name="message"
                 value={form.message}
                 onChange={set}
                 rows={5}
-                placeholder="How can we help?"
+                placeholder={t("messagePlaceholder")}
                 required
                 style={{ resize: "vertical" }}
               />
             </label>
+            <button className="btn" type="submit" style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+              {t("sendMessageBtn")}
             <button
               className="btn"
               type="submit"

@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
+import { ensureAdminUser } from "./utils/ensureAdmin.js";
 import authRoutes     from "./routes/authRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import productRoutes  from "./routes/productRoutes.js";
@@ -13,6 +14,7 @@ import cartRoutes     from "./routes/cartRoutes.js";
 import orderRoutes    from "./routes/orderRoutes.js";
 import adminRoutes    from "./routes/adminRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
+import uploadRoutes   from "./routes/uploadRoutes.js";
 import couponRoutes, { adminCouponRouter } from "./routes/couponRoutes.js";
 import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
@@ -20,7 +22,8 @@ import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
-connectDB();
+await connectDB();
+await ensureAdminUser();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -58,6 +61,7 @@ app.use("/api/cart",       cartRoutes);
 app.use("/api/orders",     orderRoutes);
 app.use("/api/admin",      adminRoutes);
 app.use("/api/settings",   settingsRoutes);
+app.use("/api/upload",     uploadRoutes);
 app.use("/api/coupons",    couponRoutes);          // Coupon system
 app.use("/api/admin/coupons", adminCouponRouter);  // Admin coupon routes
 app.use("/api/reviews",    reviewRoutes);          // Reviews system

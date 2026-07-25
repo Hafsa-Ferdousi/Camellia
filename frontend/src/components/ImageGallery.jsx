@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Gem } from "lucide-react";
 
 export default function ImageGallery({ images = [] }) {
   const [active, setActive] = useState(0);
@@ -10,7 +11,7 @@ export default function ImageGallery({ images = [] }) {
         {images.length > 0
           ? <img src={images[active]} alt="Product" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 36, opacity: 0.3 }}>💍</span>
+              <Gem size={36} style={{ opacity: 0.3 }} />
               <span style={{ fontSize: 13, color: "var(--faint)" }}>[ large product image ]</span>
             </div>
         }

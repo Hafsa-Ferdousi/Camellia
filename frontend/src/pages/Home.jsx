@@ -1,6 +1,8 @@
 // src/pages/Home.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Gift, Truck, Gem } from "lucide-react";
 import { getProducts, getCategories } from "../api/products";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
@@ -30,6 +32,7 @@ function SkeletonCard() {
 }
 
 export default function Home() {
+  const { t } = useTranslation(["home", "products"]);
   const navigate = useNavigate();
   const location = useLocation();
   const [featured,    setFeatured]    = useState([]);
@@ -165,18 +168,18 @@ export default function Home() {
       <section id="products-section" className="container" style={{ padding: "60px 24px 48px" }}>
         <div className="featured-head">
           <div>
-            <span className="featured-badge">✦ Trending This Week</span>
-            <h2 className="section-heading" style={{ fontSize: 28, marginTop: 4 }}>Featured Pieces</h2>
+            <span className="featured-badge">{t("home:trending")}</span>
+            <h2 className="section-heading" style={{ fontSize: 28, marginTop: 4 }}>{t("home:featuredPieces")}</h2>
             <div className="divider-gold">✦</div>
           </div>
-          <Link to="/products" style={s.viewAll}>View All Products →</Link>
+          <Link to="/products" style={s.viewAll}>{t("home:viewAllProducts")}</Link>
         </div>
         <div className="home-product-grid">
           {loadingF
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
             : featured.length === 0
               ? <p style={{ color: "var(--muted)", fontSize: 14, gridColumn: "1/-1" }}>
-                  No products yet — run <code>node seed.js</code> in the backend.
+                  {t("products:noProductsYet")} <code>node seed.js</code>.
                 </p>
               : featured.map(p => <ProductCard key={p._id} product={p} />)
           }
@@ -188,11 +191,11 @@ export default function Home() {
         <div className="container" style={{ padding: "0 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <span className="eyebrow">Most Loved</span>
-              <h2 className="section-heading" style={{ marginTop: 6 }}>Best Selling Items</h2>
+              <span className="eyebrow">{t("home:mostLoved")}</span>
+              <h2 className="section-heading" style={{ marginTop: 6 }}>{t("home:bestSelling")}</h2>
               <div className="divider-gold">✦</div>
             </div>
-            <Link to="/products" style={s.viewAll}>Shop All →</Link>
+            <Link to="/products" style={s.viewAll}>{t("home:shopAll")}</Link>
           </div>
           <div className="home-product-grid">
             {loadingBS
@@ -210,23 +213,25 @@ export default function Home() {
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <span style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-light)", fontFamily: "var(--font-body)" }}>
-              Why Camellia
+              {t("home:whyCamellia")}
             </span>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 34, fontStyle: "italic", color: "#FDF6EC", marginTop: 8 }}>
-              The Bridal Jewellery Specialists
+              {t("home:whyTitle")}
             </h2>
           </div>
           <div className="why-grid">
             {[
-              { icon: "✦", title: "Handcrafted", desc: "Every piece crafted by master artisans using traditional techniques" },
-              { icon: "🎁", title: "Gift Packaging", desc: "Beautiful gift packaging for every order, at no extra charge" },
-              { icon: "🚚", title: "Free Delivery", desc: "Free home delivery across Bangladesh on all orders" },
-              { icon: "💎", title: "Certified Quality", desc: "Quality certified gold and gemstones in every piece" },
+              { icon: "✦", titleKey: "featHandcraftedTitle", descKey: "featHandcraftedDesc" },
+              { icon: Gift, titleKey: "featGiftTitle", descKey: "featGiftDesc" },
+              { icon: Truck, titleKey: "featDeliveryTitle", descKey: "featDeliveryDesc" },
+              { icon: Gem, titleKey: "featQualityTitle", descKey: "featQualityDesc" },
             ].map(f => (
-              <div key={f.title} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 28, marginBottom: 14, color: "var(--gold-light)" }}>{f.icon}</div>
-                <p style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#FDF6EC", marginBottom: 8, fontWeight: 600 }}>{f.title}</p>
-                <p style={{ fontSize: 13, color: "rgba(232,217,192,0.55)", lineHeight: 1.6 }}>{f.desc}</p>
+              <div key={f.titleKey} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 28, marginBottom: 14, color: "var(--gold-light)", display: "flex", justifyContent: "center" }}>
+                  {typeof f.icon === "string" ? f.icon : <f.icon size={28} />}
+                </div>
+                <p style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#FDF6EC", marginBottom: 8, fontWeight: 600 }}>{t(`home:${f.titleKey}`)}</p>
+                <p style={{ fontSize: 13, color: "rgba(232,217,192,0.55)", lineHeight: 1.6 }}>{t(`home:${f.descKey}`)}</p>
               </div>
             ))}
           </div>
@@ -237,8 +242,8 @@ export default function Home() {
       <section className="testimonial-section">
         <div className="container">
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <span className="eyebrow">Happy Brides</span>
-            <h2 className="section-heading" style={{ fontSize: 28, marginTop: 6 }}>What Our Customers Say</h2>
+            <span className="eyebrow">{t("home:happyBrides")}</span>
+            <h2 className="section-heading" style={{ fontSize: 28, marginTop: 6 }}>{t("home:whatCustomersSay")}</h2>
             <div className="divider-gold" style={{ justifyContent: "center" }}>✦</div>
           </div>
           <div className="testimonial-grid">
@@ -258,15 +263,15 @@ export default function Home() {
 
       {/* ── CTA Banner ── */}
       <section className="cta-banner">
-        <span className="eyebrow" style={{ color: "var(--gold-light)" }}>Ready to Shop?</span>
+        <span className="eyebrow" style={{ color: "var(--gold-light)" }}>{t("home:readyToShop")}</span>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", margin: "10px 0 16px", color: "#FDF6EC" }}>
-          Explore the Full Collection
+          {t("home:exploreCollection")}
         </h2>
         <p style={{ fontSize: 14, color: "rgba(232,217,192,0.75)", marginBottom: 28, maxWidth: 420, margin: "0 auto 28px" }}>
-          Browse all our handcrafted bridal jewellery — search, filter by category and price, and find your perfect piece.
+          {t("home:ctaSub")}
         </p>
         <Link to="/products" className="btn btn-gold" style={{ display: "inline-block", padding: "13px 36px", fontSize: 13, letterSpacing: "0.1em", textDecoration: "none" }}>
-          Browse All Products →
+          {t("home:browseAll")}
         </Link>
       </section>
     </div>

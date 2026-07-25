@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
+  ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
+  LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
 import {
   getAdminStats,
   getCustomers,
@@ -18,6 +26,10 @@ import {
   deleteCategory,
   getAdminSettings,
   updateAdminSettings,
+  getLowStockProducts,
+  exportSalesCSV,
+  uploadImage,
+  deleteUploadedImage,
 } from "../api/admin";
 import {
   getAllCoupons,
@@ -29,6 +41,16 @@ import {
 import client from "../api/client";
 
 // ── helpers ──────────────────────────────────────────────────
+const CATEGORY_ICONS = {
+  kalira: "💛",
+  chura: "🔴",
+  bangles: "✨",
+  necklace: "📿",
+  "diamond-cut": "💎",
+  "wedding-accessories": "👑",
+  jhumka: "✨",
+  "wedding-sets": "👑",
+};
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
   confirmed:  { bg: "#DBEAFE", color: "#1E40AF" },
@@ -102,6 +124,17 @@ const Pagination = ({ page, totalPages, onChange }) => {
   if (totalPages <= 1) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 16 }}>
+      <button
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        style={{ ...pagBtnStyle, opacity: page === 1 ? 0.4 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}
+      ><ChevronLeft size={14} /> Prev</button>
+      <span style={{ fontSize: 12, color: "var(--muted)" }}>Page {page} of {totalPages}</span>
+      <button
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+        style={{ ...pagBtnStyle, opacity: page === totalPages ? 0.4 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}
+      >Next <ChevronRight size={14} /></button>
       <button onClick={() => onChange(Math.max(1, page - 1))} disabled={page === 1} style={{ ...pagBtnStyle, opacity: page === 1 ? 0.4 : 1 }}>← Prev</button>
       <span style={{ fontSize: 12, color: "var(--muted)" }}>Page {page} of {totalPages}</span>
       <button onClick={() => onChange(Math.min(totalPages, page + 1))} disabled={page === totalPages} style={{ ...pagBtnStyle, opacity: page === totalPages ? 0.4 : 1 }}>Next →</button>
@@ -110,6 +143,15 @@ const Pagination = ({ page, totalPages, onChange }) => {
 };
 const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
+// ── blank product form ────────────────────────────────────────
+const BLANK_PRODUCT = {
+  nameEn: "", nameBn: "",
+  descEn: "", descBn: "",
+  category: "", basePrice: "", totalStock: "",
+  images: [], isFeatured: false, isActive: true,
+};
+
+// ── blank category form ─────────────────────────────────────────
 const BLANK_PRODUCT = { nameEn: "", nameBn: "", descEn: "", descBn: "", category: "", basePrice: "", totalStock: "", images: "", isFeatured: false, isActive: true };
 const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
 const BLANK_COUPON = { code: "", title: "", description: "", discountType: "percentage", discountValue: "", minimumPurchase: "", maximumDiscount: "", usageLimit: "", perUserLimit: "", startDate: "", endDate: "", applicableProducts: [], applicableCategories: [], excludedProducts: [], isActive: true };
@@ -121,6 +163,8 @@ const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g,
 
 // ═══════════════════════════════════════════════════════════════
 export default function Admin() {
+  const { t } = useTranslation("admin");
+  const { language, setLanguage } = useLanguage();
   const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
@@ -133,6 +177,13 @@ export default function Admin() {
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
+  const [orderDetail, setOrderDetail] = useState(null); // selected order for detail modal
+  const [exportFrom, setExportFrom]   = useState("");
+  const [exportTo, setExportTo]       = useState("");
+  const [exporting, setExporting]     = useState(false);
+  const [exportErr, setExportErr]     = useState("");
+
+  // customers
   const [orderDetail, setOrderDetail] = useState(null);
   const [customers, setCustomers]         = useState([]);
   const [customersLoading, setCustL]      = useState(false);
@@ -142,6 +193,7 @@ export default function Admin() {
   const [resetPwUserId, setResetPwUserId]     = useState(null);
   const [resetPwValue, setResetPwValue]       = useState("");
   const [resetPwMsg, setResetPwMsg]           = useState("");
+  const [resetPwOk, setResetPwOk]             = useState(false);
   const [resetPwSaving, setResetPwSaving]     = useState(false);
   const [products, setProducts]       = useState([]);
   const [categories, setCategories]   = useState([]);
@@ -151,9 +203,15 @@ export default function Admin() {
   const [form, setForm]               = useState(BLANK_PRODUCT);
   const [formErr, setFormErr]         = useState("");
   const [formSaving, setFormSaving]   = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [pendingDeleteImages, setPendingDeleteImages] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [productSearch, setProductSearch] = useState("");
   const [productPage, setProductPage]     = useState(1);
+  const [lowStockIds, setLowStockIds]     = useState(new Set());
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+
+  // settings
   const [settings, setSettings]           = useState(null);
   const [settingsLoading, setSTL]         = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -166,6 +224,8 @@ export default function Admin() {
   const [catForm, setCatForm]             = useState(BLANK_CATEGORY);
   const [catFormErr, setCatFormErr]       = useState("");
   const [catFormSaving, setCatFormSaving] = useState(false);
+  const [catImageUploading, setCatImageUploading] = useState(false);
+  const [pendingDeleteCatImages, setPendingDeleteCatImages] = useState([]);
   const [catConfirmDelete, setCatConfirmDelete] = useState(null);
   const [catReordering, setCatReordering] = useState(null);
   const [coupons, setCoupons]             = useState([]);
@@ -188,6 +248,12 @@ export default function Admin() {
 
   // ── data loaders ────────────────────────────────────────────
   const loadStats = useCallback(async () => {
+    try {
+      const r = await getAdminStats();
+      setStats(r.data);
+    } catch {
+      setStatsErr(t("couldNotLoadStats"));
+    }
     try { const r = await getAdminStats(); setStats(r.data); }
     catch { setStatsErr("Could not load stats."); }
   }, []);
@@ -206,6 +272,12 @@ export default function Admin() {
 
   const loadProducts = useCallback(async () => {
     setPL(true);
+    try {
+      const [pr, cr, lr] = await Promise.all([getAllProducts(), getCategories(), getLowStockProducts()]);
+      setProducts(pr.data);
+      setCategories(cr.data);
+      setLowStockIds(new Set(lr.data.products.map(p => p._id)));
+    } finally { setPL(false); }
     try { const [pr, cr] = await Promise.all([getAllProducts(), getCategories()]); setProducts(pr.data); setCategories(cr.data); }
     finally { setPL(false); }
   }, []);
@@ -262,6 +334,7 @@ export default function Admin() {
   }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
+  useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
   useEffect(() => { setProductPage(1); }, [productSearch]);
   useEffect(() => { setCouponPage(1); }, [couponSearch, couponStatusFilter]);
 
@@ -277,6 +350,19 @@ export default function Admin() {
   const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); };
 
   const handleResetCustomerPassword = async (userId) => {
+    setResetPwSaving(true);
+    setResetPwMsg("");
+    try {
+      await resetCustomerPassword(userId, resetPwValue);
+      setResetPwMsg(t("passwordResetSuccess"));
+      setResetPwOk(true);
+      setResetPwValue("");
+    } catch (err) {
+      setResetPwMsg(err.response?.data?.message || t("couldNotResetPassword"));
+      setResetPwOk(false);
+    } finally {
+      setResetPwSaving(false);
+    }
     setResetPwSaving(true); setResetPwMsg("");
     try { await resetCustomerPassword(userId, resetPwValue); setResetPwMsg("✓ Password reset successfully."); setResetPwValue(""); }
     catch (err) { setResetPwMsg(err.response?.data?.message || "Could not reset password."); }
@@ -290,6 +376,20 @@ export default function Admin() {
   const removeDistrictCharge = (idx) => setSettings(s => ({ ...s, districtDeliveryCharges: s.districtDeliveryCharges.filter((_, i) => i !== idx) }));
 
   const handleSaveSettings = async () => {
+    if (settings.districtDeliveryCharges.some(d => !d.district.trim())) {
+      setSettingsErr(t("districtRowError"));
+      return;
+    }
+    setSettingsErr(""); setSettingsMsg(""); setSettingsSaving(true);
+    try {
+      const r = await updateAdminSettings(settings);
+      setSettings(r.data);
+      setSettingsMsg(t("settingsSaved"));
+    } catch (err) {
+      setSettingsErr(err.response?.data?.message || t("saveFailed"));
+    } finally {
+      setSettingsSaving(false);
+    }
     if (settings.districtDeliveryCharges.some(d => !d.district.trim())) { setSettingsErr("Every district row needs a name (or remove it)."); return; }
     setSettingsErr(""); setSettingsMsg(""); setSettingsSaving(true);
     try { const r = await updateAdminSettings(settings); setSettings(r.data); setSettingsMsg("✓ Settings saved."); }
@@ -299,6 +399,178 @@ export default function Admin() {
 
   const handleStatusChange = async (orderId, newStatus) => {
     setSU(orderId);
+    try {
+      const r = await updateOrderStatus(orderId, newStatus);
+      setOrders(prev => prev.map(o => o._id === orderId ? r.data : o));
+    } catch { /* keep old */ } finally { setSU(null); }
+  };
+
+  // ── sales CSV export ─────────────────────────────────────────
+  const handleExportSales = async () => {
+    setExportErr(""); setExporting(true);
+    try {
+      const params = {};
+      if (exportFrom) params.from = exportFrom;
+      if (exportTo) params.to = exportTo;
+      if (orderStatusFilter !== "all") params.status = orderStatusFilter;
+      const r = await exportSalesCSV(params);
+      const url = window.URL.createObjectURL(new Blob([r.data], { type: "text/csv" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sales-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setExportErr(t("couldNotExport"));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // ── product form helpers ─────────────────────────────────────
+  const openAdd = () => {
+    setForm({ ...BLANK_PRODUCT, category: categories[0]?._id || "" });
+    setEditTarget(null);
+    setFormErr("");
+    setPendingDeleteImages([]);
+    setModal("add");
+  };
+
+  const openEdit = (p) => {
+    setForm({
+      nameEn:     p.name?.en || "",
+      nameBn:     p.name?.bn || "",
+      descEn:     p.description?.en || "",
+      descBn:     p.description?.bn || "",
+      category:   p.category?._id || p.category || "",
+      basePrice:  p.basePrice,
+      totalStock: p.totalStock ?? 0,
+      images:     p.images || [],
+      isFeatured: p.isFeatured || false,
+      isActive:   p.isActive !== false,
+    });
+    setEditTarget(p);
+    setFormErr("");
+    setPendingDeleteImages([]);
+    setModal("edit");
+  };
+
+  const closeModal = () => { setModal(null); setEditTarget(null); setPendingDeleteImages([]); };
+
+  const setF = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm(f => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const handleProductImageSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!files.length) return;
+    setFormErr(""); setImageUploading(true);
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        const r = await uploadImage(file);
+        uploaded.push(r.data.url);
+      }
+      setForm(f => ({ ...f, images: [...f.images, ...uploaded] }));
+    } catch (err) {
+      setFormErr(err.response?.data?.message || t("imageUploadFailed"));
+    } finally { setImageUploading(false); }
+  };
+
+  const removeProductImage = (idx) => {
+    setForm(f => {
+      const removed = f.images[idx];
+      if (removed && removed.startsWith("/uploads/")) {
+        setPendingDeleteImages(prev => [...prev, removed]);
+      }
+      return { ...f, images: f.images.filter((_, i) => i !== idx) };
+    });
+  };
+
+  const buildPayload = () => ({
+    name:        { en: form.nameEn.trim(), bn: form.nameBn.trim() },
+    description: { en: form.descEn.trim(), bn: form.descBn.trim() },
+    category:    form.category,
+    basePrice:   Number(form.basePrice),
+    totalStock:  Number(form.totalStock) || 0,
+    images:      form.images,
+    isFeatured:  form.isFeatured,
+    isActive:    form.isActive,
+  });
+
+  const handleSaveProduct = async () => {
+    if (!form.nameEn.trim()) return setFormErr(t("productNameRequired"));
+    if (!form.category)      return setFormErr(t("selectCategoryRequired"));
+    if (!form.basePrice || isNaN(Number(form.basePrice))) return setFormErr(t("validBasePriceRequired"));
+    if (form.totalStock === "" || isNaN(Number(form.totalStock)) || Number(form.totalStock) < 0)
+      return setFormErr(t("validStockRequired"));
+    setFormErr(""); setFormSaving(true);
+    try {
+      if (modal === "add") {
+        const r = await createProduct(buildPayload());
+        setProducts(prev => [r.data, ...prev]);
+      } else {
+        const r = await updateProduct(editTarget._id, buildPayload());
+        setProducts(prev => prev.map(p => p._id === editTarget._id ? r.data : p));
+      }
+      // Best-effort cleanup of images the admin removed in this session — a
+      // failed delete here shouldn't block the save that already succeeded.
+      pendingDeleteImages.forEach(url => { deleteUploadedImage(url).catch(() => {}); });
+      closeModal();
+    } catch (err) {
+      setFormErr(err.response?.data?.message || t("saveFailed"));
+    } finally { setFormSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await deleteProduct(id);
+      setProducts(prev => prev.filter(p => p._id !== id));
+    } catch { /* ignore */ }
+    setConfirmDelete(null);
+  };
+
+  // ── category form helpers ───────────────────────────────────────
+  const openAddCategory = () => {
+    setCatForm(BLANK_CATEGORY);
+    setCatEditTarget(null);
+    setCatFormErr("");
+    setPendingDeleteCatImages([]);
+    setCatModal("add");
+  };
+
+  const openEditCategory = (c) => {
+    setCatForm({
+      nameEn: c.name?.en || "",
+      nameBn: c.name?.bn || "",
+      slug:   c.slug || "",
+      image:  c.image || "",
+      isFixed: c.isFixed || false,
+    });
+    setCatEditTarget(c);
+    setCatFormErr("");
+    setPendingDeleteCatImages([]);
+    setCatModal("edit");
+  };
+
+  const closeCatModal = () => { setCatModal(null); setCatEditTarget(null); setPendingDeleteCatImages([]); };
+
+  const setCF = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCatForm(f => {
+      const next = { ...f, [name]: type === "checkbox" ? checked : value };
+      // Auto-fill the slug from the English name while adding, unless the
+      // admin has already typed a slug of their own.
+      if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) {
+        next.slug = slugify(value);
+      }
+      return next;
+    });
+  };
     try { const r = await updateOrderStatus(orderId, newStatus); setOrders(prev => prev.map(o => o._id === orderId ? r.data : o)); }
     catch { } finally { setSU(null); }
   };
@@ -330,7 +602,64 @@ export default function Admin() {
   const closeCatModal = () => { setCatModal(null); setCatEditTarget(null); };
   const setCF = (e) => { const { name, value, type, checked } = e.target; setCatForm(f => { const next = { ...f, [name]: type === "checkbox" ? checked : value }; if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) { next.slug = slugify(value); } return next; }); };
 
+  const handleCategoryImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCatFormErr(""); setCatImageUploading(true);
+    try {
+      const r = await uploadImage(file);
+      setCatForm(f => {
+        if (f.image && f.image.startsWith("/uploads/")) {
+          setPendingDeleteCatImages(prev => [...prev, f.image]);
+        }
+        return { ...f, image: r.data.url };
+      });
+    } catch (err) {
+      setCatFormErr(err.response?.data?.message || t("imageUploadFailed"));
+    } finally { setCatImageUploading(false); }
+  };
+
   const handleSaveCategory = async () => {
+    if (!catForm.nameEn.trim()) return setCatFormErr(t("categoryNameRequired"));
+    if (!catForm.slug.trim())   return setCatFormErr(t("slugRequired"));
+    setCatFormErr(""); setCatFormSaving(true);
+    try {
+      const payload = {
+        name: { en: catForm.nameEn.trim(), bn: catForm.nameBn.trim() },
+        slug: slugify(catForm.slug),
+        image: catForm.image.trim(),
+      };
+      if (catModal === "add") {
+        payload.isFixed = catForm.isFixed;
+        payload.sortOrder = categories.length
+          ? Math.max(...categories.map(c => c.sortOrder || 0)) + 1
+          : 1;
+        const r = await createCategory(payload);
+        setCategories(prev => [...prev, r.data].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+      } else {
+        const r = await updateCategory(catEditTarget._id, payload);
+        setCategories(prev => prev.map(c => c._id === catEditTarget._id ? r.data : c));
+      }
+      pendingDeleteCatImages.forEach(url => { deleteUploadedImage(url).catch(() => {}); });
+      closeCatModal();
+    } catch (err) {
+      setCatFormErr(err.response?.data?.message || t("saveFailed"));
+    } finally { setCatFormSaving(false); }
+  };
+
+  const handleDeleteCategory = async (cat) => {
+    try {
+      await deleteCategory(cat._id);
+      setCategories(prev => prev.filter(c => c._id !== cat._id));
+      if (cat.image && cat.image.startsWith("/uploads/")) {
+        deleteUploadedImage(cat.image).catch(() => {});
+      }
+    } catch (err) {
+      setCatFormErr(err.response?.data?.message || t("saveFailed"));
+    }
+    setCatConfirmDelete(null);
+  };
     if (!catForm.nameEn.trim()) return setCatFormErr("Category name (English) is required.");
     if (!catForm.slug.trim()) return setCatFormErr("Slug is required.");
     setCatFormErr(""); setCatFormSaving(true);
@@ -358,6 +687,8 @@ export default function Admin() {
     } finally { setCatReordering(null); }
   };
 
+  // ── guards ───────────────────────────────────────────────────
+  if (authLoading) return <div style={s.center}>{t("loading")}</div>;
   const openAddCoupon = () => { setCouponForm(BLANK_COUPON); setCouponEditTarget(null); setCouponFormErr(""); setCouponModal("add"); };
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
@@ -392,8 +723,46 @@ export default function Admin() {
       {/* SIDEBAR */}
       <aside className="admin-sidebar">
         <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
-        <div className="admin-sidebar-role">Admin Panel</div>
+        <div className="admin-sidebar-role">{t("adminPanel")}</div>
         {[
+          { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
+          { id: "orders",     label: t("navOrders"),     icon: Package },
+          { id: "customers",  label: t("navCustomers"),  icon: Users },
+          { id: "products",   label: t("navProducts"),   icon: Gem },
+          { id: "categories", label: t("navCategories"), icon: Tag },
+          { id: "settings",   label: t("navSettings"),   icon: Settings },
+        ].map(navItem => (
+          <button
+            key={navItem.id}
+            className={`admin-nav-btn${tab === navItem.id ? " active" : ""}`}
+            onClick={() => setTab(navItem.id)}
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
+          >
+            <navItem.icon size={15} /> {navItem.label}
+          </button>
+        ))}
+        <div style={{ marginTop: "auto", padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
+          <button
+            className="admin-nav-btn"
+            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+            style={{ opacity: 0.7, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <Globe size={13} /> {language === "en" ? "বাংলা" : "English"}
+          </button>
+          <button
+            className="admin-nav-btn"
+            onClick={() => navigate("/")}
+            style={{ opacity: 0.55, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <ArrowLeft size={13} /> {t("backToStore")}
+          </button>
+          <button
+            className="admin-nav-btn admin-logout-btn"
+            onClick={async () => { await logout(); navigate("/"); }}
+            style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <LogOut size={13} /> {t("logout")}
+          </button>
           { id: "overview",   label: "📊  Overview" },
           { id: "orders",     label: "📦  Orders" },
           { id: "customers",  label: "👥  Customers" },
@@ -424,26 +793,48 @@ export default function Admin() {
         {/* ── OVERVIEW ── */}
         {tab === "overview" && (
           <div>
-            <h2 style={s.pageTitle}>Overview</h2>
+            <h2 style={s.pageTitle}>{t("overview")}</h2>
             {statsErr && <p style={s.err}>{statsErr}</p>}
-            {!stats && !statsErr && <p style={{ color: "var(--muted)" }}>Loading…</p>}
+            {!stats && !statsErr && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
             {stats && (
               <>
                 <div className="admin-stat-grid" style={s.statGrid}>
                   {[
-                    { label: "Total Revenue",  value: fmt(stats.totalRevenue),  icon: "💰" },
-                    { label: "Total Orders",   value: stats.totalOrders,         icon: "📦" },
-                    { label: "Customers",      value: stats.totalUsers,          icon: "👥" },
-                    { label: "Active Products",value: stats.totalProducts,       icon: "💎" },
+                    { label: t("totalRevenue"),  value: fmt(stats.totalRevenue),  icon: DollarSign },
+                    { label: t("totalOrders"),   value: stats.totalOrders,         icon: Package },
+                    { label: t("customers"),      value: stats.totalUsers,          icon: Users },
+                    { label: t("activeProducts"),value: stats.totalProducts,       icon: Gem },
+                    { label: t("lowStock"),      value: stats.lowStockCount,       icon: AlertTriangle, alert: stats.lowStockCount > 0 },
                   ].map(c => (
-                    <div key={c.label} style={s.statCard}>
-                      <div style={s.statIcon}>{c.icon}</div>
-                      <div style={s.statValue}>{c.value}</div>
+                    <div key={c.label} style={{ ...s.statCard, ...(c.alert ? { borderColor: "var(--red)" } : {}) }}>
+                      <div style={s.statIcon}><c.icon size={22} /></div>
+                      <div style={{ ...s.statValue, ...(c.alert ? { color: "var(--red)" } : {}) }}>{c.value}</div>
                       <div style={s.statLabel}>{c.label}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginTop: 32 }} className="admin-chart-grid">
+                  <div style={s.chartCard}>
+                    <h3 style={s.sectionTitle}>{t("revenueLast7Days")}</h3>
+                    <RevenueTrendChart data={stats.revenueTrend} />
+                  </div>
+                  <div style={s.chartCard}>
+                    <h3 style={s.sectionTitle}>{t("ordersByStatus")}</h3>
+                    <StatusBreakdownChart data={stats.statusCounts} />
+                  </div>
+                </div>
+
+                {/* Recent orders */}
+                <h3 style={{ ...s.sectionTitle, marginTop: 32 }}>{t("recentOrders")}</h3>
+                <div style={s.tableWrap}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr>
+                        {[t("colOrderId"),t("colCustomer"),t("colDate"),t("colAmount"),t("colStatus")].map(h => (
+                          <th key={h} style={s.th}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
                   <div style={s.chartCard}><h3 style={s.sectionTitle}>Revenue — Last 7 Days</h3><RevenueTrendChart data={stats.revenueTrend} /></div>
                   <div style={s.chartCard}><h3 style={s.sectionTitle}>Orders by Status</h3><StatusBreakdownChart data={stats.statusCounts} /></div>
                 </div>
@@ -455,6 +846,7 @@ export default function Admin() {
                       {stats.recentOrders.map(o => (
                         <tr key={o._id} style={{ ...s.tr, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
                           <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                          <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
@@ -473,8 +865,20 @@ export default function Admin() {
         {tab === "orders" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={s.pageTitle}>All Orders</h2>
+              <h2 style={s.pageTitle}>{t("allOrders")}</h2>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("searchOrdersPlaceholder")}
+                  value={orderSearch}
+                  onChange={e => setOrderSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={orderStatusFilter} onChange={e => setOrderStatusFilter(e.target.value)} style={{ width: 160 }}>
+                  <option value="all">{t("allStatuses")}</option>
+                  {ORDER_STATUSES.map(st => (
+                    <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
+                  ))}
                 <input className="input" placeholder="Search order ID, name, or email…" value={orderSearch} onChange={e => setOrderSearch(e.target.value)} style={{ width: 240 }} />
                 <select className="input" value={orderStatusFilter} onChange={e => setOrderStatusFilter(e.target.value)} style={{ width: 160 }}>
                   <option value="all">All statuses</option>
@@ -482,7 +886,19 @@ export default function Admin() {
                 </select>
               </div>
             </div>
-            {ordersLoading && <p style={{ color: "var(--muted)" }}>Loading orders…</p>}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 16, padding: "12px 16px", background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 10 }}>
+              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{t("exportSales")}</span>
+              <input className="input" type="date" value={exportFrom} onChange={e => setExportFrom(e.target.value)} style={{ width: 150 }} />
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("to")}</span>
+              <input className="input" type="date" value={exportTo} onChange={e => setExportTo(e.target.value)} style={{ width: 150 }} />
+              <button className="btn btn-outline" onClick={handleExportSales} disabled={exporting} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                {exporting ? t("exporting") : <><Download size={14} /> {t("exportCsv")}</>}
+              </button>
+              {exportErr && <span style={{ fontSize: 12, color: "var(--red)" }}>{exportErr}</span>}
+            </div>
+
+            {ordersLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
             {!ordersLoading && (() => {
               const q = orderSearch.trim().toLowerCase();
               const filtered = orders.filter(o => {
@@ -500,12 +916,20 @@ export default function Admin() {
                 <>
                   <div style={s.tableWrap}>
                     <table style={s.table}>
+                      <thead>
+                        <tr>
+                          {[t("colOrderId"),t("colCustomer"),t("colDate"),t("colItems"),t("colAmount"),t("colPayment"),t("colStatus"),t("colUpdate")].map(h => (
+                            <th key={h} style={s.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
                       <thead><tr>{["Order ID","Customer","Date","Items","Amount","Payment","Status","Update"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {pageItems.map(o => (
                           <tr key={o._id} style={s.tr}>
                             <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
                             <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
+                              <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}</div>
                               <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}</div>
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
                             </td>
@@ -524,6 +948,9 @@ export default function Admin() {
                             </td>
                           </tr>
                         ))}
+                        {pageItems.length === 0 && (
+                          <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noOrdersMatch")}</td></tr>
+                        )}
                         {pageItems.length === 0 && <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No orders match.</td></tr>}
                       </tbody>
                     </table>
@@ -539,21 +966,69 @@ export default function Admin() {
         {tab === "customers" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={s.pageTitle}>Customers</h2>
+              <h2 style={s.pageTitle}>{t("customersTitle")}</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {[
-                  { id: "all", label: `All (${customers.length})` },
-                  { id: "registered", label: `Registered (${customers.filter(c => c.type === "registered" || c.type === "admin").length})` },
-                  { id: "guest", label: `Guest (${customers.filter(c => c.type === "guest").length})` },
+                  { id: "all", label: t("allCount", { count: customers.length }) },
+                  { id: "registered", label: t("registeredCount", { count: customers.filter(c => c.type === "registered" || c.type === "admin").length }) },
+                  { id: "guest", label: t("guestCount", { count: customers.filter(c => c.type === "guest").length }) },
                 ].map(f => (
                   <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--charcoal)" : "var(--border)", background: customerFilter === f.id ? "var(--charcoal)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
                 ))}
               </div>
             </div>
-            {customersLoading && <p style={{ color: "var(--muted)" }}>Loading customers…</p>}
+            {customersLoading && <p style={{ color: "var(--muted)" }}>{t("loadingCustomers")}</p>}
             {!customersLoading && (
               <div style={s.tableWrap}>
                 <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colCustomer"), t("colType"), t("colContact"), t("colOrders"), t("colTotalSpent"), t("colJoinedLastOrder")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customers
+                      .filter(c => {
+                        if (customerFilter === "all") return true;
+                        if (customerFilter === "registered") return c.type === "registered" || c.type === "admin";
+                        return c.type === customerFilter;
+                      })
+                      .map(c => (
+                        <tr key={c._id} style={{ ...s.tr, cursor: c.type === "guest" ? "default" : "pointer" }} onClick={() => openCustomerDetail(c)}>
+                          <td style={s.td}>
+                            <div style={{ fontWeight: 500 }}>{c.name || "—"}</div>
+                          </td>
+                          <td style={s.td}>
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+                              textTransform: "uppercase", letterSpacing: "0.03em",
+                              background: c.type === "admin" ? "#EDE9FE" : c.type === "guest" ? "#F3F4F6" : "#DCFCE7",
+                              color: c.type === "admin" ? "#5B21B6" : c.type === "guest" ? "#4B5563" : "#166534",
+                            }}>
+                              {c.type === "admin" ? t("typeAdmin") : c.type === "guest" ? t("typeGuest") : t("typeRegistered")}
+                            </span>
+                          </td>
+                          <td style={s.td}>
+                            <div style={{ fontSize: 13 }}>{c.email}</div>
+                            {c.phone && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.phone}</div>}
+                          </td>
+                          <td style={{ ...s.td, textAlign: "center" }}>{c.orderCount}</td>
+                          <td style={s.td}>{fmt(c.totalSpent)}</td>
+                          <td style={s.td}>
+                            <div style={{ fontSize: 12 }}>
+                              {c.joinedAt ? t("joined", { date: fmtDate(c.joinedAt) }) : t("noAccount")}
+                            </div>
+                            {c.lastOrderAt && (
+                              <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("lastOrder", { date: fmtDate(c.lastOrderAt) })}</div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    {customers.length === 0 && (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noCustomersYet")}</td></tr>
+                    )}
                   <thead><tr>{["Customer","Type","Contact","Orders","Total Spent","Joined / Last Order"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {customers.filter(c => { if (customerFilter === "all") return true; if (customerFilter === "registered") return c.type === "registered" || c.type === "admin"; return c.type === customerFilter; }).map(c => (
@@ -578,15 +1053,42 @@ export default function Admin() {
         {tab === "products" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={s.pageTitle}>Products</h2>
+              <h2 style={s.pageTitle}>{t("productsTitle")}</h2>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("searchProductsPlaceholder")}
+                  value={productSearch}
+                  onChange={e => setProductSearch(e.target.value)}
+                  style={{ width: 220 }}
+                />
+                <button
+                  onClick={() => setShowLowStockOnly(v => !v)}
+                  style={{
+                    padding: "6px 14px", borderRadius: 20,
+                    border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500,
+                    borderColor: showLowStockOnly ? "var(--red)" : "var(--border)",
+                    background: showLowStockOnly ? "var(--red)" : "transparent",
+                    color: showLowStockOnly ? "#fff" : "var(--muted)",
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                  }}
+                >
+                  <AlertTriangle size={13} /> {t("lowStockFilter", { count: lowStockIds.size })}
+                </button>
+                <button className="btn" onClick={openAdd}>{t("addProduct")}</button>
                 <input className="input" placeholder="Search products…" value={productSearch} onChange={e => setProductSearch(e.target.value)} style={{ width: 220 }} />
                 <button className="btn" onClick={openAdd}>+ Add Product</button>
               </div>
             </div>
-            {prodLoading && <p style={{ color: "var(--muted)" }}>Loading products…</p>}
+            {prodLoading && <p style={{ color: "var(--muted)" }}>{t("loadingProducts")}</p>}
             {!prodLoading && (() => {
               const q = productSearch.trim().toLowerCase();
+              const bySearch = !q ? products : products.filter(p =>
+                (p.name?.en || "").toLowerCase().includes(q) ||
+                (p.name?.bn || "").toLowerCase().includes(q) ||
+                (p.category?.name?.en || "").toLowerCase().includes(q)
+              );
+              const filtered = showLowStockOnly ? bySearch.filter(p => lowStockIds.has(p._id)) : bySearch;
               const filtered = !q ? products : products.filter(p => (p.name?.en || "").toLowerCase().includes(q) || (p.name?.bn || "").toLowerCase().includes(q) || (p.category?.name?.en || "").toLowerCase().includes(q));
               const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
               const page = Math.min(productPage, totalPages);
@@ -595,6 +1097,53 @@ export default function Admin() {
                 <>
                   <div style={s.tableWrap}>
                     <table style={s.table}>
+                      <thead>
+                        <tr>
+                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colActive"),t("colActions")].map(h => (
+                            <th key={h} style={s.th}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageItems.map(p => (
+                          <tr key={p._id} style={s.tr}>
+                            <td style={s.td}>
+                              {p.images?.[0]
+                                ? <img src={p.images[0]} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                                : <div style={{ width: 48, height: 48, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}><Gem size={20} /></div>
+                              }
+                            </td>
+                            <td style={s.td}>
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
+                              {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
+                            </td>
+                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
+                            <td style={s.td}>{fmt(p.basePrice)}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>
+                              <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
+                                {p.totalStock}
+                              </span>
+                              {lowStockIds.has(p._id) && (
+                                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3, fontSize: 10, fontWeight: 600, color: "var(--red)", marginTop: 2 }}>
+                                  <AlertTriangle size={10} /> {t("lowBadge")}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? <Star size={14} fill="var(--gold)" color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>
+                              <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
+                                {p.isActive ? t("yes") : t("no")}
+                              </span>
+                            </td>
+                            <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                              <button onClick={() => openEdit(p)} style={s.editBtn}>{t("edit")}</button>
+                              <button onClick={() => setConfirmDelete(p)} style={s.delBtn}>{t("delete")}</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {pageItems.length === 0 && (
+                          <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noProductsFound")}</td></tr>
+                        )}
                       <thead><tr>{["Image","Name","Category","Price","Stock","Featured","Active","Actions"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {pageItems.map(p => (
@@ -624,13 +1173,59 @@ export default function Admin() {
         {tab === "categories" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-              <h2 style={s.pageTitle}>Categories</h2>
-              <button className="btn" onClick={openAddCategory}>+ Add Category</button>
+              <h2 style={s.pageTitle}>{t("categoriesTitle")}</h2>
+              <button className="btn" onClick={openAddCategory}>{t("addCategory")}</button>
             </div>
-            {catLoading && <p style={{ color: "var(--muted)" }}>Loading categories…</p>}
+            {catLoading && <p style={{ color: "var(--muted)" }}>{t("loadingCategories")}</p>}
             {!catLoading && (
               <div style={s.tableWrap}>
                 <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colImage"),t("colName"),t("colSlug"),t("colOrder"),t("colTypeCategory"),t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((c, i, arr) => (
+                      <tr key={c._id} style={s.tr}>
+                        <td style={s.td}>
+                          {c.image
+                            ? <img src={c.image} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                            : <div style={{ width: 40, height: 40, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{CATEGORY_ICONS[c.slug] || "💍"}</div>
+                          }
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name?.en}</div>
+                          {c.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.name.bn}</div>}
+                        </td>
+                        <td style={{ ...s.td, fontSize: 12, fontFamily: "monospace", color: "var(--muted)" }}>{c.slug}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button
+                            onClick={() => handleMoveCategory(c, "up")}
+                            disabled={i === 0 || catReordering}
+                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
+                            title={t("moveUp")}
+                          ><ArrowUp size={13} /></button>
+                          <button
+                            onClick={() => handleMoveCategory(c, "down")}
+                            disabled={i === arr.length - 1 || catReordering}
+                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
+                            title={t("moveDown")}
+                          ><ArrowDown size={13} /></button>
+                        </td>
+                        <td style={{ ...s.td, textAlign: "center" }}>
+                          {c.isFixed
+                            ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "#EDE9FE", color: "#5B21B6", fontWeight: 600 }}>{t("fixed")}</span>
+                            : <span style={{ fontSize: 11, color: "var(--muted)" }}>{t("custom")}</span>
+                          }
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button onClick={() => openEditCategory(c)} style={s.editBtn}>{t("edit")}</button>
+                          {!c.isFixed && (
+                            <button onClick={() => setCatConfirmDelete(c)} style={s.delBtn}>{t("delete")}</button>
+                          )}
                   <thead><tr>{["Image","Name","Slug","Order","Type","Actions"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {[...categories].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map((c, i, arr) => (
@@ -646,6 +1241,8 @@ export default function Admin() {
                         <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCategory(c)} style={s.editBtn}>Edit</button>{!c.isFixed && <button onClick={() => setCatConfirmDelete(c)} style={s.delBtn}>Delete</button>}</td>
                       </tr>
                     ))}
+                    {categories.length === 0 && (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noCategoriesFound")}</td></tr>
                     {categories.length === 0 && <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No categories found.</td></tr>}
                   </tbody>
                 </table>
@@ -764,11 +1361,85 @@ export default function Admin() {
         {/* ── SETTINGS ── */}
         {tab === "settings" && (
           <div>
-            <h2 style={s.pageTitle}>Settings</h2>
-            {settingsLoading && <p style={{ color: "var(--muted)" }}>Loading settings…</p>}
+            <h2 style={s.pageTitle}>{t("settingsTitle")}</h2>
+            {settingsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingSettings")}</p>}
             {!settingsLoading && settings && (
               <div style={{ ...s.tableWrap, padding: "28px 28px 32px", maxWidth: 640 }}>
                 {settingsErr && <div style={s.formErr}>{settingsErr}</div>}
+                {settingsMsg && <div style={{ background: "#DCFCE7", color: "#166534", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}><Check size={14} /> {settingsMsg}</div>}
+
+                <h3 style={s.sectionTitle}>{t("pricing")}</h3>
+                <label style={s.label}>
+                  {t("vatRate")}
+                  <input
+                    className="input"
+                    type="number" min="0" max="100" step="0.1"
+                    value={Math.round(settings.vatRate * 1000) / 10}
+                    onChange={e => setVatRate(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={s.label}>
+                  {t("defaultDeliveryCharge")}
+                  <input
+                    className="input"
+                    type="number" min="0"
+                    value={settings.defaultDeliveryCharge}
+                    onChange={e => setDefaultDelivery(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("districtDeliveryCharges")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("districtHint")}
+                </p>
+                {settings.districtDeliveryCharges.map((d, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                    <input
+                      className="input"
+                      placeholder={t("districtNamePlaceholder")}
+                      value={d.district}
+                      onChange={e => setDistrictCharge(idx, "district", e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      className="input"
+                      type="number" min="0"
+                      placeholder={t("chargePlaceholder")}
+                      value={d.charge}
+                      onChange={e => setDistrictCharge(idx, "charge", e.target.value)}
+                      style={{ width: 110 }}
+                    />
+                    <button onClick={() => removeDistrictCharge(idx)} style={s.delBtn}>{t("remove")}</button>
+                  </div>
+                ))}
+                <button className="btn btn-outline" onClick={addDistrictCharge} style={{ marginTop: 4, marginBottom: 24 }}>
+                  {t("addDistrict")}
+                </button>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("language")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("defaultLanguageHint")}
+                </p>
+                <label style={s.label}>
+                  {t("defaultLanguage")}
+                  <select
+                    className="input"
+                    value={settings.defaultLanguage || "en"}
+                    onChange={e => setSettings(s => ({ ...s, defaultLanguage: e.target.value }))}
+                    style={{ maxWidth: 160 }}
+                  >
+                    <option value="en">{t("english")}</option>
+                    <option value="bn">{t("bangla")}</option>
+                  </select>
+                </label>
+
+                <div>
+                  <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
+                    {settingsSaving ? t("saving") : t("saveSettings")}
+                  </button>
+                </div>
                 {settingsMsg && <div style={{ background: "#DCFCE7", color: "#166534", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 }}>{settingsMsg}</div>}
                 <h3 style={s.sectionTitle}>Pricing</h3>
                 <label style={s.label}>VAT Rate (%)<input className="input" type="number" min="0" max="100" step="0.1" value={Math.round(settings.vatRate * 1000) / 10} onChange={e => setVatRate(e.target.value)} style={{ maxWidth: 160 }} /></label>
@@ -794,11 +1465,28 @@ export default function Admin() {
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>Order #{orderDetail._id.slice(-6).toUpperCase()}</h3>
+            <h3 style={s.modalTitle}>{t("orderHash")}{orderDetail._id.slice(-6).toUpperCase()}</h3>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <StatusBadge status={orderDetail.status} />
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
             </div>
+
+            <h4 style={s.modalSubTitle}>{t("customer")}</h4>
+            <p style={{ fontSize: 13, marginBottom: 4 }}>
+              {orderDetail.user?.name || orderDetail.guestInfo?.name || "—"}
+              {orderDetail.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+              {orderDetail.user?.email || orderDetail.guestInfo?.email} · {orderDetail.user?.phone || orderDetail.guestInfo?.phone}
+            </p>
+
+            <h4 style={s.modalSubTitle}>{t("deliveryAddress")}</h4>
+            <p style={{ fontSize: 13, color: "var(--charcoal)", marginBottom: 16 }}>
+              {orderDetail.address?.addressLine}, {orderDetail.address?.district}, {orderDetail.address?.city}
+              {orderDetail.address?.phone && <> · <Phone size={12} style={{ verticalAlign: "-1px" }} /> {orderDetail.address.phone}</>}
+            </p>
+
+            <h4 style={s.modalSubTitle}>{t("items")}</h4>
             <h4 style={s.modalSubTitle}>Customer</h4>
             <p style={{ fontSize: 13, marginBottom: 4 }}>{orderDetail.user?.name || orderDetail.guestInfo?.name || "—"}</p>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{orderDetail.user?.email || orderDetail.guestInfo?.email} · {orderDetail.user?.phone || orderDetail.guestInfo?.phone}</p>
@@ -808,12 +1496,32 @@ export default function Admin() {
             <div style={{ marginBottom: 16 }}>
               {orderDetail.items?.map((item, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "6px 0", borderBottom: "1px solid var(--border-light)" }}>
-                  <span>{item.nameSnapshot || item.product?.name?.en} × {item.quantity}</span>
+                  <span>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</span>
                   <span style={{ fontWeight: 600 }}>{fmt(item.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
             <div style={{ background: "var(--parchment)", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
+                <span>{t("subtotal")}</span><span>{fmt(orderDetail.subtotal)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
+                <span>{t("vat")}</span><span>{fmt(orderDetail.vat)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}>
+                <span>{t("delivery")}</span><span>{fmt(orderDetail.deliveryCharge)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                <span>{t("total")}</span><span>{fmt(orderDetail.totalAmount)}</span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
+              {t("payment", { method: orderDetail.payment?.method?.toUpperCase(), status: orderDetail.payment?.status })}
+            </p>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setOrderDetail(null)}>{t("close")}</button>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}><span>Subtotal</span><span>{fmt(orderDetail.subtotal)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}><span>VAT</span><span>{fmt(orderDetail.vat)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}><span>Delivery</span><span>{fmt(orderDetail.deliveryCharge)}</span></div>
@@ -829,12 +1537,19 @@ export default function Admin() {
       {customerDetail && (
         <div style={s.overlay} onClick={closeCustomerDetail}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{customerDetail.user?.name || t("customer")}</h3>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
+              {customerDetail.user?.email} {customerDetail.user?.phone && `· ${customerDetail.user.phone}`}
+            </p>
+
+            {customerDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+
             <h3 style={s.modalTitle}>{customerDetail.user?.name || "Customer"}</h3>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>{customerDetail.user?.email} {customerDetail.user?.phone && `· ${customerDetail.user.phone}`}</p>
             {customerDetailLoading && <p style={{ color: "var(--muted)" }}>Loading…</p>}
             {!customerDetailLoading && customerDetail.user?._id && (
               <>
-                <h4 style={s.modalSubTitle}>Order History ({customerDetail.orders.length})</h4>
+                <h4 style={s.modalSubTitle}>{t("orderHistoryCount", { count: customerDetail.orders.length })}</h4>
                 <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
                   {customerDetail.orders.map(o => (
                     <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
@@ -844,6 +1559,19 @@ export default function Admin() {
                       <StatusBadge status={o.status} />
                     </div>
                   ))}
+                  {customerDetail.orders.length === 0 && (
+                    <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("noOrdersYet")}</p>
+                  )}
+                </div>
+
+                <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                  {t("resetPasswordHint")}
+                </p>
+                {resetPwUserId !== customerDetail.user._id ? (
+                  <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                    {t("resetThisCustomerPassword")}
+                  </button>
                   {customerDetail.orders.length === 0 && <p style={{ fontSize: 13, color: "var(--muted)" }}>No orders yet.</p>}
                 </div>
                 <h4 style={s.modalSubTitle}>Admin: Reset Password</h4>
@@ -852,8 +1580,27 @@ export default function Admin() {
                   <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>Reset This Customer's Password</button>
                 ) : (
                   <div>
-                    {resetPwMsg && <div style={{ fontSize: 12, marginBottom: 8, color: resetPwMsg.startsWith("✓") ? "var(--green)" : "var(--red)" }}>{resetPwMsg}</div>}
+                    {resetPwMsg && (
+                      <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
+                        {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                      </div>
+                    )}
                     <div style={{ display: "flex", gap: 10 }}>
+                      <input
+                        className="input"
+                        type="text"
+                        placeholder={t("newPasswordPlaceholder")}
+                        value={resetPwValue}
+                        onChange={e => setResetPwValue(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="btn btn-gold"
+                        disabled={resetPwSaving || !resetPwValue}
+                        onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                      >
+                        {resetPwSaving ? t("saving") : t("confirm")}
+                      </button>
                       <input className="input" type="text" placeholder="New password" value={resetPwValue} onChange={e => setResetPwValue(e.target.value)} style={{ flex: 1 }} />
                       <button className="btn btn-gold" disabled={resetPwSaving || !resetPwValue} onClick={() => handleResetCustomerPassword(customerDetail.user._id)}>{resetPwSaving ? "Saving…" : "Confirm"}</button>
                     </div>
@@ -861,6 +1608,10 @@ export default function Admin() {
                 )}
               </>
             )}
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCustomerDetail}>{t("close")}</button>
+            </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}><button className="btn btn-outline" onClick={closeCustomerDetail}>Close</button></div>
           </div>
         </div>
@@ -870,9 +1621,80 @@ export default function Admin() {
       {modal && (
         <div style={s.overlay} onClick={closeModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{modal === "add" ? t("addNewProduct") : t("editProduct")}</h3>
+
             <h3 style={s.modalTitle}>{modal === "add" ? "Add New Product" : "Edit Product"}</h3>
             {formErr && <div style={s.formErr}>{formErr}</div>}
             <div className="admin-form-grid" style={s.formGrid}>
+              <label style={s.label}>
+                {t("nameEnglish")}
+                <input className="input" name="nameEn" value={form.nameEn} onChange={setF} placeholder="e.g. Gold Necklace" />
+              </label>
+              <label style={s.label}>
+                {t("nameBengali")}
+                <input className="input" name="nameBn" value={form.nameBn} onChange={setF} placeholder="বাংলা নাম" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("descriptionEnglish")}
+                <textarea className="input" name="descEn" value={form.descEn} onChange={setF} rows={2} placeholder={t("shortDescriptionPlaceholder")} style={{ resize: "vertical" }} />
+              </label>
+              <label style={s.label}>
+                {t("category")}
+                <select className="input" name="category" value={form.category} onChange={setF}>
+                  <option value="">{t("selectPlaceholder")}</option>
+                  {categories.map(c => (
+                    <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={s.label}>
+                {t("basePrice")}
+                <input className="input" name="basePrice" type="number" min="0" value={form.basePrice} onChange={setF} placeholder="0" />
+              </label>
+              <label style={s.label}>
+                {t("stockQuantity")}
+                <input className="input" name="totalStock" type="number" min="0" value={form.totalStock} onChange={setF} placeholder="0" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("images")}
+                {form.images.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                    {form.images.map((url, idx) => (
+                      <div key={url + idx} style={{ position: "relative" }}>
+                        <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                        <button
+                          type="button"
+                          onClick={() => removeProductImage(idx)}
+                          title="Remove image"
+                          style={{
+                            position: "absolute", top: -6, right: -6, width: 20, height: 20,
+                            borderRadius: "50%", border: "none", background: "var(--red)", color: "#fff",
+                            cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex",
+                            alignItems: "center", justifyContent: "center",
+                          }}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  onChange={handleProductImageSelect}
+                  disabled={imageUploading}
+                />
+                {imageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("featuredOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
+                {t("activeVisibleInStore")}
+              </label>
               <label style={s.label}>Name (English) *<input className="input" name="nameEn" value={form.nameEn} onChange={setF} placeholder="e.g. Gold Necklace" /></label>
               <label style={s.label}>Name (Bengali)<input className="input" name="nameBn" value={form.nameBn} onChange={setF} placeholder="বাংলা নাম" /></label>
               <label style={{ ...s.label, gridColumn: "1 / -1" }}>Description (English)<textarea className="input" name="descEn" value={form.descEn} onChange={setF} rows={2} placeholder="Short description…" style={{ resize: "vertical" }} /></label>
@@ -884,6 +1706,10 @@ export default function Admin() {
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />Active (visible in store)</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeModal} disabled={formSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveProduct} disabled={formSaving || imageUploading}>
+                {formSaving ? t("saving") : modal === "add" ? t("createProduct") : t("saveChanges")}
+              </button>
               <button className="btn btn-outline" onClick={closeModal} disabled={formSaving}>Cancel</button>
               <button className="btn btn-gold" onClick={handleSaveProduct} disabled={formSaving}>{formSaving ? "Saving…" : modal === "add" ? "Create Product" : "Save Changes"}</button>
             </div>
@@ -895,6 +1721,15 @@ export default function Admin() {
       {confirmDelete && (
         <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteProductTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+              {t("deleteProductBody", { name: confirmDelete.name?.en })}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDelete(confirmDelete._id)}>
+                {t("yesDelete")}
+              </button>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>Delete Product?</h3>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>"<strong>{confirmDelete.name?.en}</strong>" will be hidden from the store.</p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -909,9 +1744,63 @@ export default function Admin() {
       {catModal && (
         <div style={s.overlay} onClick={closeCatModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{catModal === "add" ? t("addNewCategory") : t("editCategory")}</h3>
+
             <h3 style={s.modalTitle}>{catModal === "add" ? "Add New Category" : "Edit Category"}</h3>
             {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
             <div className="admin-form-grid" style={s.formGrid}>
+              <label style={s.label}>
+                {t("nameEnglish")}
+                <input className="input" name="nameEn" value={catForm.nameEn} onChange={setCF} placeholder="e.g. Earrings" />
+              </label>
+              <label style={s.label}>
+                {t("nameBengali")}
+                <input className="input" name="nameBn" value={catForm.nameBn} onChange={setCF} placeholder="বাংলা নাম" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("slug")}
+                <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("image")}
+                {catForm.image && (
+                  <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                    <img src={catForm.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ fontSize: 12, padding: "5px 10px" }}
+                      onClick={() => {
+                        if (catForm.image.startsWith("/uploads/")) {
+                          setPendingDeleteCatImages(prev => [...prev, catForm.image]);
+                        }
+                        setCatForm(f => ({ ...f, image: "" }));
+                      }}
+                    >
+                      {t("removeImage")}
+                    </button>
+                  </div>
+                )}
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleCategoryImageSelect}
+                  disabled={catImageUploading}
+                />
+                {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
+              </label>
+              {catModal === "add" && (
+                <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
+                  <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
+                  {t("fixedCategoryCheckbox")}
+                </label>
+              )}
+              {catModal === "edit" && catForm.isFixed && (
+                <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                  <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t("fixedCategoryNote")}</span>
+                </p>
+              )}
               <label style={s.label}>Name (English) *<input className="input" name="nameEn" value={catForm.nameEn} onChange={setCF} placeholder="e.g. Earrings" /></label>
               <label style={s.label}>Name (Bengali)<input className="input" name="nameBn" value={catForm.nameBn} onChange={setCF} placeholder="বাংলা নাম" /></label>
               <label style={{ ...s.label, gridColumn: "1 / -1" }}>Slug *<input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" /></label>
@@ -920,6 +1809,10 @@ export default function Admin() {
               {catModal === "edit" && catForm.isFixed && <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8 }}>🔒 This is a fixed category and cannot be deleted.</p>}
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving || catImageUploading}>
+                {catFormSaving ? t("saving") : catModal === "add" ? t("createCategory") : t("saveChanges")}
+              </button>
               <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>Cancel</button>
               <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving}>{catFormSaving ? "Saving…" : catModal === "add" ? "Create Category" : "Save Changes"}</button>
             </div>
@@ -931,6 +1824,15 @@ export default function Admin() {
       {catConfirmDelete && (
         <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCategoryTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+              {t("deleteCategoryBody", { name: catConfirmDelete.name?.en })}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setCatConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCategory(catConfirmDelete)}>
+                {t("yesDelete")}
+              </button>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>Delete Category?</h3>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>"<strong>{catConfirmDelete.name?.en}</strong>" will be removed.</p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>

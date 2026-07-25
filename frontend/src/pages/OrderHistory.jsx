@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Package, Gem, Check, Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
 import { getOrders } from "../api/cart";
-
-const STATUS_STYLE = {
-  pending:    { bg: "#FEF3C7", color: "#92400E", label: "Pending" },
-  confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: "Confirmed" },
-  processing: { bg: "#E0E7FF", color: "#3730A3", label: "Processing" },
-  shipped:    { bg: "#CFFAFE", color: "#155E75", label: "Shipped" },
-  delivered:  { bg: "#D1FAE5", color: "#065F46", label: "Delivered" },
-  cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: "Cancelled" },
-};
 
 // Progress steps for order tracking
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
 export default function OrderHistory() {
+  const { t } = useTranslation("orders");
+  const { language } = useLanguage();
+  const STATUS_STYLE = {
+    pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
+    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
+    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
+    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
+    cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
+  };
   const { loading: authLoading } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +32,7 @@ export default function OrderHistory() {
     if (authLoading) return;
     getOrders()
       .then(r => setOrders(r.data))
-      .catch(() => setError("Could not load your orders. Please try again."))
+      .catch(() => setError(t("loadOrdersError")))
       .finally(() => setLoading(false));
   }, [authLoading]);
 
@@ -43,13 +48,16 @@ export default function OrderHistory() {
     return (
       <div style={{ padding: "60px 0", textAlign: "center", color: "var(--muted)" }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-        Loading your orders…
+        {t("loadingOrders")}
       </div>
     );
   }
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 64px" }}>
+
+      {/* Header */}
+      <span className="eyebrow">{t("yourAccount")}</span>
       <span className="eyebrow">Your Account</span>
       <h1 style={{
         fontFamily: "var(--font-display)",
@@ -58,7 +66,7 @@ export default function OrderHistory() {
         marginTop: 4,
         marginBottom: 8,
       }}>
-        Order History
+        {t("orderHistory")}
       </h1>
       <div className="divider-gold">✦</div>
 
@@ -85,7 +93,7 @@ export default function OrderHistory() {
               {orders.length}
             </div>
             <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Total Orders
+              {t("totalOrders")}
             </div>
           </div>
           <div style={{ width: 1, background: "var(--border)" }} />
@@ -94,7 +102,7 @@ export default function OrderHistory() {
               {orders.filter(o => o.status === "delivered").length}
             </div>
             <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Delivered
+              {t("delivered")}
             </div>
           </div>
           <div style={{ width: 1, background: "var(--border)" }} />
@@ -103,7 +111,7 @@ export default function OrderHistory() {
               ৳ {orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}
             </div>
             <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Total Spent
+              {t("totalSpent")}
             </div>
           </div>
         </div>
@@ -129,7 +137,7 @@ export default function OrderHistory() {
                 transition: "all 0.2s",
               }}
             >
-              {status === "all" ? `All (${orders.length})` : STATUS_STYLE[status]?.label}
+              {status === "all" ? t("all", { count: orders.length }) : STATUS_STYLE[status]?.label}
             </button>
           ))}
         </div>
@@ -137,16 +145,16 @@ export default function OrderHistory() {
 
       {filteredOrders.length === 0 && !error ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.25 }}>📦</div>
+          <div style={{ marginBottom: 16, opacity: 0.25, display: "flex", justifyContent: "center" }}><Package size={48} /></div>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--charcoal)", marginBottom: 8 }}>
-            {filterStatus === "all" ? "No orders yet" : `No ${filterStatus} orders`}
+            {filterStatus === "all" ? t("noOrdersYet") : t("noStatusOrders", { status: filterStatus })}
           </p>
           <p style={{ fontSize: 14, marginBottom: 28 }}>
             {filterStatus === "all"
-              ? "When you place an order, it will show up here."
-              : `You have no orders with status "${filterStatus}".`}
+              ? t("noOrdersHint")
+              : t("noStatusOrdersHint", { status: filterStatus })}
           </p>
-          <Link to="/" className="btn">Start Shopping</Link>
+          <Link to="/" className="btn">{t("startShopping")}</Link>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -170,13 +178,13 @@ export default function OrderHistory() {
                 >
                   <div>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
-                      Order #{order._id.slice(-8).toUpperCase()}
+                      {t("orderHash")}{order._id.slice(-8).toUpperCase()}
                     </p>
                     <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                       {new Date(order.createdAt).toLocaleDateString("en-GB", {
                         day: "numeric", month: "long", year: "numeric",
                       })}
-                      {" · "}{order.items.length} {order.items.length === 1 ? "item" : "items"}
+                      {" · "}{order.items.length} {t(order.items.length === 1 ? "item_one" : "item_other")}
                     </p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -204,12 +212,12 @@ export default function OrderHistory() {
                     }}>
                       {item.product?.images?.[0]
                         ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        : <span style={{ fontSize: 18, opacity: 0.3 }}>💍</span>}
+                        : <Gem size={18} style={{ opacity: 0.3 }} />}
                     </div>
                   ))}
                   {order.items.length > 5 && (
                     <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center" }}>
-                      +{order.items.length - 5} more
+                      {t("moreCount", { count: order.items.length - 5 })}
                     </div>
                   )}
                 </div>
@@ -226,7 +234,7 @@ export default function OrderHistory() {
                             margin: "0 auto 4px",
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
-                            {i < stepIndex && <span style={{ color: "#fff", fontSize: 10 }}>✓</span>}
+                            {i < stepIndex && <Check size={12} color="#fff" strokeWidth={3} />}
                             {i === stepIndex && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", display: "block" }} />}
                           </div>
                           <div style={{ fontSize: 9, color: i <= stepIndex ? "var(--charcoal)" : "var(--muted)", textTransform: "capitalize" }}>
@@ -255,7 +263,7 @@ export default function OrderHistory() {
 
                     {/* Items List */}
                     <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 10 }}>
-                      Items
+                      {t("items")}
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                       {order.items.map((item, i) => (
@@ -271,11 +279,11 @@ export default function OrderHistory() {
                             }}>
                               {item.product?.images?.[0]
                                 ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                : <span style={{ fontSize: 14, opacity: 0.3 }}>💍</span>}
+                                : <Gem size={14} style={{ opacity: 0.3 }} />}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 500 }}>{item.nameSnapshot || item.product?.name?.en}</div>
-                              <div style={{ color: "var(--muted)", fontSize: 11 }}>Qty: {item.quantity}</div>
+                              <div style={{ fontWeight: 500 }}>{item.nameSnapshot || localized(item.product?.name, language)}</div>
+                              <div style={{ color: "var(--muted)", fontSize: 11 }}>{t("qtyLabel", { count: item.quantity })}</div>
                             </div>
                           </div>
                           <div style={{ fontWeight: 600, color: "var(--gold-text)" }}>
@@ -289,11 +297,11 @@ export default function OrderHistory() {
                     {order.address && (
                       <div style={{ marginBottom: 16 }}>
                         <p style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)", marginBottom: 6 }}>
-                          Delivery Address
+                          {t("deliveryAddress")}
                         </p>
                         <p style={{ fontSize: 13, color: "var(--charcoal)", lineHeight: 1.6 }}>
                           {order.address.addressLine}, {order.address.city}
-                          {order.address.phone && ` · 📞 ${order.address.phone}`}
+                          {order.address.phone && <> · <Phone size={12} style={{ verticalAlign: "-1px" }} /> {order.address.phone}</>}
                         </p>
                       </div>
                     )}
@@ -304,13 +312,13 @@ export default function OrderHistory() {
                       padding: "12px 16px", fontSize: 13,
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
-                        <span>Subtotal</span>
+                        <span>{t("subtotal")}</span>
                         <span>৳ {order.subtotal?.toLocaleString()}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}>
-                        <span>Delivery</span>
+                        <span>{t("delivery")}</span>
                         <span style={{ color: order.deliveryCharge === 0 ? "#065F46" : "inherit" }}>
-                          {order.deliveryCharge === 0 ? "Free" : `৳ ${order.deliveryCharge}`}
+                          {order.deliveryCharge === 0 ? t("free") : `৳ ${order.deliveryCharge}`}
                         </span>
                       </div>
                       <div style={{
@@ -318,7 +326,7 @@ export default function OrderHistory() {
                         fontWeight: 700, fontSize: 15,
                         borderTop: "1px solid var(--border)", paddingTop: 10,
                       }}>
-                        <span>Total</span>
+                        <span>{t("total")}</span>
                         <span style={{ color: "var(--gold-text)", fontFamily: "var(--font-display)" }}>
                           ৳ {order.totalAmount?.toLocaleString()}
                         </span>
@@ -333,6 +341,10 @@ export default function OrderHistory() {
                   alignItems: "center", borderTop: "1px solid var(--border)",
                   paddingTop: 12, marginTop: 14,
                 }}>
+                  <span style={{ fontSize: 13, color: "var(--muted)", textTransform: "capitalize" }}>
+                    {order.payment?.method === "cod" ? t("cashOnDelivery") : order.payment?.method}
+                    {" · "}{order.payment?.status}
+                  </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 13, color: "var(--muted)", textTransform: "capitalize" }}>
                       {order.payment?.method === "cod" ? "Cash on Delivery" : order.payment?.method}

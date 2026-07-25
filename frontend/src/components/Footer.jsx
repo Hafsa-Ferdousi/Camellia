@@ -1,17 +1,28 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
 
 export default function Footer() {
+  const { t } = useTranslation(["footer", "common"]);
+
+  function ComingSoon(label) {
+    return (e) => {
+      e.preventDefault();
+      alert(t("footer:comingSoon", { label }));
+    };
+  }
+
   return (
     <footer className="footer" id="site-footer">
       <div className="container">
         <div className="footer-grid">
           {/* Brand */}
           <div>
-            <p style={s.logo}>Camellia</p>
-            <p style={s.tagline}>Jewelry &amp; Wedding Accessories</p>
+            <p style={s.logo}>{t("common:brand")}</p>
+            <p style={s.tagline}>{t("footer:tagline")}</p>
             <p style={s.desc}>
-              Handcrafted bridal jewelry since 2019.<br />
-              Cox's Bazar, Bangladesh.
+              {t("footer:desc1")}<br />
+              {t("footer:desc2")}
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
               {[
@@ -28,7 +39,7 @@ export default function Footer() {
 
           {/* Shop */}
           <div>
-            <p style={s.colHead}>Shop</p>
+            <p style={s.colHead}>{t("footer:shop")}</p>
             {["Kalira", "Chura", "Jhumka", "Necklace Sets", "Diamond Cut", "Wedding Sets"].map(c => (
               <Link key={c} to={`/products?search=${encodeURIComponent(c)}`} style={s.link}>{c}</Link>
             ))}
@@ -36,6 +47,12 @@ export default function Footer() {
 
           {/* Information */}
           <div>
+            <p style={s.colHead}>{t("footer:information")}</p>
+            <Link to="/about" style={s.link}>{t("footer:aboutUs")}</Link>
+            <Link to="/contact" style={s.link}>{t("footer:contact")}</Link>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:faqs"))}>{t("footer:faqs")}</a>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:termsOfService"))}>{t("footer:termsOfService")}</a>
             <p style={s.colHead}>Information</p>
             <Link to="/about" style={s.link}>About Us</Link>
             <Link to="/contact" style={s.link}>Contact</Link>
@@ -46,13 +63,17 @@ export default function Footer() {
 
           {/* Customer Care */}
           <div>
+            <p style={s.colHead}>{t("footer:customerCare")}</p>
+            <Link to="/track-order" style={s.link}>{t("footer:trackOrder")}</Link>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:returnsExchanges"))}>{t("footer:returnsExchanges")}</a>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:sizeGuide"))}>{t("footer:sizeGuide")}</a>
             <p style={s.colHead}>Customer Care</p>
             <Link to="/track-order" style={s.link}>Track Order</Link>
             <Link to="/legal/refund" style={s.link}>Returns &amp; Exchanges</Link>
             <div style={{ marginTop: 20 }}>
-              <p style={{ ...s.colHead, marginBottom: 6 }}>Call Us</p>
+              <p style={{ ...s.colHead, marginBottom: 6 }}>{t("footer:callUs")}</p>
               <a href="tel:+8801700000000" style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</a>
-              <p style={{ color: "rgba(232,217,192,0.4)", fontSize: 12, marginTop: 4 }}>Sat–Thu, 10am–8pm</p>
+              <p style={{ color: "rgba(232,217,192,0.4)", fontSize: 12, marginTop: 4 }}>{t("footer:hours")}</p>
             </div>
           </div>
         </div>
@@ -61,8 +82,16 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="footer-links">
           <span style={{ color: "rgba(232,217,192,0.3)", fontSize: 13 }}>
-            © 2026 Camellia — Cox's Bazar, Bangladesh. All rights reserved.
+            {t("footer:copyright")}
           </span>
+          {/* FIX: these used <a href="/"> which force a full page reload and
+              all pointed to the homepage regardless of label. Now real
+              client-side routes / non-broken placeholders. */}
+          <Link to="/">{t("footer:home")}</Link>
+          <Link to="/products">{t("footer:products")}</Link>
+          <Link to="/contact">{t("footer:contact")}</Link>
+          <Link to="/track-order">{t("footer:trackOrder")}</Link>
+          <a href="#" onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
           <Link to="/">Home</Link>
           <Link to="/products">Products</Link>
           <Link to="/contact">Contact</Link>
