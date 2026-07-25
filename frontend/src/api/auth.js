@@ -1,4 +1,5 @@
 import client from "./client";
+import { setAccessToken, clearAccessToken } from "./tokenStore";
 
 export const register = (data) => client.post("/auth/register", data);
 
@@ -11,18 +12,18 @@ export const login = async (identifier, password) => {
     : { username: identifier, password };
   const res = await client.post("/auth/login", payload);
   if (res.data.twoFactorRequired) return res.data;
-  localStorage.setItem("token", res.data.token);
+  setAccessToken(res.data.token);
   return res.data;
 };
 
 export const verifyTwoFactorLogin = async (tempToken, code) => {
   const res = await client.post("/auth/2fa/verify", { tempToken, code });
-  localStorage.setItem("token", res.data.token);
+  setAccessToken(res.data.token);
   return res.data;
 };
 
 export const logout = async () => {
-  localStorage.removeItem("token");
+  clearAccessToken();
   try { await client.post("/auth/logout"); } catch { /* best-effort */ }
 };
 
