@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Lock } from 'lucide-react';
+import { ShoppingCart, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
 import './Checkout.css';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
 import { localized } from '../utils/localized';
+import { formatPrice } from '../utils/formatPrice';
 import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
 import { getPricing } from '../api/settings';
 import { validateCoupon } from '../api/coupons';
@@ -125,10 +126,10 @@ const [pricing, setPricing] = useState({
       }));
       const { data } = await validateCoupon(code, subtotal, items, isGuest ? formData.email : undefined);
       setAppliedCoupon({ code: data.coupon, discount: data.discount, newTotal: data.newTotal });
-      showToast('success', data.message || 'Coupon Applied Successfully');
+      showToast('success', data.message || t('couponAppliedSuccess'));
     } catch (err) {
       setAppliedCoupon(null);
-      const msg = err.response?.data?.message || 'Could not apply coupon.';
+      const msg = err.response?.data?.message || t('couponApplyFailed');
       setCouponError(msg);
       showToast('error', msg);
     } finally {
@@ -271,11 +272,6 @@ const [pricing, setPricing] = useState({
             <h2>{t('emptyCart')}</h2>
             <p style={{ color: '#888', marginBottom: 20 }}>{t('emptyCartSub')}</p>
             <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
-            <h2>🛒 Your cart is empty</h2>
-            <p style={{ color: '#888', marginBottom: 20 }}>Add some products to your cart before checking out.</p>
-            <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>
-              Browse Products
-            </button>
           </div>
         </div>
       </div>
@@ -285,8 +281,9 @@ const [pricing, setPricing] = useState({
   return (
     <div className="checkout-page">
       {toast && (
-        <div className={`checkout-toast checkout-toast-${toast.type}`}>
-          {toast.type === 'success' ? '✓ ' : '⚠ '}{toast.message}
+        <div className={`checkout-toast checkout-toast-${toast.type}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {toast.type === 'success' ? <CheckCircle2 size={16} strokeWidth={2} /> : <AlertTriangle size={16} strokeWidth={2} />}
+          {toast.message}
         </div>
       )}
       <div className="checkout-container">
@@ -295,70 +292,19 @@ const [pricing, setPricing] = useState({
 
         {error && <div className="error-message">{error}</div>}
 
-        {showAuthPrompt ? (
-          <div className="auth-section-top">
-            <p style={{ textAlign: 'center', marginBottom: 12 }}>
-              {t('authPrompt')}
-            </p>
-            <div className="auth-row" style={{ justifyContent: 'center', gap: 12 }}>
-              <Link to="/login" state={{ from: '/checkout' }} className="auth-submit-btn">{t('login')}</Link>
-              <Link to="/register" state={{ from: '/checkout' }} className="auth-submit-btn">{t('register')}</Link>
-            </div>
-            <div className="auth-divider"><span>{t('or')}</span></div>
-            <div className="auth-guest-option">
-              <button type="button" className="guest-link" onClick={handleGuestCheckout} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <ShoppingCart size={14} /> {t('continueAsGuest')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className={`user-info-bar ${isGuest ? 'guest-mode' : ''}`}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              {!user && <ShoppingCart size={14} />} {user ? t('welcome', { name: user.name?.split(' ')[0] || 'User' }) : t('checkingOutAsGuest')}
-            </span>
-            <div>
-              {isGuest && (
-                <Link to="/login" state={{ from: '/checkout' }} className="login-link">
-                  {t('loginInstead')}
-                </Link>
-              )}
-              {user && (
-                <button className="logout-btn" onClick={async () => { await logout(); navigate('/login', { state: { from: '/checkout' } }); }}>
-                  {t('logout')}
-                </button>
-              )}
-            </div>
-        {/* ===== USER INFO BAR WITH LOGIN/REGISTER LINKS ===== */}
-        <div className={`user-info-bar ${!user ? 'guest-mode' : ''}`}>
-          <span>
-            {user ? `👋 Welcome, ${user.name?.split(' ')[0] || 'User'}!` : '🛒 You are checking out as a Guest'}
+        <div className={`user-info-bar ${isGuest ? 'guest-mode' : ''}`}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {!user && <ShoppingCart size={14} />} {user ? t('welcome', { name: user.name?.split(' ')[0] || 'User' }) : t('checkingOutAsGuest')}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* 👇 LOGIN / REGISTER LINKS FOR GUESTS */}
-            {!user && (
-              <>
-                <Link to="/login" state={{ from: '/checkout' }} className="login-link" style={{ marginRight: '8px' }}>
-                  Login
-                </Link>
-                <span style={{ color: '#ccc' }}>|</span>
-                <Link to="/register" state={{ from: '/checkout' }} className="login-link" style={{ marginLeft: '8px', marginRight: '12px' }}>
-                  Register
-                </Link>
-                <span style={{ color: '#999', fontSize: '13px', marginRight: '12px' }}>
-                  (or continue as guest)
-                </span>
-              </>
+          <div>
+            {isGuest && (
+              <Link to="/login" state={{ from: '/checkout' }} className="login-link">
+                {t('loginInstead')}
+              </Link>
             )}
-            {/* 👇 LOGOUT BUTTON FOR LOGGED-IN USERS */}
             {user && (
-              <button
-                className="logout-btn"
-                onClick={async () => {
-                  await logout();
-                  navigate('/login', { state: { from: '/checkout' } });
-                }}
-              >
-                Logout
+              <button className="logout-btn" onClick={async () => { await logout(); navigate('/login', { state: { from: '/checkout' } }); }}>
+                {t('logout')}
               </button>
             )}
           </div>
@@ -376,12 +322,11 @@ const [pricing, setPricing] = useState({
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                   required
                 />
                 <small className="field-hint">
                   {isGuest ? t('guestEmailHint') : t('accountEmailHint')}
-                  {!user ? 'We will send order confirmation to this email' : 'Your account email'}
                 </small>
               </div>
 
@@ -415,7 +360,7 @@ const [pricing, setPricing] = useState({
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleChange}
-                  placeholder="01XXXXXXXXX"
+                  placeholder={t('phonePlaceholder')}
                   required
                 />
               </div>
@@ -427,7 +372,7 @@ const [pricing, setPricing] = useState({
                   name="streetAddress"
                   value={formData.streetAddress}
                   onChange={handleChange}
-                  placeholder="House, Road, Area"
+                  placeholder={t('addressPlaceholder')}
                   required
                 />
               </div>
@@ -551,8 +496,7 @@ const [pricing, setPricing] = useState({
 
               <div className="order-items">
                 {cartItems.map((item, index) => {
-                  const productName = localized(item.product?.name, language) || getString(item.name || 'Product');
-                  const productName = getString(item.product?.name || item.name || 'Product');
+                  const productName = localized(item.product?.name, language) || getString(item.name || t('productFallback'));
                   const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
                   const productDetails = localized(item.product?.description, language) || getString(item.details || '');
@@ -564,20 +508,20 @@ const [pricing, setPricing] = useState({
                         {productDetails && <div className="order-item-details">{productDetails}</div>}
                         <div className="order-item-quantity">{t('quantity', { count: productQty })}</div>
                       </div>
-                      <div className="order-item-price">Tk {productPrice.toFixed(2)}</div>
+                      <div className="order-item-price">৳ {formatPrice(productPrice, language, 2)}</div>
                     </div>
                   );
                 })}
               </div>
 
               <div className="coupon-section">
-                <label className="coupon-label">Coupon Code</label>
+                <label className="coupon-label">{t('couponCode')}</label>
                 {!appliedCoupon ? (
                   <div className="coupon-input-row">
                     <input
                       type="text"
                       className="coupon-input"
-                      placeholder="Enter coupon code"
+                      placeholder={t('enterCouponCode')}
                       value={couponInput}
                       onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
                       disabled={couponLoading}
@@ -589,17 +533,17 @@ const [pricing, setPricing] = useState({
                       onClick={handleApplyCoupon}
                       disabled={couponLoading || !couponInput.trim()}
                     >
-                      {couponLoading ? <span className="coupon-spinner" /> : 'Apply Coupon'}
+                      {couponLoading ? <span className="coupon-spinner" /> : t('applyCoupon')}
                     </button>
                   </div>
                 ) : (
                   <div className="coupon-applied-box">
                     <div className="coupon-applied-info">
-                      <span className="coupon-applied-check">✓ Coupon Applied</span>
-                      <span className="coupon-applied-code">Coupon: {appliedCoupon.code}</span>
+                      <span className="coupon-applied-check" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckCircle2 size={14} strokeWidth={2} /> {t('couponApplied')}</span>
+                      <span className="coupon-applied-code">{t('couponLabel', { code: appliedCoupon.code })}</span>
                     </div>
                     <button type="button" className="coupon-remove-btn" onClick={handleRemoveCoupon}>
-                      Remove
+                      {t('remove')}
                     </button>
                   </div>
                 )}
@@ -609,27 +553,25 @@ const [pricing, setPricing] = useState({
               <div className="order-summary">
                 <div className="summary-row">
                   <span>{t('subtotal')}</span>
-                  <span>Tk {subtotal.toFixed(2)}</span>
+                  <span>৳ {formatPrice(subtotal, language, 2)}</span>
                 </div>
                 <div className="summary-row">
                   <span>{t('shipping')}</span>
-                  <span>{formData.deliveryCharge > 0 ? `Tk ${formData.deliveryCharge.toFixed(2)}` : t('notYetCalculated')}</span>
+                  <span>{formData.deliveryCharge > 0 ? `৳ ${formatPrice(formData.deliveryCharge, language, 2)}` : t('notYetCalculated')}</span>
                 </div>
                 <div className="summary-row">
                   <span>{t('vat')}</span>
-                  <span>Tk {vat.toFixed(2)}</span>
+                  <span>৳ {formatPrice(vat, language, 2)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="summary-row discount-row">
-                    <span>DISCOUNT ({appliedCoupon.code})</span>
-                    <span>- Tk {discount.toFixed(2)}</span>
+                    <span>{t('discountLabel', { code: appliedCoupon.code })}</span>
+                    <span>- ৳ {formatPrice(discount, language, 2)}</span>
                   </div>
                 )}
                 <div className="summary-row total">
                   <span>{t('total')}</span>
-                  <span>Tk {(subtotal + vat + formData.deliveryCharge).toFixed(2)}</span>
-                  <span>TOTAL</span>
-                  <span>Tk {Math.max(0, subtotal + vat + formData.deliveryCharge - discount).toFixed(2)}</span>
+                  <span>৳ {formatPrice(Math.max(0, subtotal + vat + formData.deliveryCharge - discount), language, 2)}</span>
                 </div>
               </div>
 
@@ -643,8 +585,6 @@ const [pricing, setPricing] = useState({
                   <span className="guest-note-small">
                     {t('guestNoteSmall')}{" "}
                     <Link to="/track-order">{t('trackOrder')}</Link>{t('noAccountNeeded')}
-                    Save your Order ID from the confirmation page — you can look up your order anytime at{' '}
-                    <Link to="/track-order">Track Order</Link>, no account needed.
                   </span>
                 </p>
               )}

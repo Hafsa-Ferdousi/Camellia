@@ -1,23 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, X } from "lucide-react";
+import { Search, X, Gem } from "lucide-react";
 import { getProducts, getCategories } from "../api/products";
 import ProductGrid from "../components/ProductGrid";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
-
-const CATEGORY_ICONS = {
-  kalira: "💛",
-  chura: "🔴",
-  bangles: "✨",
-  necklace: "📿",
-  "diamond-cut": "💎",
-  "wedding-accessories": "👑",
-  // legacy slugs
-  jhumka: "✨",
-  "wedding-sets": "👑",
-};
+import { getCategoryIcon } from "../utils/categoryIcons";
 
 export default function Products() {
   const { t } = useTranslation("products");
@@ -49,19 +38,26 @@ export default function Products() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       const params = {};
       if (selectedCat) params.category = selectedCat;
       if (search)      params.search   = search;
       if (minPrice)    params.minPrice  = minPrice;
       if (maxPrice)    params.maxPrice  = maxPrice;
 
+      // Keep the URL in sync with the typed search term so results are
+      // shareable/bookmarkable, same as the category filter already is.
+      const next = {};
+      if (selectedCat) next.category = selectedCat;
+      if (search)      next.search   = search;
+      setSearchParams(next, { replace: true });
+
       getProducts(params)
         .then(r => setProducts(r.data))
         .catch(() => { setProducts([]); setError(t("loadError")); })
         .finally(() => setLoading(false));
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [selectedCat, search, minPrice, maxPrice]);
 
   const selectCategory = useCallback((catId) => {
@@ -116,17 +112,20 @@ export default function Products() {
                 style={{ ...s.catBtn, ...(selectedCat === "" ? s.catBtnActive : {}) }}
                 onClick={() => selectCategory("")}
               >
-                💍 {t("allCollections")}
+                <Gem size={13} strokeWidth={2} /> {t("allCollections")}
               </button>
-              {categories.map(c => (
-                <button
-                  key={c._id}
-                  style={{ ...s.catBtn, ...(selectedCat === c._id ? s.catBtnActive : {}) }}
-                  onClick={() => selectCategory(c._id)}
-                >
-                  {CATEGORY_ICONS[c.slug] || "💍"} {localized(c.name, language)}
-                </button>
-              ))}
+              {categories.map(c => {
+                const Icon = getCategoryIcon(c.slug);
+                return (
+                  <button
+                    key={c._id}
+                    style={{ ...s.catBtn, ...(selectedCat === c._id ? s.catBtnActive : {}) }}
+                    onClick={() => selectCategory(c._id)}
+                  >
+                    <Icon size={13} strokeWidth={2} /> {localized(c.name, language)}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Price range */}
@@ -246,7 +245,7 @@ const s = {
     color: "var(--muted)", fontWeight: 500, marginBottom: 10,
   },
   catBtn: {
-    display: "block", width: "100%", textAlign: "left",
+    display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left",
     background: "none", border: "none", borderRadius: "var(--radius-sm)",
     padding: "8px 10px", fontSize: 13, cursor: "pointer",
     color: "var(--muted)", fontFamily: "var(--font-body)",

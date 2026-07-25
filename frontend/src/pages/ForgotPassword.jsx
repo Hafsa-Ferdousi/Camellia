@@ -67,7 +67,7 @@ export default function ForgotPassword() {
           <form onSubmit={handleIdentify}>
             <label className="form-label">
               {t("emailOrUsername")}
-              <input className="input" type="text" required value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder="your@email.com" />
+              <input className="input" type="text" required value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder={t("emailPlaceholder")} />
             </label>
             <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
               {loading ? t("lookingUp") : t("continueBtn")}
@@ -77,17 +77,17 @@ export default function ForgotPassword() {
           <form onSubmit={handleReset}>
             <label className="form-label">
               {question}
-              <input className="input" type="text" required value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Your answer" />
+              <input className="input" type="text" required value={answer} onChange={e => setAnswer(e.target.value)} placeholder={t("yourAnswerPlaceholder")} />
             </label>
             <label className="form-label">
               {t("newPassword")}
-              <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a strong password" />
+              <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder={t("createPasswordPlaceholder")} />
             </label>
             <PasswordStrengthChecklist password={password} />
 
             <label className="form-label">
               {t("confirmPassword")}
-              <PasswordField value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" />
+              <PasswordField value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t("reenterPasswordPlaceholder")} />
             </label>
             <button
               className="btn"

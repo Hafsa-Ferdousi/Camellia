@@ -20,6 +20,11 @@ const getDeliveryCharge = (settings, district) => {
   return match ? match.charge : settings.defaultDeliveryCharge;
 };
 
+// Escapes regex metacharacters in user-supplied input before it's used inside
+// a RegExp — otherwise a crafted email/name lets a caller inject arbitrary
+// regex (ReDoS or overly-broad matches) into the Mongo query.
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // ── POST /api/orders/checkout (logged-in user) ──────────────────────────────
 export const checkout = async (req, res) => {
   const { address, paymentMethod = "cod", items, couponCode } = req.body;
@@ -32,32 +37,42 @@ export const checkout = async (req, res) => {
     return res.status(400).json({ message: "Cart is empty." });
   }
 
+  const decrements = [];
+  const rollbackStock = () =>
+    Promise.all(decrements.map((d) => Product.findByIdAndUpdate(d.productId, { $inc: { totalStock: d.quantity } })));
+
   try {
     const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
-    const productsToSave = [];
     const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
       const productId = line.productId || line.product;
       if (!productId || quantity < 1) {
-        return res.status(400).json({ message: "Invalid item in cart." });
+        throw new Error("Invalid item in cart.");
       }
 
-      const product = await Product.findById(productId);
-      if (!product || !product.isActive) {
-        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      const existing = await Product.findById(productId);
+      if (!existing || !existing.isActive) {
+        throw new Error("A product in your cart is no longer available. Please refresh your cart.");
       }
-      if (product.totalStock < quantity) {
-        throw new Error(`Not enough stock for ${product.name.en}`);
+
+      // Atomic conditional decrement — the stock check and the write happen
+      // in one operation, so two concurrent checkouts can't both pass the
+      // check and oversell the last unit.
+      const product = await Product.findOneAndUpdate(
+        { _id: productId, totalStock: { $gte: quantity } },
+        { $inc: { totalStock: -quantity } },
+        { new: true }
+      );
+      if (!product) {
+        throw new Error(`Not enough stock for ${existing.name.en}`);
       }
+      decrements.push({ productId, quantity });
 
       const price = product.basePrice;
-      product.totalStock = Math.max(0, product.totalStock - quantity);
-      productsToSave.push(product);
-
       subtotal += price * quantity;
       orderItems.push({
         product: product._id,
@@ -82,8 +97,6 @@ export const checkout = async (req, res) => {
       coupon = result.coupon;
       discountAmount = result.discount;
     }
-
-    await Promise.all(productsToSave.map((p) => p.save()));
 
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
@@ -114,6 +127,7 @@ export const checkout = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
+    await rollbackStock();
     res.status(400).json({ message: error.message });
   }
 };
@@ -132,31 +146,39 @@ export const guestCheckout = async (req, res) => {
     return res.status(400).json({ message: "Cart is empty." });
   }
 
+  const decrements = [];
+  const rollbackStock = () =>
+    Promise.all(decrements.map((d) => Product.findByIdAndUpdate(d.productId, { $inc: { totalStock: d.quantity } })));
+
   try {
     const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
-    const productsToSave = [];
     const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
       if (!line.productId || quantity < 1) {
-        return res.status(400).json({ message: "Invalid item in cart." });
+        throw new Error("Invalid item in cart.");
       }
 
-      const product = await Product.findById(line.productId);
-      if (!product || !product.isActive) {
-        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      const existing = await Product.findById(line.productId);
+      if (!existing || !existing.isActive) {
+        throw new Error("A product in your cart is no longer available. Please refresh your cart.");
       }
-      if (product.totalStock < quantity) {
-        throw new Error(`Not enough stock for ${product.name.en}`);
+
+      // Atomic conditional decrement — see checkout() for why this matters.
+      const product = await Product.findOneAndUpdate(
+        { _id: line.productId, totalStock: { $gte: quantity } },
+        { $inc: { totalStock: -quantity } },
+        { new: true }
+      );
+      if (!product) {
+        throw new Error(`Not enough stock for ${existing.name.en}`);
       }
+      decrements.push({ productId: line.productId, quantity });
 
       const price = product.basePrice;
-      product.totalStock = Math.max(0, product.totalStock - quantity);
-      productsToSave.push(product);
-
       subtotal += price * quantity;
       orderItems.push({
         product: product._id,
@@ -179,8 +201,6 @@ export const guestCheckout = async (req, res) => {
       coupon = result.coupon;
       discountAmount = result.discount;
     }
-
-    await Promise.all(productsToSave.map((p) => p.save()));
 
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
@@ -211,6 +231,7 @@ export const guestCheckout = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
+    await rollbackStock();
     res.status(400).json({ message: error.message });
   }
 };
@@ -220,11 +241,17 @@ export const guestLookupOrder = async (req, res) => {
   try {
     const { orderId, email, phone, name } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required." });
+    // Email alone is never enough — it must be paired with the order ID or
+    // the checkout phone number, otherwise anyone who knows a victim's email
+    // could pull their name/address/order history.
+    if (!email || (!orderId && !phone)) {
+      return res.status(400).json({ message: "Email plus either an Order ID or phone number is required." });
     }
 
-    let query = { isGuest: true };
+    const query = {
+      isGuest: true,
+      "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
+    };
 
     // Option 1: Order ID + Email (most accurate)
     if (orderId) {
@@ -232,19 +259,13 @@ export const guestLookupOrder = async (req, res) => {
         return res.status(400).json({ message: "Invalid order ID format." });
       }
       query._id = orderId;
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
     }
     // Option 2: Email + Phone
-    else if (phone) {
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
-      query['guestInfo.phone'] = phone.trim();
-      if (name) {
-        query['guestInfo.name'] = new RegExp(name.trim(), 'i');
-      }
-    }
-    // Option 3: Email only (returns all orders for that email)
     else {
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
+      query["guestInfo.phone"] = phone.trim();
+      if (name) {
+        query["guestInfo.name"] = new RegExp(escapeRegex(name.trim()), "i");
+      }
     }
 
     const orders = await Order.find(query)

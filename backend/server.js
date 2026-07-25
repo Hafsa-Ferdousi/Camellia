@@ -20,6 +20,7 @@ import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import { sanitizeInputs } from "./middleware/sanitize.js";
 
 dotenv.config();
 await connectDB();
@@ -35,6 +36,7 @@ app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(sanitizeInputs);
 app.use(apiLimiter);
 
 const frontendPublic = path.join(__dirname, "../frontend/public");
@@ -49,22 +51,11 @@ app.use("/api/orders",        orderRoutes);
 app.use("/api/admin",         adminRoutes);
 app.use("/api/admin/coupons", adminCouponRouter);
 app.use("/api/settings",      settingsRoutes);
+app.use("/api/upload",        uploadRoutes);
 app.use("/api/coupons",       couponRoutes);
 app.use("/api/contact",       contactRoutes);
 app.use("/api/wishlist",      wishlistRoutes);
-
-// ✅ Routes – combined from both branches
-app.use("/api/auth",       authRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/products",   productRoutes);
-app.use("/api/cart",       cartRoutes);
-app.use("/api/orders",     orderRoutes);
-app.use("/api/admin",      adminRoutes);
-app.use("/api/settings",   settingsRoutes);
-app.use("/api/upload",     uploadRoutes);
-app.use("/api/coupons",    couponRoutes);          // Coupon system
-app.use("/api/admin/coupons", adminCouponRouter);  // Admin coupon routes
-app.use("/api/reviews",    reviewRoutes);          // Reviews system
+app.use("/api/reviews",       reviewRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

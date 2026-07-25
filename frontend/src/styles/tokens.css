@@ -331,9 +331,88 @@ img { max-width: 100%; display: block; }
 .navbar-cart:hover { opacity: 1; color: var(--gold-light); }
 .navbar-burger { display: none; background: none; border: none; color: var(--gold-light); font-size: 24px; cursor: pointer; }
 
-@media (max-width: 1280px) {
-  .navbar-burger { display: block; margin-left: auto; }
-  .navbar-links, .navbar-actions, .navbar-search-form { display: none; }
+/* Account button + its dropdown — the standard "Account" menu pattern used
+   by commercial sites (Amazon/Daraz-style): one compact button in the top
+   bar, a small panel anchored directly under it, no full-page overlay. */
+.navbar-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  padding: 6px 12px;
+  border: 1px solid rgba(212,160,23,0.4);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--nav-text);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.navbar-account-btn:hover { border-color: var(--gold-light); color: var(--gold-light); }
+.navbar-account-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--nav-bg);
+  border: 1px solid rgba(212,160,23,0.3);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+  z-index: 200;
+}
+.navbar-account-dropdown-divider { height: 1px; background: rgba(212,160,23,0.2); margin: 4px 6px; }
+.navbar-account-dropdown a,
+.navbar-account-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--nav-text);
+  font-size: 13px;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.navbar-account-dropdown a:hover,
+.navbar-account-dropdown button:hover {
+  background: rgba(212,160,23,0.14);
+  color: var(--gold-light);
+}
+
+/* Base display for the header search form — kept as a real CSS rule
+   (not inline) so the mobile media query below can actually override it;
+   an inline `display` style would always win over a stylesheet rule. */
+.navbar-search-form { display: flex; }
+
+/* Only the primary nav links and search collapse into the hamburger drawer
+   — the cart icon and account button stay visible at every width. Once the
+   nav links are gone there's no room (or need) for a bordered "Asrafun"
+   pill next to the cart, so the account button drops to an icon-only
+   control here — the same compact icon-row pattern commercial sites
+   (Amazon, Daraz, Zara) use once their header collapses. */
+@media (max-width: 1024px) {
+  /* No margin-left here: .navbar-actions already carries margin-left:auto,
+     which pushes itself *and* every sibling after it (the burger) to the
+     right edge as one cluster. A second auto margin on the burger would
+     claim its own share of the leftover space instead, prying it away
+     from the cart/account icons with an extra gap. */
+  .navbar-burger { display: block; }
+  .navbar-links, .navbar-search-wrapper { display: none; }
+  .navbar-account-btn {
+    border: none;
+    padding: 6px;
+    gap: 0;
+  }
+  .navbar-account-label { display: none; }
 }
 
 /* ── Hero ── */
@@ -861,6 +940,7 @@ img { max-width: 100%; display: block; }
   opacity: 0.85;
 }
 .mobile-nav-link:hover { opacity: 1; color: var(--gold-light); }
+.mobile-nav-link.navbar-link-btn { width: 100%; text-align: left; }
 .mobile-nav-btn {
   margin-top: 8px;
   padding: 10px 20px;
@@ -881,6 +961,9 @@ img { max-width: 100%; display: block; }
   background: rgba(255,255,255,0.08);
   margin: 8px 0;
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
 
 /* ── Product card hover overlay — pure CSS ── */
 .product-overlay {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Package, Gem, Check, Phone } from "lucide-react";
+import { Package, Gem, Check, Phone, Clock, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
+import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
 
 // Progress steps for order tracking
@@ -47,8 +48,8 @@ export default function OrderHistory() {
   if (authLoading || loading) {
     return (
       <div style={{ padding: "60px 0", textAlign: "center", color: "var(--muted)" }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-        {t("loadingOrders")}
+        <Loader2 size={32} strokeWidth={1.5} className="spin" style={{ marginBottom: 12 }} />
+        <div>{t("loadingOrders")}</div>
       </div>
     );
   }
@@ -58,7 +59,6 @@ export default function OrderHistory() {
 
       {/* Header */}
       <span className="eyebrow">{t("yourAccount")}</span>
-      <span className="eyebrow">Your Account</span>
       <h1 style={{
         fontFamily: "var(--font-display)",
         fontSize: 32,
@@ -108,7 +108,7 @@ export default function OrderHistory() {
           <div style={{ width: 1, background: "var(--border)" }} />
           <div style={{ flex: 1, minWidth: 100, textAlign: "center" }}>
             <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "var(--font-display)", color: "var(--gold-text)" }}>
-              ৳ {orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}
+              ৳ {formatPrice(orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0), language)}
             </div>
             <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               {t("totalSpent")}
@@ -238,7 +238,7 @@ export default function OrderHistory() {
                             {i === stepIndex && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", display: "block" }} />}
                           </div>
                           <div style={{ fontSize: 9, color: i <= stepIndex ? "var(--charcoal)" : "var(--muted)", textTransform: "capitalize" }}>
-                            {step}
+                            {STATUS_STYLE[step].label}
                           </div>
                         </div>
                       ))}
@@ -287,7 +287,7 @@ export default function OrderHistory() {
                             </div>
                           </div>
                           <div style={{ fontWeight: 600, color: "var(--gold-text)" }}>
-                            ৳ {(item.price * item.quantity).toLocaleString()}
+                            ৳ {formatPrice(item.price * item.quantity, language)}
                           </div>
                         </div>
                       ))}
@@ -313,12 +313,12 @@ export default function OrderHistory() {
                     }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
                         <span>{t("subtotal")}</span>
-                        <span>৳ {order.subtotal?.toLocaleString()}</span>
+                        <span>৳ {formatPrice(order.subtotal, language)}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}>
                         <span>{t("delivery")}</span>
                         <span style={{ color: order.deliveryCharge === 0 ? "#065F46" : "inherit" }}>
-                          {order.deliveryCharge === 0 ? t("free") : `৳ ${order.deliveryCharge}`}
+                          {order.deliveryCharge === 0 ? t("free") : `৳ ${formatPrice(order.deliveryCharge, language)}`}
                         </span>
                       </div>
                       <div style={{
@@ -328,7 +328,7 @@ export default function OrderHistory() {
                       }}>
                         <span>{t("total")}</span>
                         <span style={{ color: "var(--gold-text)", fontFamily: "var(--font-display)" }}>
-                          ৳ {order.totalAmount?.toLocaleString()}
+                          ৳ {formatPrice(order.totalAmount, language)}
                         </span>
                       </div>
                     </div>
@@ -346,12 +346,8 @@ export default function OrderHistory() {
                     {" · "}{order.payment?.status}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 13, color: "var(--muted)", textTransform: "capitalize" }}>
-                      {order.payment?.method === "cod" ? "Cash on Delivery" : order.payment?.method}
-                    </span>
-
-                    {/* ✅ NEW PAYMENT STATUS BADGE */}
                     <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
                       padding: "2px 12px",
                       borderRadius: 12,
                       fontSize: 11,
@@ -360,7 +356,8 @@ export default function OrderHistory() {
                       color: isPaid ? "#2E7D32" : "#E65100",
                       textTransform: "capitalize",
                     }}>
-                      {isPaid ? "✅ Paid" : "⏳ Unpaid"}
+                      {isPaid ? <Check size={12} strokeWidth={3} /> : <Clock size={12} strokeWidth={2.5} />}
+                      {isPaid ? t("paid") : t("unpaid")}
                     </span>
                   </div>
 
@@ -368,7 +365,7 @@ export default function OrderHistory() {
                     fontFamily: "var(--font-display)", fontSize: 18,
                     fontWeight: 700, color: "var(--gold-text)",
                   }}>
-                    ৳ {order.totalAmount?.toLocaleString()}
+                    ৳ {formatPrice(order.totalAmount, language)}
                   </span>
                 </div>
               </div>

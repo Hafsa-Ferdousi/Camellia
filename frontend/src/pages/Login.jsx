@@ -81,7 +81,7 @@ export default function Login() {
                 inputMode="numeric"
                 autoFocus
                 maxLength={6}
-                placeholder="123456"
+                placeholder={t("codePlaceholder")}
                 value={code}
                 onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
                 style={{ letterSpacing: "0.3em", fontSize: 18, textAlign: "center" }}
@@ -128,11 +128,11 @@ export default function Login() {
         <form onSubmit={handleSubmit}>
           <label className="form-label">
             {t("emailOrUsername")}
-            <input className="input" type="text" placeholder="your@email.com" value={identifier} onChange={e => setIdentifier(e.target.value)} required />
+            <input className="input" type="text" placeholder={t("emailPlaceholder")} value={identifier} onChange={e => setIdentifier(e.target.value)} required />
           </label>
           <label className="form-label">
             {t("password")}
-            <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" />
+            <PasswordField value={password} onChange={e => setPassword(e.target.value)} placeholder={t("passwordPlaceholder")} />
           </label>
           <p style={{ textAlign: "right", marginTop: -8, marginBottom: 16 }}>
             <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline" }}>{t("forgotPassword")}</Link>

@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 export default function Hero({ onSearch }) {
-  const { t } = useTranslation("home");
+  const { t } = useTranslation(["home", "common"]);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
@@ -17,8 +17,8 @@ export default function Hero({ onSearch }) {
         <span className="hero-eyebrow">{t("heroEyebrow")}</span>
 
         <h1>
-          Camellia<span className="hero-accent"> — </span>Jewelry<br />
-          <span style={{ fontWeight: 400 }}>&amp; Wedding Accessories</span>
+          {t("common:brand")}<span className="hero-accent"> — </span>{t("heroTitleMain")}<br />
+          <span style={{ fontWeight: 400 }}>{t("heroTitleSub")}</span>
         </h1>
 
         <div className="hero-ornament">✦</div>

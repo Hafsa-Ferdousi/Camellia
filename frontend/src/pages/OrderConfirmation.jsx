@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Check, Printer, Download, Package } from 'lucide-react';
 import './OrderConfirmation.css';
 import Invoice from '../components/Invoice';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
+  const { language } = useLanguage();
   const { state } = useLocation();
   const order = state?.order;
   const receiptRef = useRef(null);
@@ -40,11 +42,12 @@ export default function OrderConfirmation() {
     );
   }
 
-  const placedDate = new Date(order.createdAt || Date.now()).toLocaleDateString("en-GB", {
+  const dateLocale = language === "bn" ? "bn-BD" : "en-GB";
+  const placedDate = new Date(order.createdAt || Date.now()).toLocaleDateString(dateLocale, {
     day: "numeric", month: "long", year: "numeric",
   });
 
-  const placedTime = new Date(order.createdAt || Date.now()).toLocaleTimeString("en-GB", {
+  const placedTime = new Date(order.createdAt || Date.now()).toLocaleTimeString(dateLocale, {
     hour: "2-digit", minute: "2-digit"
   });
 
@@ -53,41 +56,41 @@ export default function OrderConfirmation() {
   };
 
   const handleDownloadReceipt = () => {
-    const invoiceNumberDisplay = order.invoiceNumber || order._id || 'N/A';
+    const invoiceNumberDisplay = order.invoiceNumber || order._id || t('notAvailable');
     const receiptText = `
 ═══════════════════════════════════════
-          CAMELLIA - RECEIPT
+          ${t('receiptTitle')}
 ═══════════════════════════════════════
 
-Invoice #: ${invoiceNumberDisplay}
-Date: ${placedDate}
-Time: ${placedTime}
-Customer: ${customerName}${customerEmail ? ` (${customerEmail})` : ''}
+${t('invoiceHash')}: ${invoiceNumberDisplay}
+${t('dateColon')} ${placedDate}
+${t('timeColon')} ${placedTime}
+${t('customerColon')} ${customerName}${customerEmail ? ` (${customerEmail})` : ''}
 
 ───────────────────────────────────────
-ITEMS:
-${order.items?.map((item, i) => 
-  `  ${i+1}. ${item.nameSnapshot || 'Product'} × ${item.quantity || 1}  =  ৳${(item.price * (item.quantity || 1)).toFixed(2)}`
-).join('\n') || '  No items'}
+${t('itemsColon')}
+${order.items?.map((item, i) =>
+  `  ${i+1}. ${item.nameSnapshot || t('productFallback')} × ${item.quantity || 1}  =  ৳${(item.price * (item.quantity || 1)).toFixed(2)}`
+).join('\n') || `  ${t('noItemsLabel')}`}
 
 ───────────────────────────────────────
-Subtotal:     ৳${(order.subtotal || 0).toFixed(2)}
-VAT (10%):    ৳${(order.vat || 0).toFixed(2)}
-Delivery:     ৳${(order.deliveryCharge || 0).toFixed(2)}
+${t('subtotal')}:     ৳${(order.subtotal || 0).toFixed(2)}
+${t('vat')}:    ৳${(order.vat || 0).toFixed(2)}
+${t('deliveryCharge')}:     ৳${(order.deliveryCharge || 0).toFixed(2)}
 ───────────────────────────────────────
-TOTAL:        ৳${(order.totalAmount || order.total || 0).toFixed(2)}
+${t('grandTotal')}:        ৳${(order.totalAmount || order.total || 0).toFixed(2)}
 ───────────────────────────────────────
 
-Payment: ${paymentLabel}
+${t('paymentColon')} ${paymentLabel}
 
-Delivery Address:
-${order.address?.streetAddress || order.address?.addressLine || 'N/A'}
-${order.address?.district ? order.address.district + ', ' : ''}${order.address?.city || 'N/A'}
-Phone: ${order.address?.phone || 'N/A'}
+${t('deliveryAddressColon')}
+${order.address?.streetAddress || order.address?.addressLine || t('notAvailable')}
+${order.address?.district ? order.address.district + ', ' : ''}${order.address?.city || t('notAvailable')}
+${t('phone', { phone: order.address?.phone || t('notAvailable') })}
 
 ───────────────────────────────────────
-Thank you for shopping at Camellia!
-    est. 2019 · Cox's Bazar, Bangladesh
+${t('thankYouShoppingCamellia')}
+    ${t('brandTagline')}
 ═══════════════════════════════════════
     `;
 
@@ -110,8 +113,8 @@ Thank you for shopping at Camellia!
           <div className="order-badge">
             <span>{t('orderHash')}</span>
             <strong>{order._id?.slice(-8).toUpperCase() || t('notAvailable')}</strong>
-            <span>Invoice #</span>
-            <strong>{order.invoiceNumber || order._id?.slice(-8).toUpperCase() || 'N/A'}</strong>
+            <span>{t('invoiceHash')}</span>
+            <strong>{order.invoiceNumber || order._id?.slice(-8).toUpperCase() || t('notAvailable')}</strong>
           </div>
           <p className="order-date">
             {t('placedOn', { date: placedDate, time: placedTime })}
@@ -133,7 +136,7 @@ Thank you for shopping at Camellia!
               <tbody>
                 {order.items?.map((item, index) => (
                   <tr key={index}>
-                    <td>{item.nameSnapshot || 'Product'}</td>
+                    <td>{item.nameSnapshot || t('productFallback')}</td>
                     <td className="text-center">{item.quantity || 1}</td>
                     <td className="text-right">৳{(item.price || 0).toFixed(2)}</td>
                     <td className="text-right">৳{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
@@ -203,11 +206,9 @@ Thank you for shopping at Camellia!
         </div>
 
         <div className="confirmation-actions">
+          <Invoice order={order} />
           <button onClick={handlePrint} className="btn btn-print" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Printer size={15} /> {t('printReceipt')}
-          <Invoice order={order} />
-          <button onClick={handlePrint} className="btn btn-print">
-            🖨️ Print Receipt
           </button>
           <button onClick={handleDownloadReceipt} className="btn btn-download" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Download size={15} /> {t('downloadReceipt')}

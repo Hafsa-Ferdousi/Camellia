@@ -1,6 +1,7 @@
 // frontend/src/components/Invoice.jsx
 import React, { useRef } from 'react';
 import html2pdf from 'html2pdf.js';
+import { Download } from 'lucide-react';
 
 const Invoice = ({ order }) => {
   const invoiceRef = useRef();
@@ -19,8 +20,8 @@ const Invoice = ({ order }) => {
 
   return (
     <div>
-      <button onClick={downloadPDF} className="btn btn-gold" style={{ marginRight: '10px' }}>
-        ⬇️ Download PDF Invoice
+      <button onClick={downloadPDF} className="btn btn-gold" style={{ marginRight: '10px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <Download size={15} strokeWidth={2} /> Download PDF Invoice
       </button>
 
       {/* Hidden Invoice Design (only visible when generating PDF) */}

@@ -1,5 +1,7 @@
 {
   "heroEyebrow": "✦ Est. 2019 · Cox's Bazar, Bangladesh ✦",
+  "heroTitleMain": "Jewelry",
+  "heroTitleSub": "& Wedding Accessories",
   "heroSub": "Kalira · Chura · Diamond Cut · Wedding Sets",
   "shopNow": "Shop Now",
   "viewCategories": "View Categories",
@@ -8,6 +10,7 @@
   "trustBridal": "✦ Bridal Specialists",
   "trustBrides": "✦ 500+ Happy Brides",
   "browseByCollection": "Browse by Collection",
+  "browseCategory": "Browse {{name}}",
   "ourCollections": "Our Jewellery Collections",
   "trending": "✦ Trending This Week",
   "featuredPieces": "Featured Pieces",

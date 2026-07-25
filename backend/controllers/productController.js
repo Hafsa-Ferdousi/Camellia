@@ -1,6 +1,22 @@
 // backend/controllers/productController.js
 import Product from "../models/Product.js";
 
+// Only these fields may be written via the admin product form — prevents
+// arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
+// straight from req.body.
+const ALLOWED_PRODUCT_FIELDS = [
+  "name", "description", "category", "basePrice", "images",
+  "totalStock", "isFeatured", "isActive",
+];
+
+const pickProductFields = (body) => {
+  const payload = {};
+  for (const key of ALLOWED_PRODUCT_FIELDS) {
+    if (body[key] !== undefined) payload[key] = body[key];
+  }
+  return payload;
+};
+
 // ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
 export const getProducts = async (req, res) => {
   try {
@@ -62,7 +78,7 @@ export const getProductById = async (req, res) => {
 // ── POST /api/products (admin only) ──────────────────────────────────────────
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = await Product.create(pickProductFields(req.body));
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -72,11 +88,15 @@ export const createProduct = async (req, res) => {
 // ── PUT /api/products/:id (admin only) ──────────────────────────────────────
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      pickProductFields(req.body),
+      { new: true, runValidators: true }
+    );
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
