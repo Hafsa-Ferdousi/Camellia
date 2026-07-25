@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react"; // 👈 Added useRef, useEffect
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, ShoppingCart, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, Gem } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
+import { formatPrice } from "../utils/formatPrice";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -24,11 +25,22 @@ export default function Navbar() {
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef(null);
 
+  // Account menu — one icon button that opens a small dropdown anchored
+  // under it (Language / My Orders / Wishlist / Admin / Logout, or
+  // Login / Register), the same pattern commercial sites use for
+  // "Account" in the top bar rather than a full sidebar/drawer.
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef(null);
+  const closeAccount = () => setAccountOpen(false);
+
   // 👇 NEW: Click outside closes dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setShowSuggestions(false);
+      }
+      if (accountRef.current && !accountRef.current.contains(event.target)) {
+        setAccountOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -68,7 +80,7 @@ export default function Navbar() {
   };
 
   const handleSelectSuggestion = (product) => {
-    const name = product.name?.en || product.name?.bn || "Product";
+    const name = (language === "bn" ? product.name?.bn : product.name?.en) || t("common:productFallback");
     setQ(name);
     setShowSuggestions(false);
     navigate(`/products/${product._id}`);
@@ -121,28 +133,7 @@ export default function Navbar() {
             {navLink("/about", t("nav:about"))}
             {navLink("/contact", t("nav:contact"))}
           </nav>
-          <form
-            className="navbar-search-form"
-            onSubmit={e => {
-              e.preventDefault();
-              if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
-            }}
-            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px", flex: "1 1 180px", minWidth: 0, maxWidth: 260, overflow: "hidden" }}
-          >
-            <input
-              type="text"
-              placeholder={t("common:search")}
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              style={{ flex: "1 1 auto", minWidth: 0, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 13, padding: "6px 4px" }}
-            />
-            <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", display: "inline-flex", alignItems: "center", padding: "5px 8px", cursor: "pointer", flexShrink: 0 }}>
-              <Search size={14} strokeWidth={2.5} />
-            </button>
-          </form>
-
-          {/* 🔍 SEARCH BAR – ONLY WRAPPER AND DROPDOWN ADDED */}
-          <div ref={wrapperRef} style={{ flex: "0 1 220px", position: "relative" }}>
+          <div ref={wrapperRef} className="navbar-search-wrapper" style={{ flex: "0 1 220px", position: "relative" }}>
             <form
               className="navbar-search-form"
               onSubmit={e => {
@@ -153,18 +144,18 @@ export default function Navbar() {
                   close();
                 }
               }}
-              style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px" }}
+              style={{ alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px" }}
             >
               <input
                 type="text"
-                placeholder="Search products…"
+                placeholder={t("common:search")}
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 onFocus={() => q.trim().length >= 1 && setShowSuggestions(true)}
                 style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 13, padding: "6px 4px" }}
               />
-              <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", fontSize: 11, fontWeight: 600, padding: "5px 12px", cursor: "pointer" }}>
-                🔍
+              <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", display: "inline-flex", alignItems: "center", padding: "5px 8px", cursor: "pointer", flexShrink: 0 }}>
+                <Search size={14} strokeWidth={2.5} />
               </button>
             </form>
 
@@ -184,10 +175,10 @@ export default function Navbar() {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}>
                 {loading ? (
-                  <div style={{ padding: "12px", textAlign: "center", color: "#888" }}>Loading…</div>
+                  <div style={{ padding: "12px", textAlign: "center", color: "#888" }}>{t("common:loading")}</div>
                 ) : (
                   suggestions.map((product) => {
-                    const name = product.name?.en || product.name?.bn || "Product";
+                    const name = (language === "bn" ? product.name?.bn : product.name?.en) || t("common:productFallback");
                     const image = product.images?.[0];
                     return (
                       <div
@@ -208,12 +199,12 @@ export default function Navbar() {
                         {image ? (
                           <img src={image} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4 }} />
                         ) : (
-                          <span style={{ fontSize: 20 }}>💍</span>
+                          <span style={{ color: "#c9a84c", display: "inline-flex" }}><Gem size={20} strokeWidth={1.5} /></span>
                         )}
                         <div>
                           <div style={{ fontWeight: 500, fontSize: 14 }}>{name}</div>
                           <div style={{ fontSize: 12, color: "#c9a84c" }}>
-                            ৳ {product.basePrice?.toLocaleString()}
+                            ৳ {formatPrice(product.basePrice, language)}
                           </div>
                         </div>
                       </div>
@@ -225,33 +216,6 @@ export default function Navbar() {
           </div>
 
           <div className="navbar-actions">
-            <button
-              type="button"
-              className="navbar-link navbar-link-btn"
-              onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-              style={{ fontSize: 12 }}
-              aria-label="Toggle language"
-            >
-              {language === "en" ? "বাং" : "EN"}
-            </button>
-            {user ? (
-              <>
-                {user.role === "admin" && <Link to="/admin" className="navbar-btn-login" onClick={close}>{t("nav:admin")}</Link>}
-                <Link to="/orders" className="navbar-link" onClick={close}>{t("nav:myOrders")}</Link>
-                {user.role === "admin" && <Link to="/admin" className="navbar-btn-login" onClick={close}>Admin</Link>}
-                <Link to="/orders" className="navbar-link" onClick={close}>My Orders</Link>
-                <Link to="/wishlist" className="navbar-link" onClick={close}>Wishlist 🤍</Link>
-                <span style={{ color: "rgba(232,217,192,0.5)", fontSize: 12 }}>
-                  {t("nav:greeting", { name: user.role === "admin" ? "Admin" : (user.name?.split(" ")[0] || user.username) })}
-                </span>
-                <button className="navbar-btn-login" onClick={handleLogout}>{t("nav:logout")}</button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="navbar-btn-login" onClick={close}>{t("nav:login")}</Link>
-                <Link to="/register" className="navbar-btn-signin" onClick={close}>{t("nav:register")}</Link>
-              </>
-            )}
             <Link to="/cart" className="navbar-cart" onClick={close} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
               <ShoppingCart size={16} />
               {count > 0 ? (
@@ -266,6 +230,47 @@ export default function Navbar() {
                 <span>{t("common:cart")}</span>
               )}
             </Link>
+            <div ref={accountRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="navbar-account-btn"
+                onClick={() => setAccountOpen(o => !o)}
+                aria-expanded={accountOpen}
+                aria-label={t("nav:account")}
+              >
+                <User size={15} />
+                <span className="navbar-account-label">{user ? (user.role === "admin" ? t("nav:admin") : (user.name?.split(" ")[0] || user.username)) : t("nav:account")}</span>
+              </button>
+              {accountOpen && (
+                <div className="navbar-account-dropdown">
+                  <button
+                    type="button"
+                    onClick={() => { setLanguage(language === "en" ? "bn" : "en"); }}
+                  >
+                    {t("nav:language")}: {language === "en" ? "বাংলা" : "English"}
+                  </button>
+                  <div className="navbar-account-dropdown-divider" />
+                  {user ? (
+                    <>
+                      {user.role === "admin" ? (
+                        <Link to="/admin" onClick={() => { closeAccount(); close(); }}>{t("nav:adminPanel")}</Link>
+                      ) : (
+                        <>
+                          <Link to="/orders" onClick={() => { closeAccount(); close(); }}>{t("nav:myOrders")}</Link>
+                          <Link to="/wishlist" onClick={() => { closeAccount(); close(); }}>{t("nav:wishlist")}</Link>
+                        </>
+                      )}
+                      <button type="button" onClick={() => { closeAccount(); handleLogout(); }}>{t("nav:logout")}</button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={() => { closeAccount(); close(); }}>{t("nav:login")}</Link>
+                      <Link to="/register" onClick={() => { closeAccount(); close(); }}>{t("nav:register")}</Link>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <button className="navbar-burger" onClick={() => setOpen(o => !o)} aria-label={t("nav:menu")}>
@@ -302,33 +307,6 @@ export default function Navbar() {
           </button>
           <Link to="/about" className="mobile-nav-link" onClick={close}>{t("nav:about")}</Link>
           <Link to="/contact" className="mobile-nav-link" onClick={close}>{t("nav:contact")}</Link>
-          <button
-            type="button"
-            className="mobile-nav-link navbar-link-btn"
-            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-          >
-            {language === "en" ? "বাংলা" : "English"}
-          </button>
-          <div className="mobile-nav-divider" />
-          {user ? (
-            <>
-              <Link to="/orders" className="mobile-nav-link" onClick={close}>{t("nav:myOrders")}</Link>
-              {user.role === "admin" && <Link to="/admin" className="mobile-nav-link" onClick={close}>{t("nav:adminPanel")}</Link>}
-              <button className="mobile-nav-btn" onClick={handleLogout}>{t("nav:logout")}</button>
-              <Link to="/orders" className="mobile-nav-link" onClick={close}>My Orders</Link>
-              <Link to="/wishlist" className="mobile-nav-link" onClick={close}>Wishlist 🤍</Link>
-              {user.role === "admin" && <Link to="/admin" className="mobile-nav-link" onClick={close}>Admin Panel</Link>}
-              <button className="mobile-nav-btn" onClick={handleLogout}>Logout</button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="mobile-nav-link" onClick={close}>{t("nav:login")}</Link>
-              <Link to="/register" className="mobile-nav-btn" onClick={close}>{t("nav:register")}</Link>
-            </>
-          )}
-          <Link to="/cart" className="mobile-nav-link" onClick={close} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <ShoppingCart size={16} /> {t("common:cart")} {count > 0 && `(${count})`}
-          </Link>
         </div>
       )}
     </>

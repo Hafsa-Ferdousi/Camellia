@@ -40,8 +40,15 @@ export default function Footer() {
           {/* Shop */}
           <div>
             <p style={s.colHead}>{t("footer:shop")}</p>
-            {["Kalira", "Chura", "Jhumka", "Necklace Sets", "Diamond Cut", "Wedding Sets"].map(c => (
-              <Link key={c} to={`/products?search=${encodeURIComponent(c)}`} style={s.link}>{c}</Link>
+            {[
+              { en: "Kalira", key: "categoryKalira" },
+              { en: "Chura", key: "categoryChura" },
+              { en: "Jhumka", key: "categoryJhumka" },
+              { en: "Necklace Sets", key: "categoryNecklaceSets" },
+              { en: "Diamond Cut", key: "categoryDiamondCut" },
+              { en: "Wedding Sets", key: "categoryWeddingSets" },
+            ].map(c => (
+              <Link key={c.en} to={`/products?search=${encodeURIComponent(c.en)}`} style={s.link}>{t(`footer:${c.key}`)}</Link>
             ))}
           </div>
 
@@ -51,25 +58,16 @@ export default function Footer() {
             <Link to="/about" style={s.link}>{t("footer:aboutUs")}</Link>
             <Link to="/contact" style={s.link}>{t("footer:contact")}</Link>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:faqs"))}>{t("footer:faqs")}</a>
-            <a href="#" style={s.link} onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
-            <a href="#" style={s.link} onClick={ComingSoon(t("footer:termsOfService"))}>{t("footer:termsOfService")}</a>
-            <p style={s.colHead}>Information</p>
-            <Link to="/about" style={s.link}>About Us</Link>
-            <Link to="/contact" style={s.link}>Contact</Link>
-            <Link to="/legal/terms" style={s.link}>Terms of Service</Link>
-            <Link to="/legal/privacy" style={s.link}>Privacy Policy</Link>
-            <Link to="/legal/refund" style={s.link}>Returns &amp; Exchanges</Link>
+            <Link to="/legal/privacy" style={s.link}>{t("footer:privacyPolicy")}</Link>
+            <Link to="/legal/terms" style={s.link}>{t("footer:termsOfService")}</Link>
           </div>
 
           {/* Customer Care */}
           <div>
             <p style={s.colHead}>{t("footer:customerCare")}</p>
             <Link to="/track-order" style={s.link}>{t("footer:trackOrder")}</Link>
-            <a href="#" style={s.link} onClick={ComingSoon(t("footer:returnsExchanges"))}>{t("footer:returnsExchanges")}</a>
+            <Link to="/legal/refund" style={s.link}>{t("footer:returnsExchanges")}</Link>
             <a href="#" style={s.link} onClick={ComingSoon(t("footer:sizeGuide"))}>{t("footer:sizeGuide")}</a>
-            <p style={s.colHead}>Customer Care</p>
-            <Link to="/track-order" style={s.link}>Track Order</Link>
-            <Link to="/legal/refund" style={s.link}>Returns &amp; Exchanges</Link>
             <div style={{ marginTop: 20 }}>
               <p style={{ ...s.colHead, marginBottom: 6 }}>{t("footer:callUs")}</p>
               <a href="tel:+8801700000000" style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</a>
@@ -91,12 +89,7 @@ export default function Footer() {
           <Link to="/products">{t("footer:products")}</Link>
           <Link to="/contact">{t("footer:contact")}</Link>
           <Link to="/track-order">{t("footer:trackOrder")}</Link>
-          <a href="#" onClick={ComingSoon(t("footer:privacyPolicy"))}>{t("footer:privacyPolicy")}</a>
-          <Link to="/">Home</Link>
-          <Link to="/products">Products</Link>
-          <Link to="/contact">Contact</Link>
-          <Link to="/track-order">Track Order</Link>
-          <Link to="/legal/privacy">Privacy Policy</Link>
+          <Link to="/legal/privacy">{t("footer:privacyPolicy")}</Link>
         </div>
       </div>
     </footer>

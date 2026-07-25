@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 export default function PasswordField({
   value,
@@ -10,6 +11,7 @@ export default function PasswordField({
   autoFocus = false,
 }) {
   const [visible, setVisible] = useState(false);
+  const { t } = useTranslation("auth");
 
   return (
     <div style={{ position: "relative" }}>
@@ -32,7 +34,7 @@ export default function PasswordField({
           position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
           background: "none", border: "none", cursor: "pointer", display: "inline-flex", color: "var(--muted)",
         }}
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? t("hidePassword") : t("showPassword")}
         tabIndex={-1}
       >
         {visible ? <EyeOff size={16} /> : <Eye size={16} />}
