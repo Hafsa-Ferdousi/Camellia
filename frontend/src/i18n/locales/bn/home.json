@@ -1,5 +1,7 @@
 {
   "heroEyebrow": "✦ প্রতিষ্ঠিত ২০১৯ · কক্সবাজার, বাংলাদেশ ✦",
+  "heroTitleMain": "জুয়েলারি",
+  "heroTitleSub": "ও বিয়ের আনুষাঙ্গিক",
   "heroSub": "কালিরা · চুড়া · ডায়মন্ড কাট · ওয়েডিং সেট",
   "shopNow": "এখনই কিনুন",
   "viewCategories": "ক্যাটাগরি দেখুন",
@@ -8,6 +10,7 @@
   "trustBridal": "✦ বিয়ের গহনা বিশেষজ্ঞ",
   "trustBrides": "✦ ৫০০+ সন্তুষ্ট কনে",
   "browseByCollection": "কালেকশন অনুযায়ী দেখুন",
+  "browseCategory": "{{name}} দেখুন",
   "ourCollections": "আমাদের জুয়েলারি কালেকশন",
   "trending": "✦ এই সপ্তাহে জনপ্রিয়",
   "featuredPieces": "বিশেষ সংগ্রহ",

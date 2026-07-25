@@ -7,10 +7,13 @@
   "admin": "Admin",
   "adminPanel": "Admin Panel",
   "myOrders": "My Orders",
+  "wishlist": "Wishlist",
   "login": "Login",
   "register": "Register",
   "logout": "Logout",
   "greeting": "Hi, {{name}}",
   "trackOrder": "Track Order",
-  "menu": "Menu"
+  "menu": "Menu",
+  "account": "Account",
+  "language": "Language"
 }

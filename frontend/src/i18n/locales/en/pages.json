@@ -15,10 +15,15 @@
   "contactIntro": "Have a question about an order, a custom piece, or just want to say hello? Reach out any way that's convenient — we usually reply within a few hours.",
   "reachUsDirectly": "Reach Us Directly",
   "sendMessage": "Send a Message",
-  "emailOpened": "Opening your email app with your message ready to send…",
+  "emailOpened": "Your message has been sent successfully! We will get back to you soon.",
   "yourName": "Your Name *",
   "emailAddress": "Email Address *",
   "message": "Message *",
   "messagePlaceholder": "How can we help?",
-  "sendMessageBtn": "Send Message"
+  "sendMessageBtn": "Send Message",
+  "sending": "Sending...",
+  "sendFailed": "Failed to send message. Please try again.",
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "fullNamePlaceholder": "Your Full Name",
+  "emailPlaceholder": "your@email.com"
 }
