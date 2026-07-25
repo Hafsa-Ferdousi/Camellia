@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-  nameSnapshot: String, // product name at time of order (in case product changes later)
+  nameSnapshot: String,
   quantity: Number,
-  price: Number, // price at time of order
+  price: Number,
 });
 
 const paymentSchema = new mongoose.Schema({
@@ -46,6 +46,12 @@ const orderSchema = new mongoose.Schema(
     originalTotal: { type: Number, default: null }, // subtotal + vat + delivery, before discount
     totalAmount: { type: Number, required: true }, // final total, after discount
     payment: paymentSchema,
+
+    //  INVOICE NUMBER FIELD ADDED HERE
+    invoiceNumber: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true }
 );

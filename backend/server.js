@@ -17,6 +17,7 @@ import couponRoutes, { adminCouponRouter } from "./routes/couponRoutes.js";
 import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -48,6 +49,18 @@ app.use("/api/settings",      settingsRoutes);
 app.use("/api/coupons",       couponRoutes);
 app.use("/api/contact",       contactRoutes);
 app.use("/api/wishlist",      wishlistRoutes);
+
+// ✅ Routes – combined from both branches
+app.use("/api/auth",       authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products",   productRoutes);
+app.use("/api/cart",       cartRoutes);
+app.use("/api/orders",     orderRoutes);
+app.use("/api/admin",      adminRoutes);
+app.use("/api/settings",   settingsRoutes);
+app.use("/api/coupons",    couponRoutes);          // Coupon system
+app.use("/api/admin/coupons", adminCouponRouter);  // Admin coupon routes
+app.use("/api/reviews",    reviewRoutes);          // Reviews system
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
