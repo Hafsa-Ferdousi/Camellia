@@ -5,6 +5,8 @@ import {
   logout as apiLogout,
   verifyTwoFactorLogin as apiVerifyTwoFactorLogin,
 } from "../api/auth";
+import { refreshAccessToken } from "../api/client";
+import { clearAccessToken } from "../api/tokenStore";
 
 const AuthContext = createContext(null);
 
@@ -12,12 +14,15 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // The access token lives in memory only, so it's gone on every fresh page
+  // load — re-establish the session here using the httpOnly refresh cookie
+  // before asking who's logged in. A rejected refresh just means there's no
+  // valid session (guest), not an error.
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
-    getMe()
+    refreshAccessToken()
+      .then(() => getMe())
       .then(r => setUser(r.data))
-      .catch(() => { localStorage.removeItem("token"); setUser(null); })
+      .catch(() => { clearAccessToken(); setUser(null); })
       .finally(() => setLoading(false));
   }, []);
 
