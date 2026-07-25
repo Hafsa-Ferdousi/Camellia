@@ -70,23 +70,23 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <label className="form-label">
             {t("fullName")}
-            <input className="input" name="name" value={form.name} onChange={set} placeholder="Your Full Name" required />
+            <input className="input" name="name" value={form.name} onChange={set} placeholder={t("fullNamePlaceholder")} required />
           </label>
           <label className="form-label">
             {t("username")}
-             <input className="input" name="username" value={form.username} onChange={set} placeholder="Choose a username" required />
+             <input className="input" name="username" value={form.username} onChange={set} placeholder={t("usernamePlaceholder")} required />
           </label>
           <label className="form-label">
             {t("emailAddress")}
-            <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder="your@email.com" required />
+            <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder={t("emailPlaceholder")} required />
           </label>
           <label className="form-label">
             {t("phoneNumber")}
-            <input className="input" name="phone" value={form.phone} onChange={set} placeholder="01XXXXXXXXX" />
+            <input className="input" name="phone" value={form.phone} onChange={set} placeholder={t("phonePlaceholder")} />
           </label>
           <label className="form-label">
             {t("password")}
-            <PasswordField name="password" value={form.password} onChange={set} placeholder="Create a strong password" />
+            <PasswordField name="password" value={form.password} onChange={set} placeholder={t("createPasswordPlaceholder")} />
           </label>
           <PasswordStrengthChecklist password={form.password} />
 
@@ -96,7 +96,7 @@ export default function Register() {
               name="confirmPassword"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter your password"
+              placeholder={t("reenterPasswordPlaceholder")}
             />
           </label>
           {!passwordsMatch && (
@@ -116,7 +116,7 @@ export default function Register() {
               name="securityAnswer"
               value={form.securityAnswer}
               onChange={set}
-              placeholder="Answer used to recover your account"
+              placeholder={t("answerPlaceholder")}
               required
             />
           </label>

@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Heart, Gem, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
+import { formatPrice } from "../utils/formatPrice";
 import { getWishlist, removeFromWishlist, clearWishlist } from "../api/wishlist";
 
 export default function WishlistPage() {
+  const { t } = useTranslation(["wishlist", "orders"]);
+  const { language } = useLanguage();
   const { user, loading: authLoading } = useAuth();
   const { addItem } = useCart();
   const navigate = useNavigate();
@@ -19,7 +26,7 @@ export default function WishlistPage() {
     if (!user) { navigate("/login", { state: { from: "/wishlist" } }); return; }
     getWishlist()
       .then(r => setItems(r.data))
-      .catch(() => setError("Could not load your wishlist."))
+      .catch(() => setError(t("wishlist:loadError")))
       .finally(() => setLoading(false));
   }, [user, authLoading, navigate]);
 
@@ -29,7 +36,7 @@ export default function WishlistPage() {
       await removeFromWishlist(productId);
       setItems(prev => prev.filter(i => i.product._id !== productId));
     } catch {
-      setError("Failed to remove item.");
+      setError(t("wishlist:removeError"));
     } finally {
       setRemoving(null);
     }
@@ -42,27 +49,27 @@ export default function WishlistPage() {
       await removeFromWishlist(product._id);
       setItems(prev => prev.filter(i => i.product._id !== product._id));
     } catch {
-      setError("Failed to add to cart.");
+      setError(t("wishlist:addToCartError"));
     } finally {
       setAddingToCart(null);
     }
   };
 
   const handleClear = async () => {
-    if (!window.confirm("Are you sure you want to clear your wishlist?")) return;
+    if (!window.confirm(t("wishlist:clearConfirm"))) return;
     try {
       await clearWishlist();
       setItems([]);
     } catch {
-      setError("Failed to clear wishlist.");
+      setError(t("wishlist:clearError"));
     }
   };
 
   if (authLoading || loading) {
     return (
       <div style={{ padding: "60px 0", textAlign: "center", color: "var(--muted)" }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-        Loading your wishlist…
+        <Loader2 size={32} strokeWidth={1.5} className="spin" style={{ marginBottom: 12 }} />
+        <div>{t("wishlist:loading")}</div>
       </div>
     );
   }
@@ -71,9 +78,9 @@ export default function WishlistPage() {
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 64px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div>
-          <span className="eyebrow">Your Account</span>
+          <span className="eyebrow">{t("orders:yourAccount")}</span>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
-            Wishlist
+            {t("wishlist:title")}
           </h1>
         </div>
         {items.length > 0 && (
@@ -85,7 +92,7 @@ export default function WishlistPage() {
               fontSize: 12, color: "var(--muted)", cursor: "pointer",
             }}
           >
-            Clear All
+            {t("wishlist:clearAll")}
           </button>
         )}
       </div>
@@ -103,19 +110,19 @@ export default function WishlistPage() {
 
       {items.length === 0 && !error ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
-          <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.25 }}>🤍</div>
+          <Heart size={48} strokeWidth={1.5} style={{ marginBottom: 16, opacity: 0.25 }} />
           <p style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--charcoal)", marginBottom: 8 }}>
-            Your wishlist is empty
+            {t("wishlist:empty")}
           </p>
           <p style={{ fontSize: 14, marginBottom: 28 }}>
-            Save items you love and come back to them anytime!
+            {t("wishlist:emptySub")}
           </p>
-          <Link to="/products" className="btn">Browse Products</Link>
+          <Link to="/products" className="btn">{t("wishlist:browseProducts")}</Link>
         </div>
       ) : (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
-            {items.length} {items.length === 1 ? "item" : "items"} saved
+            {t(items.length === 1 ? "wishlist:itemCount_one" : "wishlist:itemCount_other", { count: items.length })}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
             {items.map(({ product }) => (
@@ -128,23 +135,23 @@ export default function WishlistPage() {
                     overflow: "hidden",
                   }}>
                     {product.images?.[0]
-                      ? <img src={product.images[0]} alt={product.name?.en} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      : <span style={{ fontSize: 36, opacity: 0.2 }}>💍</span>}
+                      ? <img src={product.images[0]} alt={localized(product.name, language)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <Gem size={36} strokeWidth={1.5} style={{ opacity: 0.2 }} />}
                   </div>
                 </Link>
                 <div style={{ padding: "12px 14px 14px" }}>
                   <Link to={`/products/${product._id}`} style={{ textDecoration: "none" }}>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "var(--charcoal)", marginBottom: 4 }}>
-                      {product.name?.en}
+                      {localized(product.name, language)}
                     </p>
                   </Link>
                   <p style={{ fontSize: 15, fontWeight: 700, color: "var(--gold-text)", marginBottom: 4 }}>
-                    ৳ {product.basePrice?.toLocaleString()}
+                    ৳ {formatPrice(product.basePrice, language)}
                   </p>
                   <p style={{ fontSize: 11, marginBottom: 12 }}>
                     {product.totalStock > 0
-                      ? <span style={{ color: "#065F46" }}>In Stock</span>
-                      : <span style={{ color: "#991B1B" }}>Out of Stock</span>}
+                      ? <span style={{ color: "#065F46" }}>{t("wishlist:inStock")}</span>
+                      : <span style={{ color: "#991B1B" }}>{t("wishlist:outOfStock")}</span>}
                   </p>
                   <button
                     onClick={() => handleAddToCart(product)}
@@ -159,7 +166,7 @@ export default function WishlistPage() {
                       marginBottom: 8,
                     }}
                   >
-                    {addingToCart === product._id ? "Adding..." : product.totalStock ? "Move to Cart" : "Out of Stock"}
+                    {addingToCart === product._id ? t("wishlist:adding") : product.totalStock ? t("wishlist:moveToCart") : t("wishlist:outOfStock")}
                   </button>
                   <button
                     onClick={() => handleRemove(product._id)}
@@ -173,7 +180,7 @@ export default function WishlistPage() {
                       cursor: "pointer",
                     }}
                   >
-                    {removing === product._id ? "Removing..." : "Remove"}
+                    {removing === product._id ? t("wishlist:removing") : t("wishlist:remove")}
                   </button>
                 </div>
               </div>

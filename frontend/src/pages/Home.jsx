@@ -38,11 +38,12 @@ export default function Home() {
   const [featured,    setFeatured]    = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [categories,  setCategories]  = useState([]);
+  const [catError,    setCatError]    = useState(false);
   const [loadingF,    setLoadingF]    = useState(true);
   const [loadingBS,   setLoadingBS]   = useState(true);
 
   useEffect(() => {
-    getCategories().then(r => setCategories(r.data)).catch(() => {});
+    getCategories().then(r => setCategories(r.data)).catch(() => setCatError(true));
   }, []);
 
   // If we arrived here from the navbar's "Categories" link on another page,
@@ -162,7 +163,7 @@ export default function Home() {
       <Hero onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)} />
 
       {/* ── Category tiles ── */}
-      <CategorySection categories={categories} onSelect={goToCategory} />
+      <CategorySection categories={categories} error={catError} onSelect={goToCategory} />
 
       {/* ── Featured picks ── */}
       <section id="products-section" className="container" style={{ padding: "60px 24px 48px" }}>
@@ -172,7 +173,7 @@ export default function Home() {
             <h2 className="section-heading" style={{ fontSize: 28, marginTop: 4 }}>{t("home:featuredPieces")}</h2>
             <div className="divider-gold">✦</div>
           </div>
-          <Link to="/products" style={s.viewAll}>{t("home:viewAllProducts")}</Link>
+          <Link to="/products" style={s.viewAll}>{t("products:viewAllProducts")}</Link>
         </div>
         <div className="home-product-grid">
           {loadingF
@@ -195,7 +196,7 @@ export default function Home() {
               <h2 className="section-heading" style={{ marginTop: 6 }}>{t("home:bestSelling")}</h2>
               <div className="divider-gold">✦</div>
             </div>
-            <Link to="/products" style={s.viewAll}>{t("home:shopAll")}</Link>
+            <Link to="/products" style={s.viewAll}>{t("products:shopAll")}</Link>
           </div>
           <div className="home-product-grid">
             {loadingBS

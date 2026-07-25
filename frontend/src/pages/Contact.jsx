@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin, AlertCircle } from "lucide-react";
+import client from "../api/client";
 
 export default function Contact() {
   const { t } = useTranslation("pages");
@@ -17,23 +18,11 @@ export default function Contact() {
     setError("");
 
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Failed to send message. Please try again.");
-        return;
-      }
-
+      await client.post("/contact", form);
       setSent(true);
       setForm({ name: "", email: "", message: "" });
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      setError(err.response?.data?.message || t("somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -63,9 +52,7 @@ export default function Contact() {
             <Phone size={14} /> <a href="tel:+8801700000000" style={{ color: "var(--charcoal)" }}>+880 1700-000000</a>
           </p>
           <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-            <Mail size={14} /> <a href="mailto:hello@camellia.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
-          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10 }}>
-            ✉️ <a href="mailto:camelliabyanandi@gmail.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
+            <Mail size={14} /> <a href="mailto:camelliabyanandi@gmail.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
           </p>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>{t("hours")}</p>
 
@@ -98,13 +85,6 @@ export default function Contact() {
           {sent && (
             <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0" }}>
               {t("emailOpened")}
-            <div style={{
-              background: "#ECFDF5", color: "#065F46",
-              padding: "10px 14px", borderRadius: "var(--radius-sm)",
-              marginBottom: 16, fontSize: 13,
-              border: "1px solid #A7F3D0",
-            }}>
-              ✅ Your message has been sent! We will get back to you soon.
             </div>
           )}
 
@@ -115,40 +95,20 @@ export default function Contact() {
               padding: "10px 14px", borderRadius: "var(--radius-sm)",
               marginBottom: 16, fontSize: 13,
               border: "1px solid #FECACA",
+              display: "flex", alignItems: "center", gap: 8,
             }}>
-              ❌ {error}
+              <AlertCircle size={15} strokeWidth={2} /> {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <label className="form-label">
               {t("yourName")}
-              <input className="input" name="name" value={form.name} onChange={set} placeholder="Your Full Name" required />
+              <input className="input" name="name" value={form.name} onChange={set} placeholder={t("fullNamePlaceholder")} required />
             </label>
             <label className="form-label">
               {t("emailAddress")}
-              <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder="your@email.com" required />
-              Your Name *
-              <input
-                className="input"
-                name="name"
-                value={form.name}
-                onChange={set}
-                placeholder="Your Full Name"
-                required
-              />
-            </label>
-            <label className="form-label">
-              Email Address *
-              <input
-                className="input"
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={set}
-                placeholder="your@email.com"
-                required
-              />
+              <input className="input" name="email" type="email" value={form.email} onChange={set} placeholder={t("emailPlaceholder")} required />
             </label>
             <label className="form-label">
               {t("message")}
@@ -163,8 +123,6 @@ export default function Contact() {
                 style={{ resize: "vertical" }}
               />
             </label>
-            <button className="btn" type="submit" style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
-              {t("sendMessageBtn")}
             <button
               className="btn"
               type="submit"
@@ -176,7 +134,7 @@ export default function Contact() {
                 cursor: loading ? "not-allowed" : "pointer",
               }}
             >
-              {loading ? "Sending..." : "Send Message"}
+              {loading ? t("sending") : t("sendMessageBtn")}
             </button>
           </form>
         </div>

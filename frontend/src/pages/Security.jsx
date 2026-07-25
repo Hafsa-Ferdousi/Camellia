@@ -92,7 +92,7 @@ export default function Security() {
             <form onSubmit={handleDisable}>
               <label className="form-label">
                 {t("enterPasswordDisable")}
-                <input className="input" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Current password" />
+                <input className="input" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder={t("currentPasswordPlaceholder")} />
               </label>
               <button className="btn" type="submit" disabled={loading} style={{ padding: "10px 20px", fontSize: 13 }}>
                 {loading ? t("disabling") : t("disable2fa")}
@@ -127,7 +127,7 @@ export default function Security() {
                   required
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="123456"
+                  placeholder={t("codePlaceholder")}
                   style={{ letterSpacing: "0.3em", textAlign: "center" }}
                 />
               </label>
