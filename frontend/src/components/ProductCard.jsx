@@ -5,9 +5,10 @@ import { Gem, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
+import { formatPrice } from "../utils/formatPrice";
 
 export default function ProductCard({ product }) {
-  const { t } = useTranslation("products");
+  const { t } = useTranslation(["products", "common"]);
   const { language } = useLanguage();
   const name = localized(product.name, language);
   const image = product.images?.[0] || null;
@@ -46,12 +47,12 @@ export default function ProductCard({ product }) {
             <span className="product-stock-badge badge-outstock">{t("outOfStock")}</span>
           )}
           <div className="product-overlay">
-            <span className="product-overlay-text">View Details</span>
+            <span className="product-overlay-text">{t("common:viewDetails")}</span>
           </div>
         </div>
         <div className="product-info">
           <p className="product-name">{name}</p>
-          <p className="product-price">৳ {product.basePrice?.toLocaleString()}</p>
+          <p className="product-price">৳ {formatPrice(product.basePrice, language)}</p>
         </div>
       </Link>
 

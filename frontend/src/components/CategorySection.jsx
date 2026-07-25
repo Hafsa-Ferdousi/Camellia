@@ -1,22 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
+import { getCategoryIcon } from "../utils/categoryIcons";
 
-const CATEGORY_ICONS = {
-  kalira: "💛",
-  chura: "🔴",
-  bangles: "✨",
-  necklace: "📿",
-  "diamond-cut": "💎",
-  "wedding-accessories": "👑",
-  jhumka: "✨",
-  "wedding-sets": "👑",
-};
-
-export default function CategorySection({ categories, onSelect }) {
+export default function CategorySection({ categories, error, onSelect }) {
   const { t } = useTranslation("home");
   const { language } = useLanguage();
-  if (!categories || categories.length === 0) return null;
+  if (!error && (!categories || categories.length === 0)) return null;
 
   return (
     <section id="categories-section" className="category-showcase">
@@ -28,24 +18,31 @@ export default function CategorySection({ categories, onSelect }) {
           </h2>
           <div className="divider-gold" style={{ justifyContent: "center" }}>✦</div>
         </div>
+        {error ? (
+          <p style={{ textAlign: "center", color: "var(--red)", fontSize: 13 }}>
+            {t("categoriesLoadError", "Couldn't load categories. Please try again later.")}
+          </p>
+        ) : (
         <div className="category-grid">
           {categories.map(cat => {
             const name = localized(cat.name, language);
+            const Icon = getCategoryIcon(cat.slug);
             return (
               <button
                 key={cat._id}
                 className="category-tile"
                 onClick={() => onSelect(cat)}
-                title={`Browse ${name}`}
+                title={t("browseCategory", { name })}
               >
                 <span className="category-tile-photo">
-                  {cat.image ? <img src={cat.image} alt="" /> : CATEGORY_ICONS[cat.slug] || "💍"}
+                  {cat.image ? <img src={cat.image} alt="" /> : <Icon size={22} strokeWidth={1.5} />}
                 </span>
                 <span className="category-tile-name">{name}</span>
               </button>
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );
