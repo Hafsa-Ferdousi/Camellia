@@ -1,9 +1,10 @@
-// backend/controllers/orderController.js
 import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
+import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
+import User from "../models/User.js";
 
 // Generate unique invoice number
 const generateInvoiceNumber = () => {
@@ -103,7 +104,7 @@ export const checkout = async (req, res) => {
     const originalTotal = subtotal + vat + deliveryCharge;
     const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
-    // ✅ FIXED: Payment status is always "pending" – admin confirms later
+    // Payment status is always "pending" – admin confirms later
     const order = await Order.create({
       user: req.user._id,
       address,
@@ -327,10 +328,35 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     order.status = req.body.status;
-    if (req.body.status === "delivered" && order.payment.method === "cod") {
+
+    const justMarkedPaid = req.body.status === "delivered" && order.payment.method === "cod" && order.payment.status !== "paid";
+    if (justMarkedPaid) {
       order.payment.status = "paid";
     }
     await order.save();
+
+    // Best-effort notification — never blocks the response if email fails
+    // or isn't configured (see utils/mailer.js).
+    const recipientEmail = order.isGuest
+      ? order.guestInfo?.email
+      : (await User.findById(order.user).select("email"))?.email;
+
+    if (recipientEmail) {
+      sendOrderStatusEmail(recipientEmail, {
+        orderId: order._id,
+        invoiceNumber: order.invoiceNumber,
+        status: order.status,
+      }).catch(() => {});
+
+      if (justMarkedPaid) {
+        sendPaymentConfirmedEmail(recipientEmail, {
+          orderId: order._id,
+          invoiceNumber: order.invoiceNumber,
+          amount: order.totalAmount,
+        }).catch(() => {});
+      }
+    }
+
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: "Failed to update order status." });
