@@ -1,8 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { ShoppingCart, Gem } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
+import { formatPrice } from "../utils/formatPrice";
 
 export default function Cart() {
-  const { items, updateQty, removeItem } = useCart();
+  const { t } = useTranslation("cart");
+  const { language } = useLanguage();
+  const { items, updateQty, removeItem, mergeDroppedCount, dismissMergeNotice } = useCart();
   const navigate = useNavigate();
 
   const getPrice = item => {
@@ -31,25 +38,42 @@ export default function Cart() {
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 64px" }}>
-      <span className="eyebrow">Shopping</span>
+      <span className="eyebrow">{t("shopping")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
-        Your Cart
+        {t("yourCart")}
         {items.length > 0 && (
           <span style={{ fontSize: 17, fontStyle: "normal", color: "var(--muted)", marginLeft: 10, fontFamily: "var(--font-body)" }}>
-            ({items.length} {items.length === 1 ? "item" : "items"})
+            ({items.length} {t(items.length === 1 ? "item_one" : "item_other")})
           </span>
         )}
       </h1>
       <div className="divider-gold">✦</div>
 
+      {mergeDroppedCount > 0 && (
+        <div style={{
+          background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A",
+          borderRadius: "var(--radius-sm)", padding: "10px 14px",
+          marginBottom: 20, fontSize: 13, display: "flex",
+          justifyContent: "space-between", alignItems: "center", gap: 12,
+        }}>
+          <span>{t(mergeDroppedCount === 1 ? "mergeNotice_one" : "mergeNotice_other", { count: mergeDroppedCount })}</span>
+          <button
+            onClick={dismissMergeNotice}
+            style={{ background: "none", border: "none", color: "#92400E", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
+          >
+            {t("dismiss")}
+          </button>
+        </div>
+      )}
+
       {items.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
-          <div style={{ fontSize: 56, marginBottom: 16, opacity: 0.25 }}>🛍</div>
+          <div style={{ marginBottom: 16, opacity: 0.25, display: "flex", justifyContent: "center" }}><ShoppingCart size={56} /></div>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--charcoal)", marginBottom: 8 }}>
-            Your cart is empty
+            {t("empty")}
           </p>
-          <p style={{ fontSize: 14, marginBottom: 32 }}>Discover our beautiful jewellery collections</p>
-          <Link to="/" className="btn">Continue Shopping</Link>
+          <p style={{ fontSize: 14, marginBottom: 32 }}>{t("emptySub")}</p>
+          <Link to="/" className="btn">{t("continueShopping")}</Link>
         </div>
       ) : (
         <>
@@ -63,19 +87,19 @@ export default function Cart() {
                     <div className="cart-thumb">
                       {item.product?.images?.[0]
                         ? <img src={item.product.images[0]} alt="" />
-                        : <span style={{ fontSize: 22, opacity: 0.3 }}>💍</span>}
+                        : <Gem size={22} style={{ opacity: 0.3 }} />}
                     </div>
                   </Link>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {item.product?.name?.en}
+                      {localized(item.product?.name, language)}
                     </p>
                     {item.variantSku && (
-                      <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Variant: {item.variantSku}</p>
+                      <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{t("variant", { sku: item.variantSku })}</p>
                     )}
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--gold-text)", fontWeight: 600, marginBottom: 10 }}>
-                      ৳ {price.toLocaleString()}
+                      ৳ {formatPrice(price, language)}
                     </p>
                     <div className="qty-stepper">
                       <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} disabled={item.quantity <= 1}>−</button>
@@ -86,9 +110,9 @@ export default function Cart() {
 
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: "var(--charcoal)", marginBottom: 10 }}>
-                      ৳ {(price * item.quantity).toLocaleString()}
+                      ৳ {formatPrice(price * item.quantity, language)}
                     </p>
-                    <button className="remove-btn" onClick={() => removeItem(item.productId, item.variantSku)}>Remove</button>
+                    <button className="remove-btn" onClick={() => removeItem(item.productId, item.variantSku)}>{t("remove")}</button>
                   </div>
                 </div>
               );
@@ -96,23 +120,23 @@ export default function Cart() {
           </div>
 
           <div className="panel" style={{ marginBottom: 16 }}>
-            <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 16 }}>Order Summary</p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 16 }}>{t("orderSummary")}</p>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 14, color: "var(--muted)" }}>
-              <span>Subtotal ({items.length} {items.length === 1 ? "item" : "items"})</span>
-              <span>৳ {subtotal.toLocaleString()}</span>
+              <span>{t("subtotal", { count: items.length, label: t(items.length === 1 ? "item_one" : "item_other") })}</span>
+              <span>৳ {formatPrice(subtotal, language)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14, color: "var(--muted)" }}>
-              <span>Delivery (COD)</span>
-              <span style={{ color: "var(--ink)", fontWeight: 600 }}>৳ {DELIVERY}</span>
+              <span>{t("deliveryCod")}</span>
+              <span style={{ color: "var(--ink)", fontWeight: 600 }}>৳ {formatPrice(DELIVERY, language)}</span>
             </div>
             <div style={{ borderTop: "1px solid var(--border)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600 }}>Estimated Total</span>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600 }}>{t("estimatedTotal")}</span>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 24, fontWeight: 700, color: "var(--gold-text)" }}>
-                ৳ {(subtotal + DELIVERY).toLocaleString()}
+                ৳ {formatPrice(subtotal + DELIVERY, language)}
               </span>
             </div>
             <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              * Delivery charge waived for online payments (bKash / Bank)
+              {t("deliveryNote")}
             </p>
           </div>
 
@@ -121,11 +145,11 @@ export default function Cart() {
             style={{ width: "100%", padding: 14, fontSize: 14, letterSpacing: "0.1em", marginBottom: 12 }}
             onClick={() => navigate("/checkout")}
           >
-            Proceed to Checkout →
+            {t("proceedToCheckout")}
           </button>
 
           <p style={{ textAlign: "center" }}>
-            <Link to="/" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "underline" }}>Continue Shopping</Link>
+            <Link to="/" style={{ fontSize: 13, color: "var(--muted)", textDecoration: "underline" }}>{t("continueShopping")}</Link>
           </p>
         </>
       )}

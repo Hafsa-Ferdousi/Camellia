@@ -1,0 +1,19 @@
+{
+  "home": "Home",
+  "products": "Products",
+  "categories": "Categories",
+  "about": "About",
+  "contact": "Contact",
+  "admin": "Admin",
+  "adminPanel": "Admin Panel",
+  "myOrders": "My Orders",
+  "wishlist": "Wishlist",
+  "login": "Login",
+  "register": "Register",
+  "logout": "Logout",
+  "greeting": "Hi, {{name}}",
+  "trackOrder": "Track Order",
+  "menu": "Menu",
+  "account": "Account",
+  "language": "Language"
+}

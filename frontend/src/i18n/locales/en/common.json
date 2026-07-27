@@ -1,0 +1,14 @@
+{
+  "brand": "Camellia",
+  "cart": "Cart",
+  "search": "Search products…",
+  "loading": "Loading…",
+  "viewDetails": "View Details",
+  "productImagePlaceholder": "[ product image ]",
+  "largeProductImagePlaceholder": "[ large product image ]",
+  "noProductsFound": "No products found",
+  "tryDifferentFilter": "Try a different keyword or category filter.",
+  "accessRestricted": "Access Restricted",
+  "adminOnlyArea": "This area is only available to administrators.",
+  "productFallback": "Product"
+}

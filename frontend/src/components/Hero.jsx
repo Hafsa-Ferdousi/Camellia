@@ -1,24 +1,28 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Hero({ onSearch }) {
+  const { t } = useTranslation(["home", "common"]);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
   const scrollTo = (id) =>
     setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 60);
 
+  const trustBadges = ["trustHandcrafted", "trustDelivery", "trustBridal", "trustBrides"];
+
   return (
     <section className="hero">
       <div className="container" style={{ position: "relative" }}>
-        <span className="hero-eyebrow">✦ Est. 2019 · Cox's Bazar, Bangladesh ✦</span>
+        <span className="hero-eyebrow">{t("heroEyebrow")}</span>
 
         <h1>
-          Camellia<span className="hero-accent"> — </span>Jewelry<br />
-          <span style={{ fontWeight: 400 }}>&amp; Wedding Accessories</span>
+          {t("common:brand")}<span className="hero-accent"> — </span>{t("heroTitleMain")}<br />
+          <span style={{ fontWeight: 400 }}>{t("heroTitleSub")}</span>
         </h1>
 
         <div className="hero-ornament">✦</div>
-        <p className="hero-sub">Kalira · Chura · Diamond Cut · Wedding Sets</p>
+        <p className="hero-sub">{t("heroSub")}</p>
 
 
         {/* ── CTA buttons ── */}
@@ -27,20 +31,20 @@ export default function Hero({ onSearch }) {
             className="hero-btn-primary"
             onClick={() => scrollTo("products-section")}
           >
-            Shop Now
+            {t("shopNow")}
           </button>
           <button
             className="hero-btn-outline"
             onClick={() => scrollTo("categories-section")}
           >
-            View Categories
+            {t("viewCategories")}
           </button>
         </div>
 
         {/* Trust badges */}
         <div style={s.trustRow}>
-          {["✦ Handcrafted Quality", "✦ Free Delivery", "✦ Bridal Specialists", "✦ 500+ Happy Brides"].map(t => (
-            <span key={t} style={s.trust}>{t}</span>
+          {trustBadges.map(key => (
+            <span key={key} style={s.trust}>{t(key)}</span>
           ))}
         </div>
       </div>

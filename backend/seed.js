@@ -26,6 +26,10 @@ async function seed() {
   await Promise.all([User.deleteMany({}), Category.deleteMany({}), Product.deleteMany({})]);
 
   // ── Users ──
+  // NOTE: this hardcoded admin is for local/demo use only (this script also
+  // wipes all products/categories, so never run it against production). In
+  // production, don't run seed.js — set ADMIN_* env vars instead and the
+  // server bootstraps the admin automatically on startup (see utils/ensureAdmin.js).
   console.log("👤 Creating users...");
   const demoAnswerHash = await bcrypt.hash("demo", 10);
   const securityQuestion = "What is the name of your first pet?";

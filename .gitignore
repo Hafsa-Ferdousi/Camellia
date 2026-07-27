@@ -23,3 +23,6 @@ Thumbs.db
 
 # Optional: ignore these if you have them
 *.pem
+
+# Admin-uploaded product/category images
+frontend/public/uploads/

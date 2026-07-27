@@ -1,6 +1,23 @@
+// backend/controllers/productController.js
 import Product from "../models/Product.js";
 
-// GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured=
+// Only these fields may be written via the admin product form — prevents
+// arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
+// straight from req.body.
+const ALLOWED_PRODUCT_FIELDS = [
+  "name", "description", "category", "basePrice", "images",
+  "totalStock", "isFeatured", "isActive",
+];
+
+const pickProductFields = (body) => {
+  const payload = {};
+  for (const key of ALLOWED_PRODUCT_FIELDS) {
+    if (body[key] !== undefined) payload[key] = body[key];
+  }
+  return payload;
+};
+
+// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
 export const getProducts = async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, limit, featured, sort } = req.query;
@@ -18,12 +35,10 @@ export const getProducts = async (req, res) => {
       if (minPrice) query.basePrice.$gte = Number(minPrice);
       if (maxPrice) query.basePrice.$lte = Number(maxPrice);
     }
-    // BUG FIX #10: Support featured filter for homepage best sellers
     if (featured === "true") query.isFeatured = true;
 
     let q = Product.find(query).populate("category", "name slug");
 
-    // BUG FIX #11: Support sort param (newest, price-asc, price-desc)
     if (sort === "price-asc") q = q.sort({ basePrice: 1 });
     else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
     else q = q.sort({ createdAt: -1 });
@@ -37,7 +52,7 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// GET /api/products/admin/all (admin only) — includes inactive/soft-deleted products
+// ── GET /api/products/admin/all ──────────────────────────────────────────────
 export const getAllProductsAdmin = async (req, res) => {
   try {
     const products = await Product.find()
@@ -49,11 +64,10 @@ export const getAllProductsAdmin = async (req, res) => {
   }
 };
 
-// GET /api/products/:id
+// ── GET /api/products/:id ───────────────────────────────────────────────────
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category", "name slug");
-    // BUG FIX #12: Return 404 for inactive products too
     if (!product || !product.isActive) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
@@ -61,31 +75,34 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// POST /api/products (admin only)
+// ── POST /api/products (admin only) ──────────────────────────────────────────
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const product = await Product.create(pickProductFields(req.body));
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-// PUT /api/products/:id (admin only)
+// ── PUT /api/products/:id (admin only) ──────────────────────────────────────
 export const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      pickProductFields(req.body),
+      { new: true, runValidators: true }
+    );
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
-// DELETE /api/products/:id (admin only) — soft delete
+// ── DELETE /api/products/:id (admin only) ───────────────────────────────────
 export const deleteProduct = async (req, res) => {
   try {
-    // BUG FIX #15: Soft delete instead of hard delete to preserve order history
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
@@ -93,6 +110,33 @@ export const deleteProduct = async (req, res) => {
     );
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json({ message: "Product removed" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ================================================================
+// ✅ NEW: SEARCH / AUTOCOMPLETE ENDPOINT (Added below)
+// ── GET /api/products/search?q=... ──────────────────────────────────────────
+export const searchProducts = async (req, res) => {
+  try {
+    const query = req.query.q;
+    if (!query || query.length < 1) {
+      return res.json([]);
+    }
+
+    const products = await Product.find({
+      isActive: true,
+      $or: [
+        { 'name.en': { $regex: query, $options: 'i' } },
+        { 'name.bn': { $regex: query, $options: 'i' } },
+      ],
+    })
+    .select('_id name images basePrice')
+    .limit(10)
+    .lean();
+
+    res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

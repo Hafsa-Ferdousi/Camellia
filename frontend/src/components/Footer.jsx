@@ -1,25 +1,28 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-
-function ComingSoon(label) {
-  return (e) => {
-    e.preventDefault();
-    alert(`${label} — page coming soon!`);
-  };
-}
 
 export default function Footer() {
+  const { t } = useTranslation(["footer", "common"]);
+
+  function ComingSoon(label) {
+    return (e) => {
+      e.preventDefault();
+      alert(t("footer:comingSoon", { label }));
+    };
+  }
+
   return (
     <footer className="footer" id="site-footer">
       <div className="container">
         <div className="footer-grid">
           {/* Brand */}
           <div>
-            <p style={s.logo}>Camellia</p>
-            <p style={s.tagline}>Jewelry &amp; Wedding Accessories</p>
+            <p style={s.logo}>{t("common:brand")}</p>
+            <p style={s.tagline}>{t("footer:tagline")}</p>
             <p style={s.desc}>
-              Handcrafted bridal jewelry since 2019.<br />
-              Cox's Bazar, Bangladesh.
+              {t("footer:desc1")}<br />
+              {t("footer:desc2")}
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
               {[
@@ -34,34 +37,41 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Shop — now real category filters instead of dead links */}
+          {/* Shop */}
           <div>
-            <p style={s.colHead}>Shop</p>
-            {["Kalira", "Chura", "Jhumka", "Necklace Sets", "Diamond Cut", "Wedding Sets"].map(c => (
-              <Link key={c} to={`/products?search=${encodeURIComponent(c)}`} style={s.link}>{c}</Link>
+            <p style={s.colHead}>{t("footer:shop")}</p>
+            {[
+              { en: "Kalira", key: "categoryKalira" },
+              { en: "Chura", key: "categoryChura" },
+              { en: "Jhumka", key: "categoryJhumka" },
+              { en: "Necklace Sets", key: "categoryNecklaceSets" },
+              { en: "Diamond Cut", key: "categoryDiamondCut" },
+              { en: "Wedding Sets", key: "categoryWeddingSets" },
+            ].map(c => (
+              <Link key={c.en} to={`/products?search=${encodeURIComponent(c.en)}`} style={s.link}>{t(`footer:${c.key}`)}</Link>
             ))}
           </div>
 
           {/* Information */}
           <div>
-            <p style={s.colHead}>Information</p>
-            <Link to="/about" style={s.link}>About Us</Link>
-            <Link to="/contact" style={s.link}>Contact</Link>
-            <a href="#" style={s.link} onClick={ComingSoon("FAQs")}>FAQs</a>
-            <a href="#" style={s.link} onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
-            <a href="#" style={s.link} onClick={ComingSoon("Terms of Service")}>Terms of Service</a>
+            <p style={s.colHead}>{t("footer:information")}</p>
+            <Link to="/about" style={s.link}>{t("footer:aboutUs")}</Link>
+            <Link to="/contact" style={s.link}>{t("footer:contact")}</Link>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:faqs"))}>{t("footer:faqs")}</a>
+            <Link to="/legal/privacy" style={s.link}>{t("footer:privacyPolicy")}</Link>
+            <Link to="/legal/terms" style={s.link}>{t("footer:termsOfService")}</Link>
           </div>
 
           {/* Customer Care */}
           <div>
-            <p style={s.colHead}>Customer Care</p>
-            <Link to="/track-order" style={s.link}>Track Order</Link>
-            <a href="#" style={s.link} onClick={ComingSoon("Returns & Exchanges")}>Returns &amp; Exchanges</a>
-            <a href="#" style={s.link} onClick={ComingSoon("Size Guide")}>Size Guide</a>
+            <p style={s.colHead}>{t("footer:customerCare")}</p>
+            <Link to="/track-order" style={s.link}>{t("footer:trackOrder")}</Link>
+            <Link to="/legal/refund" style={s.link}>{t("footer:returnsExchanges")}</Link>
+            <a href="#" style={s.link} onClick={ComingSoon(t("footer:sizeGuide"))}>{t("footer:sizeGuide")}</a>
             <div style={{ marginTop: 20 }}>
-              <p style={{ ...s.colHead, marginBottom: 6 }}>Call Us</p>
+              <p style={{ ...s.colHead, marginBottom: 6 }}>{t("footer:callUs")}</p>
               <a href="tel:+8801700000000" style={{ color: "rgba(232,217,192,0.7)", fontSize: 13 }}>+880 1700-000000</a>
-              <p style={{ color: "rgba(232,217,192,0.4)", fontSize: 12, marginTop: 4 }}>Sat–Thu, 10am–8pm</p>
+              <p style={{ color: "rgba(232,217,192,0.4)", fontSize: 12, marginTop: 4 }}>{t("footer:hours")}</p>
             </div>
           </div>
         </div>
@@ -70,16 +80,16 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="footer-links">
           <span style={{ color: "rgba(232,217,192,0.3)", fontSize: 13 }}>
-            © 2026 Camellia — Cox's Bazar, Bangladesh. All rights reserved.
+            {t("footer:copyright")}
           </span>
           {/* FIX: these used <a href="/"> which force a full page reload and
               all pointed to the homepage regardless of label. Now real
               client-side routes / non-broken placeholders. */}
-          <Link to="/">Home</Link>
-          <Link to="/products">Products</Link>
-          <Link to="/contact">Contact</Link>
-          <Link to="/track-order">Track Order</Link>
-          <a href="#" onClick={ComingSoon("Privacy Policy")}>Privacy Policy</a>
+          <Link to="/">{t("footer:home")}</Link>
+          <Link to="/products">{t("footer:products")}</Link>
+          <Link to="/contact">{t("footer:contact")}</Link>
+          <Link to="/track-order">{t("footer:trackOrder")}</Link>
+          <Link to="/legal/privacy">{t("footer:privacyPolicy")}</Link>
         </div>
       </div>
     </footer>
