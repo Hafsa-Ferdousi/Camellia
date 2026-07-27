@@ -11,6 +11,8 @@ import {
   setupTwoFactor,
   verifyTwoFactorSetup,
   disableTwoFactor,
+  verifyEmailOtp,
+  resendEmailOtp,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { loginLimiter, sensitiveActionLimiter } from "../middleware/rateLimiters.js";
@@ -24,6 +26,10 @@ router.post("/2fa/verify", loginLimiter, verifyTwoFactorLogin);
 router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.get("/me", protect, getMe);
+
+// Email verification (OTP sent at registration)
+router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
+router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 
 // Password reset — via the security question chosen at registration (no email service)
 router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);
