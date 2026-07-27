@@ -5,6 +5,8 @@ import qrcode from "qrcode";
 import User from "../models/User.js";
 import { validatePasswordStrength } from "../utils/validators.js";
 import { SECURITY_QUESTIONS, normalizeAnswer } from "../utils/securityQuestions.js";
+import { generateOtp, hashOtp, compareOtp, OTP_TTL_MS } from "../utils/otp.js";
+import { sendVerificationOtpEmail } from "../utils/mailer.js";
 import {
   generateAccessToken,
   generateTwoFactorTempToken,
@@ -68,10 +70,22 @@ export const registerUser = async (req, res) => {
     }
 
     const securityAnswerHash = await bcrypt.hash(normalizeAnswer(securityAnswer), 10);
-    await User.create({ username, name, email, password, phone, securityQuestion, securityAnswerHash });
+
+    const otp = generateOtp();
+    const emailOtpHash = await hashOtp(otp);
+    const emailOtpExpiry = new Date(Date.now() + OTP_TTL_MS);
+
+    await User.create({
+      username, name, email, password, phone, securityQuestion, securityAnswerHash,
+      isEmailVerified: false,
+      emailOtpHash,
+      emailOtpExpiry,
+    });
+
+    await sendVerificationOtpEmail(email, otp);
 
     res.status(201).json({
-      message: "Account created. You can now log in.",
+      message: "Account created. Check your email for a verification code.",
       email,
     });
   } catch (error) {
@@ -111,6 +125,14 @@ export const loginUser = async (req, res) => {
       return invalidCreds();
     }
     await user.resetLoginAttempts();
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        code: "EMAIL_NOT_VERIFIED",
+        message: "Please verify your email before logging in.",
+        email: user.email,
+      });
+    }
 
     if (user.twoFactorEnabled) {
       return res.json({
@@ -354,6 +376,63 @@ export const disableTwoFactor = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     res.json({ message: "Two-factor authentication disabled." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─────────────────────  Email verification (OTP)  ────────────────────────
+export const verifyEmailOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and code are required." });
+    }
+
+    const user = await User.findOne({ email }).select("+emailOtpHash +emailOtpExpiry");
+    if (!user) return res.status(400).json({ message: "Invalid email or code." });
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: "This account is already verified." });
+    }
+
+    if (!user.emailOtpExpiry || user.emailOtpExpiry < new Date()) {
+      return res.status(400).json({ message: "This code has expired. Please request a new one." });
+    }
+
+    const ok = await compareOtp(otp, user.emailOtpHash);
+    if (!ok) return res.status(400).json({ message: "Invalid or incorrect code." });
+
+    user.isEmailVerified = true;
+    user.emailOtpHash = undefined;
+    user.emailOtpExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.json({ message: "Email verified. You can now log in." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resendEmailOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required." });
+
+    const user = await User.findOne({ email });
+    // Deliberately vague response either way, so this can't be used to
+    // enumerate which emails have accounts.
+    const genericOk = () => res.json({ message: "If that account needs verification, a new code has been sent." });
+
+    if (!user || user.isEmailVerified) return genericOk();
+
+    const otp = generateOtp();
+    user.emailOtpHash = await hashOtp(otp);
+    user.emailOtpExpiry = new Date(Date.now() + OTP_TTL_MS);
+    await user.save({ validateBeforeSave: false });
+
+    await sendVerificationOtpEmail(email, otp);
+    return genericOk();
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

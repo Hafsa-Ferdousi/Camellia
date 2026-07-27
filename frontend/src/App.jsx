@@ -10,6 +10,7 @@ import Products from "./pages/Products";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import Security from "./pages/Security";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
@@ -50,6 +51,7 @@ export default function App() {
                 <Route path="/login"               element={<Login />} />
                 <Route path="/register"            element={<Register />} />
                 <Route path="/forgot-password"     element={<ForgotPassword />} />
+                <Route path="/verify-email"        element={<VerifyEmail />} />
                 <Route path="/security"            element={<ProtectedRoute><Security /></ProtectedRoute>} />
                 <Route path="/cart"                element={<Cart />} />
                 <Route path="/checkout"            element={<Checkout />} />

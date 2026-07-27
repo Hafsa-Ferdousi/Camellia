@@ -1,5 +1,5 @@
+import "./loadEnv.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -22,7 +22,6 @@ import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import { sanitizeInputs } from "./middleware/sanitize.js";
 
-dotenv.config();
 await connectDB();
 await ensureAdminUser();
 

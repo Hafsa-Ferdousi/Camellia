@@ -38,3 +38,7 @@ export const resetPasswordWithAnswer = (identifier, answer, password) =>
 export const setupTwoFactor = () => client.post("/auth/2fa/setup");
 export const confirmTwoFactorSetup = (code) => client.post("/auth/2fa/verify-setup", { code });
 export const disableTwoFactor = (password) => client.post("/auth/2fa/disable", { password });
+
+// --- Email verification (OTP sent at registration) ---
+export const verifyEmailOtp = (email, otp) => client.post("/auth/verify-email", { email, otp });
+export const resendEmailOtp = (email) => client.post("/auth/resend-otp", { email });

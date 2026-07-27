@@ -47,7 +47,7 @@ export default function Register() {
     // BUG FIX #34: Register was missing username field (required by backend User model)
     try {
       await register(form);
-      navigate("/login", { state: { registered: true, from } });
+      navigate("/verify-email", { state: { email: form.email, from } });
     } catch (err) {
       setError(err.response?.data?.message || t("registerFailed"));
     } finally {

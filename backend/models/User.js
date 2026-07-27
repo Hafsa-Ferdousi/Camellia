@@ -32,6 +32,14 @@ const userSchema = new mongoose.Schema(
     addresses: [addressSchema],
     preferredLanguage: { type: String, enum: ["en", "bn"], default: "en" },
 
+    // --- Email verification (OTP sent at registration) ---
+    // Defaults to true so existing/seeded users and any other creation path
+    // (e.g. admin-created accounts) are unaffected. Only the public
+    // /register endpoint explicitly sets this to false.
+    isEmailVerified: { type: Boolean, default: true },
+    emailOtpHash: { type: String, select: false },
+    emailOtpExpiry: { type: Date, select: false },
+
     // --- Password reset (via security question — no email service available) ---
     securityQuestion: { type: String, required: true },
     securityAnswerHash: { type: String, required: true, select: false },
