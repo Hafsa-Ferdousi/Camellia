@@ -12,6 +12,7 @@ import { formatPrice } from "../utils/formatPrice";
 import ImageGallery from "../components/ImageGallery";
 import { addToWishlist, removeFromWishlist } from "../api/wishlist";
 import StarRating from "../components/StarRating";
+import Recommendations from '../components/Recommendations';
 
 export default function ProductDetail() {
   const { t } = useTranslation("products");
@@ -484,6 +485,10 @@ export default function ProductDetail() {
               )}
             </div>
           </div>
+
+          {/* ===== AI RECOMMENDATIONS ===== */}
+          <Recommendations productId={id} />
+
         </div>
       </div>
     </div>
