@@ -39,3 +39,14 @@ export const guestLookupLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "Too many lookup attempts. Please try again later." },
 });
+
+// Chat widget hits an external AI API on every message — capped tighter than
+// the general API limiter so one visitor can't burn through the free-tier
+// quota (or run up cost on a paid key) by spamming messages.
+export const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "You're sending messages too quickly. Please slow down." },
+});
