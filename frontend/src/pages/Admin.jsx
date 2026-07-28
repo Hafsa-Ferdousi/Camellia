@@ -5,7 +5,7 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail,
+  Ticket, Mail, MessageCircle, Trash2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -32,6 +32,9 @@ import {
   exportSalesCSV,
   uploadImage,
   deleteUploadedImage,
+  getAllConversations,
+  getConversationById,
+  deleteConversation as deleteConversationApi,
 } from "../api/admin";
 import {
   getAllCoupons,
@@ -238,6 +241,12 @@ export default function Admin() {
   const [messagesLoading, setML]        = useState(false);
   const [messageFilter, setMessageFilter] = useState("all");
 
+  // ── CHATS (AI conversations) state ──────────────────────────
+  const [conversations, setConversations] = useState([]);
+  const [conversationsLoading, setConvL]  = useState(false);
+  const [conversationDetail, setConversationDetail] = useState(null);
+  const [conversationDetailLoading, setConvDL] = useState(false);
+
   // ── data loaders ────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
@@ -310,6 +319,29 @@ export default function Admin() {
     } catch { /* ignore */ }
   };
 
+  // ── CHATS loader ────────────────────────────────────────────
+  const loadConversations = useCallback(async () => {
+    setConvL(true);
+    try { const r = await getAllConversations(); setConversations(r.data); }
+    catch { setConversations([]); }
+    finally { setConvL(false); }
+  }, []);
+
+  const openConversationDetail = async (id) => {
+    setConvDL(true);
+    setConversationDetail({ _id: id, messages: [] });
+    try { const r = await getConversationById(id); setConversationDetail(r.data); }
+    catch { setConversationDetail(null); }
+    finally { setConvDL(false); }
+  };
+
+  const handleDeleteConversation = async (id) => {
+    try {
+      await deleteConversationApi(id);
+      setConversations(prev => prev.filter(c => c._id !== id));
+    } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -319,7 +351,8 @@ export default function Admin() {
     if (tab === "settings")   loadSettings();
     if (tab === "coupons")    loadCoupons();
     if (tab === "messages")   loadMessages();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages]);
+    if (tab === "chats")      loadConversations();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -666,6 +699,7 @@ export default function Admin() {
           { id: "categories", label: t("navCategories"), icon: Tag },
           { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
+          { id: "chats",      label: t("navChats"),       icon: MessageCircle },
           { id: "settings",   label: t("navSettings"),   icon: Settings },
         ].map(navItem => (
           <button
@@ -1222,6 +1256,40 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── CHATS ── */}
+        {tab === "chats" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("chatsTitle")}</h2>
+            {conversationsLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!conversationsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead><tr>{[t("colUser"), t("colLastMessage"), t("colMessages"), t("colUpdated"), t("colActions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {conversations.map(c => (
+                      <tr key={c._id} style={s.tr}>
+                        <td style={s.td}>{c.user?.name || t("guestBadge")}</td>
+                        <td style={{ ...s.td, maxWidth: 320 }}>
+                          <p style={{ fontSize: 13, color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>{c.lastMessage}</p>
+                        </td>
+                        <td style={s.td}>{c.messageCount}</td>
+                        <td style={{ ...s.td, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(c.updatedAt)}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button onClick={() => openConversationDetail(c._id)} style={s.editBtn}>{t("viewChat")}</button>
+                          <button onClick={() => handleDeleteConversation(c._id)} style={s.delBtn}><Trash2 size={13} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                    {conversations.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noChatsFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── SETTINGS ── */}
         {tab === "settings" && (
           <div>
@@ -1437,6 +1505,45 @@ export default function Admin() {
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
               <button className="btn btn-outline" onClick={closeCustomerDetail}>{t("close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CONVERSATION DETAIL MODAL ── */}
+      {conversationDetail && (
+        <div style={s.overlay} onClick={() => setConversationDetail(null)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{conversationDetail.user?.name || t("guestBadge")}</h3>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{conversationDetail.user?.email}</p>
+
+            {conversationDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!conversationDetailLoading && (
+              <div style={{ maxHeight: 380, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                {conversationDetail.messages?.map((m, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                      maxWidth: "80%",
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      fontSize: 13,
+                      background: m.role === "user" ? "var(--gold-pale)" : "var(--cream-dark)",
+                      color: "var(--ink)",
+                    }}
+                  >
+                    {m.content}
+                  </div>
+                ))}
+                {conversationDetail.messages?.length === 0 && (
+                  <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("noChatsFound")}</p>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setConversationDetail(null)}>{t("close")}</button>
             </div>
           </div>
         </div>
