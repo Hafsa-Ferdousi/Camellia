@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import speakeasy from "speakeasy";
 import qrcode from "qrcode";
 import User from "../models/User.js";
+import CartItem from "../models/CartItem.js";
+import Wishlist from "../models/Wishlist.js";
+import Review from "../models/Review.js";
 import { validatePasswordStrength } from "../utils/validators.js";
 import { SECURITY_QUESTIONS, normalizeAnswer } from "../utils/securityQuestions.js";
 import { generateOtp, hashOtp, compareOtp, OTP_TTL_MS } from "../utils/otp.js";
@@ -313,6 +316,34 @@ export const resetPasswordWithAnswer = async (req, res) => {
 // ───────────────────────────────  Get profile  ───────────────────────────
 export const getMe = async (req, res) => {
   res.json(publicUser(req.user));
+};
+
+// ─────────────────────────────  Delete account  ───────────────────────────
+export const deleteAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.user._id).select("+password");
+
+    // Password confirmation guards against a hijacked/left-open session
+    // being used to destroy the account.
+    const ok = await user.matchPassword(password || "");
+    if (!ok) return res.status(401).json({ message: "Incorrect password." });
+
+    // Orders are kept for business/legal record-keeping (Order.user is
+    // optional, same as guest checkout) — everything else tied only to this
+    // account is removed.
+    await Promise.all([
+      CartItem.deleteMany({ user: user._id }),
+      Wishlist.deleteMany({ user: user._id }),
+      Review.deleteMany({ user: user._id }),
+    ]);
+    await user.deleteOne();
+
+    res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+    res.json({ message: "Your account has been deleted." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // ───────────────────────────  2FA: setup / manage  ────────────────────────

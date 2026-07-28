@@ -94,5 +94,8 @@
   "thankYouShoppingCamellia": "Thank you for shopping at Camellia!",
   "orderNotFoundError": "Order not found.",
   "phonePlaceholder": "01XXXXXXXXX",
-  "emailPlaceholderExample": "you@example.com"
+  "emailPlaceholderExample": "you@example.com",
+  "downloadPdfInvoice": "Download PDF Invoice",
+  "customerDetails": "Customer Details",
+  "orderItems": "Order Items"
 }

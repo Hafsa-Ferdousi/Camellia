@@ -6,6 +6,7 @@ import {
   refreshAccessToken,
   logoutUser,
   getMe,
+  deleteAccount,
   getSecurityQuestion,
   resetPasswordWithAnswer,
   setupTwoFactor,
@@ -26,6 +27,11 @@ router.post("/2fa/verify", loginLimiter, verifyTwoFactorLogin);
 router.post("/refresh", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.get("/me", protect, getMe);
+router.delete("/me", protect, sensitiveActionLimiter, deleteAccount);
+
+// Email verification (OTP sent at registration)
+router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
+router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 
 // Email verification (OTP sent at registration)
 router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);

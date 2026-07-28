@@ -28,6 +28,7 @@ export const logout = async () => {
 };
 
 export const getMe = () => client.get("/auth/me");
+export const deleteAccount = (password) => client.delete("/auth/me", { data: { password } });
 
 // --- Password reset (via security question — no email service) ---
 export const getSecurityQuestion = (identifier) => client.post("/auth/forgot-password/question", { identifier });

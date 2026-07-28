@@ -53,7 +53,10 @@ const STATUS_COLORS = {
 };
 const ORDER_STATUSES = ["pending","confirmed","processing","shipped","delivered","cancelled"];
 
+const statusLabelKey = (status) => `status${status.charAt(0).toUpperCase()}${status.slice(1)}`;
+
 const StatusBadge = ({ status }) => {
+  const { t } = useTranslation("orders");
   const c = STATUS_COLORS[status] || { bg: "#F3F4F6", color: "#374151" };
   return (
     <span style={{
@@ -62,7 +65,7 @@ const StatusBadge = ({ status }) => {
       fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
       textTransform: "capitalize", whiteSpace: "nowrap",
     }}>
-      {status}
+      {t(statusLabelKey(status))}
     </span>
   );
 };
@@ -91,6 +94,7 @@ const RevenueTrendChart = ({ data }) => {
 };
 
 const StatusBreakdownChart = ({ data }) => {
+  const { t } = useTranslation("orders");
   const total = Math.max(1, Object.values(data).reduce((a, b) => a + b, 0));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "8px 4px 0" }}>
@@ -99,7 +103,7 @@ const StatusBreakdownChart = ({ data }) => {
         return (
           <div key={status}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 3 }}>
-              <span style={{ textTransform: "capitalize", color: "var(--muted)" }}>{status}</span>
+              <span style={{ textTransform: "capitalize", color: "var(--muted)" }}>{t(statusLabelKey(status))}</span>
               <span style={{ fontWeight: 600 }}>{count}</span>
             </div>
             <div style={{ height: 6, borderRadius: 4, background: "var(--cream-dark)", overflow: "hidden" }}>
@@ -113,6 +117,7 @@ const StatusBreakdownChart = ({ data }) => {
 };
 
 const Pagination = ({ page, totalPages, onChange }) => {
+  const { t } = useTranslation("admin");
   if (totalPages <= 1) return null;
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 16 }}>
@@ -120,13 +125,13 @@ const Pagination = ({ page, totalPages, onChange }) => {
         onClick={() => onChange(Math.max(1, page - 1))}
         disabled={page === 1}
         style={{ ...pagBtnStyle, opacity: page === 1 ? 0.4 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}
-      ><ChevronLeft size={14} /> Prev</button>
-      <span style={{ fontSize: 12, color: "var(--muted)" }}>Page {page} of {totalPages}</span>
+      ><ChevronLeft size={14} /> {t("prev")}</button>
+      <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("pageOf", { page, totalPages })}</span>
       <button
         onClick={() => onChange(Math.min(totalPages, page + 1))}
         disabled={page === totalPages}
         style={{ ...pagBtnStyle, opacity: page === totalPages ? 0.4 : 1, display: "inline-flex", alignItems: "center", gap: 4 }}
-      >Next <ChevronRight size={14} /></button>
+      >{t("next")} <ChevronRight size={14} /></button>
     </div>
   );
 };
@@ -839,7 +844,7 @@ export default function Admin() {
                             <td style={s.td}>{fmt(o.totalAmount)}</td>
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
-                              <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{o.payment?.status}</div>
+                              <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
                             </td>
                             <td style={s.td}><StatusBadge status={o.status} /></td>
                             <td style={s.td}>
@@ -1114,18 +1119,18 @@ export default function Admin() {
         {tab === "coupons" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={s.pageTitle}>Coupons</h2>
+              <h2 style={s.pageTitle}>{t("couponsTitle")}</h2>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <input className="input" placeholder="Search code or title…" value={couponSearch} onChange={e => setCouponSearch(e.target.value)} style={{ width: 200 }} />
+                <input className="input" placeholder={t("searchCouponPlaceholder")} value={couponSearch} onChange={e => setCouponSearch(e.target.value)} style={{ width: 200 }} />
                 <select className="input" value={couponStatusFilter} onChange={e => setCouponStatusFilter(e.target.value)} style={{ width: 140 }}>
-                  <option value="all">All statuses</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="all">{t("allStatuses")}</option>
+                  <option value="active">{t("colActive")}</option>
+                  <option value="inactive">{t("inactive")}</option>
                 </select>
-                <button className="btn" onClick={openAddCoupon}>+ Create Coupon</button>
+                <button className="btn" onClick={openAddCoupon}>{t("createCoupon")}</button>
               </div>
             </div>
-            {couponsLoading && <p style={{ color: "var(--muted)" }}>Loading coupons…</p>}
+            {couponsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingCoupons")}</p>}
             {!couponsLoading && (() => {
               const q = couponSearch.trim().toLowerCase();
               let filtered = !q ? coupons : coupons.filter(c => (c.code || "").toLowerCase().includes(q) || (c.title || "").toLowerCase().includes(q));
@@ -1138,7 +1143,7 @@ export default function Admin() {
                 <>
                   <div style={s.tableWrap}>
                     <table style={s.table}>
-                      <thead><tr>{["Code","Title","Discount","Validity","Usage","Status","Actions"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{[t("colCode"),t("colTitleCol"),t("colDiscount"),t("colValidity"),t("colUsage"),t("colStatus"),t("colActions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {pageItems.map(c => {
                           const expired = isCouponExpired(c);
@@ -1147,15 +1152,15 @@ export default function Admin() {
                             <tr key={c._id} style={s.tr}>
                               <td style={{ ...s.td, ...s.mono }}>{c.code}</td>
                               <td style={s.td}><div style={{ fontWeight: 500, fontSize: 13 }}>{c.title}</div>{c.description && <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 220 }}>{c.description}</div>}</td>
-                              <td style={{ ...s.td, fontSize: 12.5 }}>{c.discountType === "percentage" ? `${c.discountValue}% OFF` : `${fmt(c.discountValue)} OFF`}{c.maximumDiscount != null && <div style={{ fontSize: 11, color: "var(--muted)" }}>Max {fmt(c.maximumDiscount)}</div>}{c.minimumPurchase > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>Min {fmt(c.minimumPurchase)}</div>}</td>
-                              <td style={{ ...s.td, fontSize: 12 }}>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}{expired && <div style={{ color: "var(--red)", fontSize: 11, fontWeight: 600 }}>Expired</div>}{!expired && upcoming && <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>Upcoming</div>}</td>
-                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--charcoal)" }} title="View usage stats">{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
-                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => handleToggleCouponStatus(c)} style={{ ...s.editBtn, background: c.isActive ? "var(--green)" : "var(--muted)", marginRight: 0 }} title="Click to toggle">{c.isActive ? "Active" : "Inactive"}</button></td>
-                              <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCoupon(c)} style={s.editBtn}>Edit</button><button onClick={() => setCouponConfirmDelete(c)} style={s.delBtn}>Delete</button></td>
+                              <td style={{ ...s.td, fontSize: 12.5 }}>{c.discountType === "percentage" ? t("percentOff", { value: c.discountValue }) : t("amountOff", { value: fmt(c.discountValue) })}{c.maximumDiscount != null && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("maxDiscountLabel", { amount: fmt(c.maximumDiscount) })}</div>}{c.minimumPurchase > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("minPurchaseLabel", { amount: fmt(c.minimumPurchase) })}</div>}</td>
+                              <td style={{ ...s.td, fontSize: 12 }}>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}{expired && <div style={{ color: "var(--red)", fontSize: 11, fontWeight: 600 }}>{t("expiredLabel")}</div>}{!expired && upcoming && <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>{t("upcomingLabel")}</div>}</td>
+                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--charcoal)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
+                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => handleToggleCouponStatus(c)} style={{ ...s.editBtn, background: c.isActive ? "var(--green)" : "var(--muted)", marginRight: 0 }} title={t("clickToToggleTitle")}>{c.isActive ? t("colActive") : t("inactive")}</button></td>
+                              <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCoupon(c)} style={s.editBtn}>{t("edit")}</button><button onClick={() => setCouponConfirmDelete(c)} style={s.delBtn}>{t("delete")}</button></td>
                             </tr>
                           );
                         })}
-                        {pageItems.length === 0 && <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No coupons found.</td></tr>}
+                        {pageItems.length === 0 && <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noCouponsFound")}</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -1170,18 +1175,18 @@ export default function Admin() {
         {tab === "messages" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={s.pageTitle}>Contact Messages</h2>
+              <h2 style={s.pageTitle}>{t("messagesTitle")}</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {["all", "unread", "read", "replied"].map(f => (
-                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{f}</button>
+                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
                 ))}
               </div>
             </div>
-            {messagesLoading && <p style={{ color: "var(--muted)" }}>Loading messages…</p>}
+            {messagesLoading && <p style={{ color: "var(--muted)" }}>{t("loadingMessages")}</p>}
             {!messagesLoading && (
               <div style={s.tableWrap}>
                 <table style={s.table}>
-                  <thead><tr>{["Name","Email","Message","Date","Status","Actions"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                  <thead><tr>{[t("colName"),t("colEmail"),t("colMessage"),t("colDate"),t("colStatus"),t("colActions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
                   <tbody>
                     {messages
                       .filter(m => messageFilter === "all" || m.status === messageFilter)
@@ -1198,17 +1203,17 @@ export default function Admin() {
                               fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
                               background: m.status === "unread" ? "#FEF9C3" : m.status === "replied" ? "#DCFCE7" : "#F3F4F6",
                               color: m.status === "unread" ? "#854D0E" : m.status === "replied" ? "#166534" : "#4B5563",
-                            }}>{m.status}</span>
+                            }}>{t(`msg${m.status.charAt(0).toUpperCase()}${m.status.slice(1)}`)}</span>
                           </td>
                           <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>Mark Read</button>}
-                            {m.status === "read" && <button onClick={() => handleUpdateMessageStatus(m._id, "replied")} style={{ ...s.editBtn, background: "var(--green)" }}>Mark Replied</button>}
-                            <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>Delete</button>
+                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
+                            {m.status === "read" && <button onClick={() => handleUpdateMessageStatus(m._id, "replied")} style={{ ...s.editBtn, background: "var(--green)" }}>{t("markReplied")}</button>}
+                            <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
                           </td>
                         </tr>
                       ))}
                     {messages.filter(m => messageFilter === "all" || m.status === messageFilter).length === 0 && (
-                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>No messages found.</td></tr>
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noMessagesFound")}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1355,7 +1360,7 @@ export default function Admin() {
             </div>
 
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
-              {t("payment", { method: orderDetail.payment?.method?.toUpperCase(), status: orderDetail.payment?.status })}
+              {t("payment", { method: orderDetail.payment?.method?.toUpperCase(), status: t(`orders:${orderDetail.payment?.status === "paid" ? "paid" : "unpaid"}`) })}
             </p>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -1634,28 +1639,28 @@ export default function Admin() {
       {couponModal && (
         <div style={s.overlay} onClick={closeCouponModal}>
           <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{couponModal === "add" ? "Create Coupon" : "Edit Coupon"}</h3>
+            <h3 style={s.modalTitle}>{couponModal === "add" ? t("createCouponModalTitle") : t("editCouponModalTitle")}</h3>
             {couponFormErr && <div style={s.formErr}>{couponFormErr}</div>}
             <div className="admin-form-grid" style={s.formGrid}>
-              <label style={s.label}>Coupon Code *<input className="input" name="code" value={couponForm.code} onChange={setCouponF} placeholder="e.g. EID2026" style={{ textTransform: "uppercase" }} /></label>
-              <label style={s.label}>Title *<input className="input" name="title" value={couponForm.title} onChange={setCouponF} placeholder="e.g. Eid Offer" /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>Description<textarea className="input" name="description" value={couponForm.description} onChange={setCouponF} rows={2} placeholder="Shown to customers…" style={{ resize: "vertical" }} /></label>
-              <label style={s.label}>Discount Type *<select className="input" name="discountType" value={couponForm.discountType} onChange={setCouponF}><option value="percentage">Percentage (%)</option><option value="fixed">Fixed Amount (৳)</option></select></label>
-              <label style={s.label}>Discount Value *<input className="input" name="discountValue" type="number" min="0" value={couponForm.discountValue} onChange={setCouponF} placeholder={couponForm.discountType === "percentage" ? "e.g. 20" : "e.g. 500"} /></label>
-              <label style={s.label}>Minimum Purchase (৳)<input className="input" name="minimumPurchase" type="number" min="0" value={couponForm.minimumPurchase} onChange={setCouponF} placeholder="0" /></label>
-              <label style={s.label}>Maximum Discount (৳)<input className="input" name="maximumDiscount" type="number" min="0" value={couponForm.maximumDiscount} onChange={setCouponF} placeholder="No cap" /></label>
-              <label style={s.label}>Usage Limit<input className="input" name="usageLimit" type="number" min="0" value={couponForm.usageLimit} onChange={setCouponF} placeholder="Unlimited" /></label>
-              <label style={s.label}>Per-User Limit<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder="Unlimited" /></label>
-              <label style={s.label}>Start Date *<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
-              <label style={s.label}>End Date *<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>Applicable Categories<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>Applicable Products<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>Excluded Products<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />Active</label>
+              <label style={s.label}>{t("couponCodeLabel")}<input className="input" name="code" value={couponForm.code} onChange={setCouponF} placeholder={t("couponCodePlaceholder")} style={{ textTransform: "uppercase" }} /></label>
+              <label style={s.label}>{t("couponTitleLabel")}<input className="input" name="title" value={couponForm.title} onChange={setCouponF} placeholder={t("couponTitlePlaceholder")} /></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("couponDescriptionLabel")}<textarea className="input" name="description" value={couponForm.description} onChange={setCouponF} rows={2} placeholder={t("couponDescriptionPlaceholder")} style={{ resize: "vertical" }} /></label>
+              <label style={s.label}>{t("discountTypeLabel")}<select className="input" name="discountType" value={couponForm.discountType} onChange={setCouponF}><option value="percentage">{t("percentageOption")}</option><option value="fixed">{t("fixedAmountOption")}</option></select></label>
+              <label style={s.label}>{t("discountValueLabel")}<input className="input" name="discountValue" type="number" min="0" value={couponForm.discountValue} onChange={setCouponF} placeholder={couponForm.discountType === "percentage" ? t("discountValuePercentPlaceholder") : t("discountValueFixedPlaceholder")} /></label>
+              <label style={s.label}>{t("minimumPurchaseLabel")}<input className="input" name="minimumPurchase" type="number" min="0" value={couponForm.minimumPurchase} onChange={setCouponF} placeholder="0" /></label>
+              <label style={s.label}>{t("maximumDiscountLabel")}<input className="input" name="maximumDiscount" type="number" min="0" value={couponForm.maximumDiscount} onChange={setCouponF} placeholder={t("noCapPlaceholder")} /></label>
+              <label style={s.label}>{t("usageLimitLabel")}<input className="input" name="usageLimit" type="number" min="0" value={couponForm.usageLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
+              <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
+              <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
+              <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-              <button className="btn btn-outline" onClick={closeCouponModal} disabled={couponFormSaving}>Cancel</button>
-              <button className="btn btn-gold" onClick={handleSaveCoupon} disabled={couponFormSaving}>{couponFormSaving ? "Saving…" : couponModal === "add" ? "Create Coupon" : "Save Changes"}</button>
+              <button className="btn btn-outline" onClick={closeCouponModal} disabled={couponFormSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveCoupon} disabled={couponFormSaving}>{couponFormSaving ? t("saving") : couponModal === "add" ? t("createCoupon") : t("saveChanges")}</button>
             </div>
           </div>
         </div>
@@ -1665,11 +1670,11 @@ export default function Admin() {
       {couponConfirmDelete && (
         <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>Delete Coupon?</h3>
-            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>"<strong>{couponConfirmDelete.code}</strong>" will be permanently deleted.</p>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCouponTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>{t("deleteCouponBody", { code: couponConfirmDelete.code })}</p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn btn-outline" onClick={() => setCouponConfirmDelete(null)}>Cancel</button>
-              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCoupon(couponConfirmDelete._id)}>Yes, Delete</button>
+              <button className="btn btn-outline" onClick={() => setCouponConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCoupon(couponConfirmDelete._id)}>{t("yesDelete")}</button>
             </div>
           </div>
         </div>
@@ -1679,14 +1684,14 @@ export default function Admin() {
       {couponStatsTarget && (
         <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
           <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>Usage — {couponStatsTarget.code}</h3>
+            <h3 style={s.modalTitle}>{t("couponUsageTitle", { code: couponStatsTarget.code })}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedCount}</div><div style={s.statLabel}>Total Uses</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usageLimit != null ? couponStatsTarget.usageLimit : "∞"}</div><div style={s.statLabel}>Usage Limit</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.perUserLimit != null ? couponStatsTarget.perUserLimit : "∞"}</div><div style={s.statLabel}>Per-User Limit</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedBy?.length || 0}</div><div style={s.statLabel}>Unique Customers</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedCount}</div><div style={s.statLabel}>{t("totalUses")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usageLimit != null ? couponStatsTarget.usageLimit : "∞"}</div><div style={s.statLabel}>{t("usageLimitLabel")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.perUserLimit != null ? couponStatsTarget.perUserLimit : "∞"}</div><div style={s.statLabel}>{t("perUserLimitLabel")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedBy?.length || 0}</div><div style={s.statLabel}>{t("uniqueCustomers")}</div></div>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="btn btn-outline" onClick={() => setCouponStatsTarget(null)}>Close</button></div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="btn btn-outline" onClick={() => setCouponStatsTarget(null)}>{t("close")}</button></div>
           </div>
         </div>
       )}
