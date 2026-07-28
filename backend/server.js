@@ -20,6 +20,7 @@ import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 import { sanitizeInputs } from "./middleware/sanitize.js";
 
 await connectDB();
@@ -55,6 +56,7 @@ app.use("/api/coupons",       couponRoutes);
 app.use("/api/contact",       contactRoutes);
 app.use("/api/wishlist",      wishlistRoutes);
 app.use("/api/reviews",       reviewRoutes);
+app.use("/api/chat",          chatRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

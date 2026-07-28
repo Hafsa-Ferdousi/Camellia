@@ -22,21 +22,32 @@ const kal  = (...nums) => nums.map(n => `/products/kalira_${n}.jpg`);
 
 async function seed() {
   await connectDB();
-  console.log("🌱 Clearing existing data...");
-  await Promise.all([User.deleteMany({}), Category.deleteMany({}), Product.deleteMany({})]);
+  console.log("🌱 Clearing existing product/category data...");
+  // Deliberately NOT wiping Users here — this script is meant to be re-run
+  // any time you need fresh demo products, and it must never delete real
+  // registered customer accounts as a side effect.
+  await Promise.all([Category.deleteMany({}), Product.deleteMany({})]);
 
-  // ── Users ──
-  // NOTE: this hardcoded admin is for local/demo use only (this script also
-  // wipes all products/categories, so never run it against production). In
-  // production, don't run seed.js — set ADMIN_* env vars instead and the
-  // server bootstraps the admin automatically on startup (see utils/ensureAdmin.js).
-  console.log("👤 Creating users...");
+  // ── Demo users ──
+  // Only created the first time (if missing) — never overwrites or deletes
+  // existing accounts, so re-running this script is safe even after real
+  // customers have registered. NOTE: this hardcoded admin is for local/demo
+  // use only. In production, don't run seed.js — set ADMIN_* env vars
+  // instead and the server bootstraps the admin automatically on startup
+  // (see utils/ensureAdmin.js).
+  console.log("👤 Ensuring demo users exist...");
   const demoAnswerHash = await bcrypt.hash("demo", 10);
   const securityQuestion = "What is the name of your first pet?";
 
+  const ensureDemoUser = async (data) => {
+    const existing = await User.findOne({ email: data.email });
+    if (existing) return;
+    await User.create(data);
+  };
+
   await Promise.all([
-    User.create({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "Admin123!",    role: "admin",    phone: "+8801700000001", securityQuestion, securityAnswerHash: demoAnswerHash }),
-    User.create({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "Customer123!", role: "customer", phone: "+8801700000002", securityQuestion, securityAnswerHash: demoAnswerHash }),
+    ensureDemoUser({ username: "admin",     name: "Camellia Admin", email: "admin@camellia.com",  password: "Admin123!",    role: "admin",    phone: "+8801700000001", securityQuestion, securityAnswerHash: demoAnswerHash }),
+    ensureDemoUser({ username: "customer1", name: "Hafsa Rahman",   email: "hafsa@example.com",   password: "Customer123!", role: "customer", phone: "+8801700000002", securityQuestion, securityAnswerHash: demoAnswerHash }),
   ]);
 
   // ── Categories ──

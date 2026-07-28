@@ -5,6 +5,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import ChatWidget from "./components/ChatWidget";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Login from "./pages/Login";
@@ -31,6 +32,7 @@ function SiteLayout() {
       <Navbar />
       <main style={{ minHeight: "60vh" }}><Outlet /></main>
       <Footer />
+      <ChatWidget />
     </>
   );
 }
