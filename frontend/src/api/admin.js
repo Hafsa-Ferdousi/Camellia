@@ -27,6 +27,10 @@ export const createCategory  = (data)     => client.post("/categories", data);
 export const updateCategory  = (id, data) => client.put(`/categories/${id}`, data);
 export const deleteCategory  = (id)       => client.delete(`/categories/${id}`);
 
+export const getAllConversations  = ()   => client.get("/admin/chats");
+export const getConversationById  = (id) => client.get(`/admin/chats/${id}`);
+export const deleteConversation   = (id) => client.delete(`/admin/chats/${id}`);
+
 export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append("image", file);
