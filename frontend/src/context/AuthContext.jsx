@@ -4,6 +4,7 @@ import {
   login as apiLogin,
   logout as apiLogout,
   verifyTwoFactorLogin as apiVerifyTwoFactorLogin,
+  deleteAccount as apiDeleteAccount,
 } from "../api/auth";
 import { refreshAccessToken } from "../api/client";
 import { clearAccessToken } from "../api/tokenStore";
@@ -57,8 +58,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const deleteAccount = async (password) => {
+    await apiDeleteAccount(password);
+    clearAccessToken();
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, login, completeTwoFactorLogin, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, completeTwoFactorLogin, logout, deleteAccount, loading }}>
       {children}
     </AuthContext.Provider>
   );

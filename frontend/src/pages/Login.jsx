@@ -37,6 +37,10 @@ export default function Login() {
         navigate(destinationFor(data.role), { replace: true });
       }
     } catch (err) {
+      if (err.response?.data?.code === "EMAIL_NOT_VERIFIED") {
+        navigate("/verify-email", { state: { email: err.response.data.email, from: explicitFrom } });
+        return;
+      }
       if (err.response?.status === 423) {
         setError(err.response.data.message);
       } else {

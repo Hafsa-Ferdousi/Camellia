@@ -253,11 +253,15 @@ export default function Navbar() {
                   {user ? (
                     <>
                       {user.role === "admin" ? (
-                        <Link to="/admin" onClick={() => { closeAccount(); close(); }}>{t("nav:adminPanel")}</Link>
+                        <>
+                          <Link to="/admin" onClick={() => { closeAccount(); close(); }}>{t("nav:adminPanel")}</Link>
+                          <Link to="/security" onClick={() => { closeAccount(); close(); }}>{t("nav:security")}</Link>
+                        </>
                       ) : (
                         <>
                           <Link to="/orders" onClick={() => { closeAccount(); close(); }}>{t("nav:myOrders")}</Link>
                           <Link to="/wishlist" onClick={() => { closeAccount(); close(); }}>{t("nav:wishlist")}</Link>
+                          <Link to="/security" onClick={() => { closeAccount(); close(); }}>{t("nav:security")}</Link>
                         </>
                       )}
                       <button type="button" onClick={() => { closeAccount(); handleLogout(); }}>{t("nav:logout")}</button>

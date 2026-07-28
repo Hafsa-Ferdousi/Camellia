@@ -385,7 +385,7 @@ const [pricing, setPricing] = useState({
                   onChange={handleChange}
                   required
                 >
-                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="Bangladesh">{t('bangladesh')}</option>
                 </select>
               </div>
 
@@ -398,15 +398,15 @@ const [pricing, setPricing] = useState({
                   required
                 >
                   <option value="">{t('selectDistrict')}</option>
-                  <option value="Cox's Bazar">Cox's Bazar</option>
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chattogram">Chattogram</option>
-                  <option value="Rajshahi">Rajshahi</option>
-                  <option value="Khulna">Khulna</option>
-                  <option value="Barishal">Barishal</option>
-                  <option value="Sylhet">Sylhet</option>
-                  <option value="Rangpur">Rangpur</option>
-                  <option value="Mymensingh">Mymensingh</option>
+                  <option value="Cox's Bazar">{t('districtCoxsBazar')}</option>
+                  <option value="Dhaka">{t('districtDhaka')}</option>
+                  <option value="Chattogram">{t('districtChattogram')}</option>
+                  <option value="Rajshahi">{t('districtRajshahi')}</option>
+                  <option value="Khulna">{t('districtKhulna')}</option>
+                  <option value="Barishal">{t('districtBarishal')}</option>
+                  <option value="Sylhet">{t('districtSylhet')}</option>
+                  <option value="Rangpur">{t('districtRangpur')}</option>
+                  <option value="Mymensingh">{t('districtMymensingh')}</option>
                 </select>
                 <small className="field-hint">{t('districtHint')}</small>
               </div>
@@ -420,15 +420,15 @@ const [pricing, setPricing] = useState({
                   required
                 >
                   <option value="">{t('selectCity')}</option>
-                  <option value="Cox's Bazar">Cox's Bazar</option>
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chattogram">Chattogram</option>
-                  <option value="Rajshahi">Rajshahi</option>
-                  <option value="Khulna">Khulna</option>
-                  <option value="Barishal">Barishal</option>
-                  <option value="Sylhet">Sylhet</option>
-                  <option value="Rangpur">Rangpur</option>
-                  <option value="Mymensingh">Mymensingh</option>
+                  <option value="Cox's Bazar">{t('districtCoxsBazar')}</option>
+                  <option value="Dhaka">{t('districtDhaka')}</option>
+                  <option value="Chattogram">{t('districtChattogram')}</option>
+                  <option value="Rajshahi">{t('districtRajshahi')}</option>
+                  <option value="Khulna">{t('districtKhulna')}</option>
+                  <option value="Barishal">{t('districtBarishal')}</option>
+                  <option value="Sylhet">{t('districtSylhet')}</option>
+                  <option value="Rangpur">{t('districtRangpur')}</option>
+                  <option value="Mymensingh">{t('districtMymensingh')}</option>
                   <option value="Other">{t('other')}</option>
                 </select>
               </div>

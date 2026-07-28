@@ -94,5 +94,8 @@
   "thankYouShoppingCamellia": "ক্যামেলিয়াতে কেনাকাটার জন্য ধন্যবাদ!",
   "orderNotFoundError": "অর্ডার পাওয়া যায়নি।",
   "phonePlaceholder": "01XXXXXXXXX",
-  "emailPlaceholderExample": "you@example.com"
+  "emailPlaceholderExample": "you@example.com",
+  "downloadPdfInvoice": "পিডিএফ ইনভয়েস ডাউনলোড করুন",
+  "customerDetails": "গ্রাহকের বিবরণ",
+  "orderItems": "অর্ডারকৃত পণ্য"
 }

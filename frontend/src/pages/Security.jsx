@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -6,13 +7,32 @@ import { setupTwoFactor, confirmTwoFactorSetup, disableTwoFactor } from "../api/
 
 export default function Security() {
   const { t } = useTranslation("auth");
-  const { user, setUser } = useAuth();
+  const { user, setUser, deleteAccount } = useAuth();
+  const navigate = useNavigate();
   const [setup, setSetup] = useState(null); // { qrCodeDataUrl, secret }
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleteError(""); setDeleting(true);
+    try {
+      await deleteAccount(deletePassword);
+      navigate("/");
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || t("incorrectPassword"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const startSetup = async () => {
     setError(""); setMessage(""); setLoading(true);
@@ -141,6 +161,68 @@ export default function Security() {
               </div>
             </form>
           </div>
+        )}
+      </div>
+
+      <div className="panel" style={{ borderColor: "var(--red)" }}>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 6, color: "var(--red)" }}>
+          {t("dangerZone")}
+        </p>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+          {t("deleteAccountDesc")}
+        </p>
+
+        {!showDeleteConfirm && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{ padding: "10px 20px", fontSize: 13, borderColor: "var(--red)", color: "var(--red)" }}
+          >
+            {t("deleteAccount")}
+          </button>
+        )}
+
+        {showDeleteConfirm && (
+          <form onSubmit={handleDeleteAccount}>
+            {deleteError && (
+              <div style={{ background: "#FEF2F2", color: "var(--red)", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #FECACA" }}>
+                {deleteError}
+              </div>
+            )}
+            <p style={{ fontSize: 13, color: "var(--red)", marginBottom: 12 }}>
+              {t("deleteAccountWarning")}
+            </p>
+            <label className="form-label">
+              {t("enterPasswordDelete")}
+              <input
+                className="input"
+                type="password"
+                required
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder={t("currentPasswordPlaceholder")}
+              />
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                className="btn"
+                type="submit"
+                disabled={deleting}
+                style={{ padding: "10px 20px", fontSize: 13, background: "var(--red)", borderColor: "var(--red)", color: "#fff" }}
+              >
+                {deleting ? t("deleting") : t("confirmDeleteAccount")}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError(""); }}
+                style={{ padding: "10px 20px", fontSize: 13 }}
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
