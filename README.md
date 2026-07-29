@@ -1,4 +1,3 @@
-
 # Camellia E-Commerce Platform
 
 Camellia is a modern e-commerce platform developed for a Bangladeshi jewellery and wedding accessories brand. The system replaces manual Facebook-based order management with an automated online shopping experience.
@@ -13,7 +12,7 @@ Camellia is a modern e-commerce platform developed for a Bangladeshi jewellery a
 
 
 ## Goal
-To streamline jewellery sales, inventory management, and order processing while improving the customer experience.
+To streamline jewellery sales, inventory management, and order processing while improving the customer experiences.
 
 ## Team
 - Asrafun Nahar Raisa
