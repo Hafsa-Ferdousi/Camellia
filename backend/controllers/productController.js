@@ -18,22 +18,6 @@ const pickProductFields = (body) => {
   return payload;
 };
 
-// Only these fields may be written via the admin product form — prevents
-// arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
-// straight from req.body.
-const ALLOWED_PRODUCT_FIELDS = [
-  "name", "description", "category", "basePrice", "images",
-  "totalStock", "isFeatured", "isActive",
-];
-
-const pickProductFields = (body) => {
-  const payload = {};
-  for (const key of ALLOWED_PRODUCT_FIELDS) {
-    if (body[key] !== undefined) payload[key] = body[key];
-  }
-  return payload;
-};
-
 // ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
 export const getProducts = async (req, res) => {
   try {

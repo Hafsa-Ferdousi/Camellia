@@ -64,5 +64,6 @@
   "loginForWishlist": "Please login to use wishlist!",
   "productFallback": "Product",
   "reviewCount_one": "({{count}} review)",
-  "reviewCount_other": "({{count}} reviews)"
+  "reviewCount_other": "({{count}} reviews)",
+  "youMayAlsoLike": "You May Also Like"
 }
