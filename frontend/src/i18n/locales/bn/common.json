@@ -1,0 +1,22 @@
+{
+  "brand": "ক্যামেলিয়া",
+  "cart": "কার্ট",
+  "search": "পণ্য খুঁজুন…",
+  "loading": "লোড হচ্ছে…",
+  "viewDetails": "বিস্তারিত দেখুন",
+  "productImagePlaceholder": "[ পণ্যের ছবি ]",
+  "largeProductImagePlaceholder": "[ বড় পণ্যের ছবি ]",
+  "noProductsFound": "কোনো পণ্য পাওয়া যায়নি",
+  "tryDifferentFilter": "ভিন্ন কীওয়ার্ড বা ক্যাটাগরি ফিল্টার ব্যবহার করে দেখুন।",
+  "accessRestricted": "প্রবেশাধিকার সীমিত",
+  "adminOnlyArea": "এই অংশটি শুধুমাত্র প্রশাসকদের জন্য উপলব্ধ।",
+  "productFallback": "পণ্য",
+  "chatTitle": "আমাদের সাথে চ্যাট করুন",
+  "chatGreeting": "হ্যালো! পণ্য, অর্ডার বা শিপিং সম্পর্কে জিজ্ঞাসা করুন।",
+  "chatPlaceholder": "একটি বার্তা লিখুন…",
+  "chatSend": "পাঠান",
+  "chatError": "দুঃখিত, কিছু ভুল হয়েছে। আবার চেষ্টা করুন။",
+
+  "categories": "ক্যাটাগরি",
+  "viewAllResults": "\"{{query}}\" এর জন্য সব ফলাফল দেখুন →"
+}

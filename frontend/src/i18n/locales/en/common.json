@@ -1,0 +1,22 @@
+{
+  "brand": "Camellia",
+  "cart": "Cart",
+  "search": "Search products…",
+  "loading": "Loading…",
+  "viewDetails": "View Details",
+  "productImagePlaceholder": "[ product image ]",
+  "largeProductImagePlaceholder": "[ large product image ]",
+  "noProductsFound": "No products found",
+  "tryDifferentFilter": "Try a different keyword or category filter.",
+  "accessRestricted": "Access Restricted",
+  "adminOnlyArea": "This area is only available to administrators.",
+  "productFallback": "Product",
+  "chatTitle": "Chat with us",
+  "chatGreeting": "Hi! Ask me about products, orders, or shipping.",
+  "chatPlaceholder": "Type a message…",
+  "chatSend": "Send",
+  "chatError": "Sorry, something went wrong. Please try again.",
+
+  "categories": "Categories",
+  "viewAllResults": "View all results for \"{{query}}\" →"
+}

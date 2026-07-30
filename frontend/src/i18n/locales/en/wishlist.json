@@ -1,0 +1,21 @@
+{
+  "title": "Wishlist",
+  "clearAll": "Clear All",
+  "clearConfirm": "Are you sure you want to clear your wishlist?",
+  "loadError": "Could not load your wishlist.",
+  "removeError": "Failed to remove item.",
+  "addToCartError": "Failed to add to cart.",
+  "clearError": "Failed to clear wishlist.",
+  "loading": "Loading your wishlist…",
+  "empty": "Your wishlist is empty",
+  "emptySub": "Save items you love and come back to them anytime!",
+  "browseProducts": "Browse Products",
+  "itemCount_one": "{{count}} item saved",
+  "itemCount_other": "{{count}} items saved",
+  "inStock": "In Stock",
+  "outOfStock": "Out of Stock",
+  "moveToCart": "Move to Cart",
+  "adding": "Adding...",
+  "remove": "Remove",
+  "removing": "Removing..."
+}
