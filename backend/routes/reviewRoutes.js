@@ -2,9 +2,28 @@
 import express from "express";
 import Review from "../models/Review.js";
 import Product from "../models/Product.js";
-import { protect } from "../middleware/authMiddleware.js";
+import Order from "../models/Order.js";
+import { optionalAuth } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// A review is only allowed once the reviewer has actually received the
+// product — i.e. they have a *delivered* order (not just placed/paid) that
+// contains it. Checked server-side; the client never gets to assert this.
+const hasDeliveredPurchase = async ({ userId, guestEmail, productId }) => {
+  const query = { status: "delivered", "items.product": productId };
+  if (userId) {
+    query.user = userId;
+  } else if (guestEmail) {
+    query.isGuest = true;
+    query["guestInfo.email"] = new RegExp(`^${escapeRegex(guestEmail)}$`, "i");
+  } else {
+    return false;
+  }
+  return !!(await Order.exists(query));
+};
 
 // ── GET /api/reviews/:productId ─────────────────────────────────────────────
 // Public — get all reviews for a product + average rating
@@ -30,9 +49,36 @@ router.get("/:productId", async (req, res) => {
   }
 });
 
+// ── GET /api/reviews/:productId/eligibility ─────────────────────────────────
+// Lets the frontend check (before showing the review form) whether the
+// current user/guest email has a delivered order for this product.
+router.get("/:productId/eligibility", optionalAuth, async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { email } = req.query;
+
+    if (req.user) {
+      const alreadyReviewed = await Review.exists({ product: productId, user: req.user._id });
+      const eligible = !alreadyReviewed && await hasDeliveredPurchase({ userId: req.user._id, productId });
+      return res.json({ eligible, reason: alreadyReviewed ? "already_reviewed" : eligible ? null : "not_purchased" });
+    }
+
+    if (!email || !email.includes("@")) {
+      return res.json({ eligible: false, reason: "email_required" });
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const alreadyReviewed = await Review.exists({ product: productId, guestEmail: normalizedEmail });
+    const eligible = !alreadyReviewed && await hasDeliveredPurchase({ guestEmail: normalizedEmail, productId });
+    res.json({ eligible, reason: alreadyReviewed ? "already_reviewed" : eligible ? null : "not_purchased" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ── POST /api/reviews/:productId ────────────────────────────────────────────
-// 🔓 PUBLIC — ANYONE can post a review (logged-in OR guest)
-router.post("/:productId", async (req, res) => {
+// Only customers who have a delivered order containing this product — guest
+// or logged-in — may post a review for it.
+router.post("/:productId", optionalAuth, async (req, res) => {
   try {
     const { productId } = req.params;
     const { rating, comment, guestName, guestEmail } = req.body;
@@ -69,6 +115,11 @@ router.post("/:productId", async (req, res) => {
       if (alreadyReviewed) {
         return res.status(400).json({ message: "You have already reviewed this product." });
       }
+
+      const purchased = await hasDeliveredPurchase({ userId: req.user._id, productId });
+      if (!purchased) {
+        return res.status(403).json({ message: "Only customers who have received this product can leave a review." });
+      }
     } else {
       // GUEST USER
       if (!guestName || !guestEmail) {
@@ -93,13 +144,18 @@ router.post("/:productId", async (req, res) => {
           message: "You have already reviewed this product with this email.",
         });
       }
+
+      const purchased = await hasDeliveredPurchase({ guestEmail: guestEmailToCheck, productId });
+      if (!purchased) {
+        return res.status(403).json({ message: "Only customers who have received this product can leave a review." });
+      }
     }
 
     // 4. Create the review
     const review = await Review.create({
       product: productId,
       user: user, // null for guests
-      guestName: guestEmailToCheck || null,
+      guestName: guestEmailToCheck ? userName : null,
       guestEmail: guestEmailToCheck || null,
       userName: userName,
       rating: Number(rating),

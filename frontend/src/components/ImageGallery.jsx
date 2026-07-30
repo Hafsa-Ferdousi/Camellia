@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Gem } from "lucide-react";
 
 export default function ImageGallery({ images = [] }) {
+  const { t } = useTranslation("common");
   const [active, setActive] = useState(0);
 
   return (
@@ -8,10 +11,10 @@ export default function ImageGallery({ images = [] }) {
       {/* Main image */}
       <div style={{ ...styles.main, cursor: images.length ? "zoom-in" : "default" }}>
         {images.length > 0
-          ? <img src={images[active]} alt="Product" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ? <img src={images[active]} alt={t("productFallback")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 36, opacity: 0.3 }}>💍</span>
-              <span style={{ fontSize: 13, color: "var(--faint)" }}>[ large product image ]</span>
+              <Gem size={36} style={{ opacity: 0.3 }} />
+              <span style={{ fontSize: 13, color: "var(--faint)" }}>{t("largeProductImagePlaceholder")}</span>
             </div>
         }
       </div>

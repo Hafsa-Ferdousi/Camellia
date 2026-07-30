@@ -1,9 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { setupTwoFactor, confirmTwoFactorSetup, disableTwoFactor } from "../api/auth";
 
 export default function Security() {
-  const { user, setUser } = useAuth();
+  const { t } = useTranslation("auth");
+  const { user, setUser, deleteAccount } = useAuth();
+  const navigate = useNavigate();
   const [setup, setSetup] = useState(null); // { qrCodeDataUrl, secret }
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -11,13 +16,31 @@ export default function Security() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleteError(""); setDeleting(true);
+    try {
+      await deleteAccount(deletePassword);
+      navigate("/");
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || t("incorrectPassword"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const startSetup = async () => {
     setError(""); setMessage(""); setLoading(true);
     try {
       const { data } = await setupTwoFactor();
       setSetup(data);
     } catch (err) {
-      setError(err.response?.data?.message || "Could not start 2FA setup.");
+      setError(err.response?.data?.message || t("couldNotStart2fa"));
     } finally {
       setLoading(false);
     }
@@ -31,9 +54,9 @@ export default function Security() {
       setUser(u => ({ ...u, twoFactorEnabled: true }));
       setSetup(null);
       setCode("");
-      setMessage("Two-factor authentication is now enabled on your account.");
+      setMessage(t("twoFactorEnabledMsg"));
     } catch (err) {
-      setError(err.response?.data?.message || "Incorrect code. Please try again.");
+      setError(err.response?.data?.message || t("incorrectCodeRetry"));
     } finally {
       setLoading(false);
     }
@@ -46,9 +69,9 @@ export default function Security() {
       await disableTwoFactor(password);
       setUser(u => ({ ...u, twoFactorEnabled: false }));
       setPassword("");
-      setMessage("Two-factor authentication has been disabled.");
+      setMessage(t("twoFactorDisabledMsg"));
     } catch (err) {
-      setError(err.response?.data?.message || "Incorrect password.");
+      setError(err.response?.data?.message || t("incorrectPassword"));
     } finally {
       setLoading(false);
     }
@@ -56,15 +79,15 @@ export default function Security() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "36px 24px 64px" }}>
-      <span className="eyebrow">Your Account</span>
+      <span className="eyebrow">{t("yourAccount")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
-        Security
+        {t("security")}
       </h1>
       <div className="divider-gold">✦</div>
 
       {message && (
-        <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0" }}>
-          ✓ {message}
+        <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0", display: "flex", alignItems: "center", gap: 6 }}>
+          <Check size={14} /> {message}
         </div>
       )}
       {error && (
@@ -75,22 +98,24 @@ export default function Security() {
 
       <div className="panel" style={{ marginBottom: 20 }}>
         <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 6 }}>
-          Two-Factor Authentication (2FA)
+          {t("twoFactorAuth")}
         </p>
         <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
-          Add an extra layer of security using an authenticator app (Google Authenticator, Authy, etc).
+          {t("twoFactorDesc")}
         </p>
 
         {user?.twoFactorEnabled && !setup && (
           <>
-            <p style={{ fontSize: 13, color: "#065F46", marginBottom: 16 }}>✓ 2FA is currently <strong>enabled</strong> on your account.</p>
+            <p style={{ fontSize: 13, color: "#065F46", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+              <Check size={14} /> <span dangerouslySetInnerHTML={{ __html: t("twoFactorEnabledNote") }} />
+            </p>
             <form onSubmit={handleDisable}>
               <label className="form-label">
-                Enter your password to disable 2FA
-                <input className="input" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Current password" />
+                {t("enterPasswordDisable")}
+                <input className="input" type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder={t("currentPasswordPlaceholder")} />
               </label>
               <button className="btn" type="submit" disabled={loading} style={{ padding: "10px 20px", fontSize: 13 }}>
-                {loading ? "Disabling…" : "Disable 2FA"}
+                {loading ? t("disabling") : t("disable2fa")}
               </button>
             </form>
           </>
@@ -98,22 +123,22 @@ export default function Security() {
 
         {!user?.twoFactorEnabled && !setup && (
           <button className="btn btn-gold" onClick={startSetup} disabled={loading} style={{ padding: "10px 20px", fontSize: 13 }}>
-            {loading ? "Loading…" : "Enable 2FA"}
+            {loading ? t("loading") : t("enable2fa")}
           </button>
         )}
 
         {setup && (
           <div>
             <p style={{ fontSize: 13, marginBottom: 12 }}>
-              1. Scan this QR code with your authenticator app:
+              {t("scanQr")}
             </p>
             <img src={setup.qrCodeDataUrl} alt="2FA QR code" style={{ width: 180, height: 180, marginBottom: 12, borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }} />
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16, wordBreak: "break-all" }}>
-              Or enter this key manually: <code>{setup.secret}</code>
+              {t("enterKeyManually")} <code>{setup.secret}</code>
             </p>
             <form onSubmit={confirmSetup}>
               <label className="form-label">
-                2. Enter the 6-digit code it shows
+                {t("enterCode")}
                 <input
                   className="input"
                   type="text"
@@ -122,20 +147,82 @@ export default function Security() {
                   required
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="123456"
+                  placeholder={t("codePlaceholder")}
                   style={{ letterSpacing: "0.3em", textAlign: "center" }}
                 />
               </label>
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn btn-gold" type="submit" disabled={loading || code.length < 6} style={{ padding: "10px 20px", fontSize: 13 }}>
-                  {loading ? "Confirming…" : "Confirm & Enable"}
+                  {loading ? t("confirming") : t("confirmEnable")}
                 </button>
                 <button type="button" className="btn" onClick={() => { setSetup(null); setCode(""); }} style={{ padding: "10px 20px", fontSize: 13 }}>
-                  Cancel
+                  {t("cancel")}
                 </button>
               </div>
             </form>
           </div>
+        )}
+      </div>
+
+      <div className="panel" style={{ borderColor: "var(--red)" }}>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 6, color: "var(--red)" }}>
+          {t("dangerZone")}
+        </p>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+          {t("deleteAccountDesc")}
+        </p>
+
+        {!showDeleteConfirm && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{ padding: "10px 20px", fontSize: 13, borderColor: "var(--red)", color: "var(--red)" }}
+          >
+            {t("deleteAccount")}
+          </button>
+        )}
+
+        {showDeleteConfirm && (
+          <form onSubmit={handleDeleteAccount}>
+            {deleteError && (
+              <div style={{ background: "#FEF2F2", color: "var(--red)", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #FECACA" }}>
+                {deleteError}
+              </div>
+            )}
+            <p style={{ fontSize: 13, color: "var(--red)", marginBottom: 12 }}>
+              {t("deleteAccountWarning")}
+            </p>
+            <label className="form-label">
+              {t("enterPasswordDelete")}
+              <input
+                className="input"
+                type="password"
+                required
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder={t("currentPasswordPlaceholder")}
+              />
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                className="btn"
+                type="submit"
+                disabled={deleting}
+                style={{ padding: "10px 20px", fontSize: 13, background: "var(--red)", borderColor: "var(--red)", color: "#fff" }}
+              >
+                {deleting ? t("deleting") : t("confirmDeleteAccount")}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError(""); }}
+                style={{ padding: "10px 20px", fontSize: 13 }}
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>

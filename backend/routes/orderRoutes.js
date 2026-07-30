@@ -10,12 +10,13 @@ import {
   getOrderSummary,
 } from "../controllers/orderController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
+import { guestLookupLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
 // Public — no account required.
 router.post("/guest-checkout", guestCheckout);
-router.post("/guest-lookup", guestLookupOrder);
+router.post("/guest-lookup", guestLookupLimiter, guestLookupOrder);
 
 router.use(protect);
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAccessToken, setAccessToken, clearAccessToken } from "./tokenStore";
 
 // In dev: Vite proxy forwards /api -> http://localhost:5000/api (no CORS issues)
 // In prod: set VITE_API_BASE_URL to your deployed backend URL
@@ -11,23 +12,24 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Access tokens are short-lived (15 min). When one expires mid-session, try
-// a silent refresh using the httpOnly refresh cookie and replay the
-// original request once, so the user is never bounced out just because
-// their token aged out under them.
+// Access tokens are short-lived (15 min) and kept in memory only. When one
+// expires mid-session — or on a fresh page load, since memory doesn't
+// survive a reload — try a silent refresh using the httpOnly refresh cookie
+// and replay the original request once, so the user is never bounced out
+// just because their token aged out or the tab was reloaded.
 let refreshPromise = null;
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = client
       .post("/auth/refresh")
       .then((res) => {
-        localStorage.setItem("token", res.data.token);
+        setAccessToken(res.data.token);
         return res.data.token;
       })
       .finally(() => {
@@ -53,7 +55,7 @@ client.interceptors.response.use(
         config.headers.Authorization = `Bearer ${newToken}`;
         return client(config);
       } catch {
-        localStorage.removeItem("token");
+        clearAccessToken();
         window.dispatchEvent(new Event("auth:unauthorized"));
         return Promise.reject(error);
       }
@@ -61,8 +63,8 @@ client.interceptors.response.use(
 
     // Any other 401 (invalid token, refresh itself failed, etc.) means the
     // session is genuinely over — clear it and let AuthContext react.
-    if (status === 401 && localStorage.getItem("token")) {
-      localStorage.removeItem("token");
+    if (status === 401 && getAccessToken()) {
+      clearAccessToken();
       window.dispatchEvent(new Event("auth:unauthorized"));
     }
 

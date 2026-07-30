@@ -4,8 +4,40 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
+import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
+import User from "../models/User.js";
 
-// Generate unique invoice number
+// ===== GENERATE CUSTOMER‑FRIENDLY ORDER ID =====
+// Format: ORD-FirstName-PhoneLast3-RandomTime
+// Example: ORD-JOHN-789-42
+const generateGuestOrderId = (guestInfo, user) => {
+  // Get first name
+  let firstName = '';
+  if (user && user.name) {
+    firstName = user.name.split(' ')[0];
+  } else if (guestInfo && guestInfo.name) {
+    firstName = guestInfo.name.split(' ')[0];
+  } else {
+    firstName = 'Guest';
+  }
+  
+  // Get phone (last 3 digits)
+  let phoneLast3 = '000';
+  const phone = guestInfo?.phone || user?.phone || '';
+  if (phone && phone.length >= 3) {
+    phoneLast3 = phone.slice(-3);
+  }
+  
+  // Generate random 2-digit number for uniqueness (in case of same name+phone)
+  const random = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+  
+  // Generate timestamp (last 4 digits of milliseconds)
+  const time = String(Date.now()).slice(-4);
+  
+  return `ORD-${firstName.toUpperCase()}-${phoneLast3}-${time}`;
+};
+
+// ===== INVOICE NUMBER GENERATION =====
 const generateInvoiceNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
@@ -20,6 +52,11 @@ const getDeliveryCharge = (settings, district) => {
   return match ? match.charge : settings.defaultDeliveryCharge;
 };
 
+// Escapes regex metacharacters in user-supplied input before it's used inside
+// a RegExp — otherwise a crafted email/name lets a caller inject arbitrary
+// regex (ReDoS or overly-broad matches) into the Mongo query.
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // ── POST /api/orders/checkout (logged-in user) ──────────────────────────────
 export const checkout = async (req, res) => {
   const { address, paymentMethod = "cod", items, couponCode } = req.body;
@@ -32,32 +69,42 @@ export const checkout = async (req, res) => {
     return res.status(400).json({ message: "Cart is empty." });
   }
 
+  const decrements = [];
+  const rollbackStock = () =>
+    Promise.all(decrements.map((d) => Product.findByIdAndUpdate(d.productId, { $inc: { totalStock: d.quantity } })));
+
   try {
     const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
-    const productsToSave = [];
     const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
       const productId = line.productId || line.product;
       if (!productId || quantity < 1) {
-        return res.status(400).json({ message: "Invalid item in cart." });
+        throw new Error("Invalid item in cart.");
       }
 
-      const product = await Product.findById(productId);
-      if (!product || !product.isActive) {
-        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      const existing = await Product.findById(productId);
+      if (!existing || !existing.isActive) {
+        throw new Error("A product in your cart is no longer available. Please refresh your cart.");
       }
-      if (product.totalStock < quantity) {
-        throw new Error(`Not enough stock for ${product.name.en}`);
+
+      // Atomic conditional decrement — the stock check and the write happen
+      // in one operation, so two concurrent checkouts can't both pass the
+      // check and oversell the last unit.
+      const product = await Product.findOneAndUpdate(
+        { _id: productId, totalStock: { $gte: quantity } },
+        { $inc: { totalStock: -quantity } },
+        { new: true }
+      );
+      if (!product) {
+        throw new Error(`Not enough stock for ${existing.name.en}`);
       }
+      decrements.push({ productId, quantity });
 
       const price = product.basePrice;
-      product.totalStock = Math.max(0, product.totalStock - quantity);
-      productsToSave.push(product);
-
       subtotal += price * quantity;
       orderItems.push({
         product: product._id,
@@ -83,14 +130,12 @@ export const checkout = async (req, res) => {
       discountAmount = result.discount;
     }
 
-    await Promise.all(productsToSave.map((p) => p.save()));
-
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
     const originalTotal = subtotal + vat + deliveryCharge;
     const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
-    // ✅ FIXED: Payment status is always "pending" – admin confirms later
+    // Payment status is always "pending" – admin confirms later
     const order = await Order.create({
       user: req.user._id,
       address,
@@ -104,6 +149,7 @@ export const checkout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
+      guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
@@ -114,6 +160,7 @@ export const checkout = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
+    await rollbackStock();
     res.status(400).json({ message: error.message });
   }
 };
@@ -132,31 +179,39 @@ export const guestCheckout = async (req, res) => {
     return res.status(400).json({ message: "Cart is empty." });
   }
 
+  const decrements = [];
+  const rollbackStock = () =>
+    Promise.all(decrements.map((d) => Product.findByIdAndUpdate(d.productId, { $inc: { totalStock: d.quantity } })));
+
   try {
     const settings = await Setting.getSingleton();
     let subtotal = 0;
     const orderItems = [];
-    const productsToSave = [];
     const couponLines = [];
 
     for (const line of items) {
       const quantity = Number(line.quantity) || 0;
       if (!line.productId || quantity < 1) {
-        return res.status(400).json({ message: "Invalid item in cart." });
+        throw new Error("Invalid item in cart.");
       }
 
-      const product = await Product.findById(line.productId);
-      if (!product || !product.isActive) {
-        return res.status(400).json({ message: "A product in your cart is no longer available. Please refresh your cart." });
+      const existing = await Product.findById(line.productId);
+      if (!existing || !existing.isActive) {
+        throw new Error("A product in your cart is no longer available. Please refresh your cart.");
       }
-      if (product.totalStock < quantity) {
-        throw new Error(`Not enough stock for ${product.name.en}`);
+
+      // Atomic conditional decrement — see checkout() for why this matters.
+      const product = await Product.findOneAndUpdate(
+        { _id: line.productId, totalStock: { $gte: quantity } },
+        { $inc: { totalStock: -quantity } },
+        { new: true }
+      );
+      if (!product) {
+        throw new Error(`Not enough stock for ${existing.name.en}`);
       }
+      decrements.push({ productId: line.productId, quantity });
 
       const price = product.basePrice;
-      product.totalStock = Math.max(0, product.totalStock - quantity);
-      productsToSave.push(product);
-
       subtotal += price * quantity;
       orderItems.push({
         product: product._id,
@@ -180,14 +235,12 @@ export const guestCheckout = async (req, res) => {
       discountAmount = result.discount;
     }
 
-    await Promise.all(productsToSave.map((p) => p.save()));
-
     const deliveryCharge = getDeliveryCharge(settings, address.district);
     const vat = Math.round(subtotal * settings.vatRate * 100) / 100;
     const originalTotal = subtotal + vat + deliveryCharge;
     const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
-    // ✅ FIXED: Payment status is always "pending" – admin confirms later
+    // Payment status is always "pending" – admin confirms later
     const order = await Order.create({
       user: null,
       isGuest: true,
@@ -203,6 +256,7 @@ export const guestCheckout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
+      guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
@@ -211,40 +265,50 @@ export const guestCheckout = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
+    await rollbackStock();
     res.status(400).json({ message: error.message });
   }
 };
 
 // ── POST /api/orders/guest-lookup  (public — no account required) ──────────
+// Now supports searching by:
+//   - Order ID (MongoDB _id) + Email
+//   - Guest Order ID (friendly format) + Email
+//   - Phone + Email (without order ID)
 export const guestLookupOrder = async (req, res) => {
   try {
     const { orderId, email, phone, name } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ message: "Email is required." });
+    if (!email || (!orderId && !phone)) {
+      return res.status(400).json({ message: "Email plus either an Order ID or phone number is required." });
     }
 
-    let query = { isGuest: true };
+    const query = {
+      isGuest: true,
+      "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
+    };
 
-    // Option 1: Order ID + Email (most accurate)
+    // Option 1: Order ID or Guest Order ID + Email
     if (orderId) {
-      if (!orderId.match(/^[0-9a-fA-F]{24}$/)) {
+      // Check if it's a MongoDB ObjectId (24 hex chars)
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderId);
+      // Or check if it's our friendly format (starts with ORD-)
+      const isFriendly = orderId.startsWith('ORD-');
+
+      if (isObjectId) {
+        query._id = orderId;
+      } else if (isFriendly) {
+        query.guestOrderId = orderId;
+      } else {
         return res.status(400).json({ message: "Invalid order ID format." });
       }
-      query._id = orderId;
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
     }
     // Option 2: Email + Phone
-    else if (phone) {
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
-      query['guestInfo.phone'] = phone.trim();
-      if (name) {
-        query['guestInfo.name'] = new RegExp(name.trim(), 'i');
-      }
-    }
-    // Option 3: Email only (returns all orders for that email)
     else {
-      query['guestInfo.email'] = new RegExp(`^${email.trim()}$`, 'i');
+      query["guestInfo.phone"] = phone.trim();
+      if (name) {
+        query["guestInfo.name"] = new RegExp(escapeRegex(name.trim()), "i");
+      }
     }
 
     const orders = await Order.find(query)
@@ -306,10 +370,35 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     order.status = req.body.status;
-    if (req.body.status === "delivered" && order.payment.method === "cod") {
+
+    const justMarkedPaid = req.body.status === "delivered" && order.payment.method === "cod" && order.payment.status !== "paid";
+    if (justMarkedPaid) {
       order.payment.status = "paid";
     }
     await order.save();
+
+    // Best-effort notification — never blocks the response if email fails
+    // or isn't configured (see utils/mailer.js).
+    const recipientEmail = order.isGuest
+      ? order.guestInfo?.email
+      : (await User.findById(order.user).select("email"))?.email;
+
+    if (recipientEmail) {
+      sendOrderStatusEmail(recipientEmail, {
+        orderId: order._id,
+        invoiceNumber: order.invoiceNumber,
+        status: order.status,
+      }).catch(() => {});
+
+      if (justMarkedPaid) {
+        sendPaymentConfirmedEmail(recipientEmail, {
+          orderId: order._id,
+          invoiceNumber: order.invoiceNumber,
+          amount: order.totalAmount,
+        }).catch(() => {});
+      }
+    }
+
     res.json(order);
   } catch (error) {
     res.status(500).json({ message: "Failed to update order status." });

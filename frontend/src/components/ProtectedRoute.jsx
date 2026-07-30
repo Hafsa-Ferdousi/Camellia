@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 // Wrap any route that requires a logged-in user (and optionally an admin role).
@@ -8,11 +9,12 @@ import { useAuth } from "../context/AuthContext";
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation("common");
 
   if (loading) {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 14 }}>
-        Loading…
+        {t("loading")}
       </div>
     );
   }
@@ -26,10 +28,10 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     return (
       <div style={{ minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", textAlign: "center" }}>
         <p style={{ fontFamily: "var(--font-display)", fontSize: 26, fontStyle: "italic", color: "var(--maroon)", marginBottom: 8 }}>
-          Access Restricted
+          {t("accessRestricted")}
         </p>
         <p style={{ color: "var(--muted)", fontSize: 14 }}>
-          This area is only available to administrators.
+          {t("adminOnlyArea")}
         </p>
       </div>
     );
