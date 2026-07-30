@@ -1,17 +1,23 @@
 // frontend/src/pages/TrackOrder.jsx
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-
-const STATUS_STYLE = {
-  pending:    { bg: "#FEF3C7", color: "#92400E", label: "Pending" },
-  confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: "Confirmed" },
-  processing: { bg: "#E0E7FF", color: "#3730A3", label: "Processing" },
-  shipped:    { bg: "#CFFAFE", color: "#155E75", label: "Shipped" },
-  delivered:  { bg: "#D1FAE5", color: "#065F46", label: "Delivered" },
-  cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: "Cancelled" },
-};
+import { useTranslation } from "react-i18next";
+import { Phone } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
+import { localized } from "../utils/localized";
+import { formatPrice } from "../utils/formatPrice";
 
 export default function TrackOrder() {
+  const { t } = useTranslation("orders");
+  const { language } = useLanguage();
+  const STATUS_STYLE = {
+    pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
+    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
+    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
+    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
+    cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
+  };
   const [params] = useSearchParams();
   const [orderId, setOrderId] = useState(params.get("orderId") || "");
   const [email, setEmail] = useState("");
@@ -28,12 +34,12 @@ export default function TrackOrder() {
 
     // Validate
     if (!email.trim()) {
-      setError("Email address is required.");
+      setError(t("emailRequiredError"));
       setLoading(false);
       return;
     }
     if (!orderId.trim() && !phone.trim()) {
-      setError("Please provide either Order ID or Phone Number.");
+      setError(t("orderIdOrPhoneRequiredError"));
       setLoading(false);
       return;
     }
@@ -44,7 +50,7 @@ export default function TrackOrder() {
     if (phone.trim()) payload.phone = phone.trim();
 
     try {
-      // ✅ Use fetch directly (bypasses Axios, sends phone number correctly)
+      // Use fetch directly (bypasses Axios, sends phone number correctly)
       const response = await fetch('/api/orders/guest-lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,18 +59,18 @@ export default function TrackOrder() {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.message || 'Order not found.');
+        throw new Error(err.message || t("orderNotFoundError"));
       }
 
       const data = await response.json();
-      
+
       if (data.orders && data.orders.length > 0) {
         setOrders(data.orders);
       } else {
-        setError("No orders found for the provided information.");
+        setError(t("noOrderForIdEmail"));
       }
     } catch (err) {
-      setError(err.message || "Network error. Please try again.");
+      setError(err.message || t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -74,11 +80,9 @@ export default function TrackOrder() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "Georgia, serif", fontSize: 28, fontStyle: "italic", color: "#8B1A1A", marginBottom: 4 }}>
-            Track Your Order
-          </p>
-          <p style={{ fontSize: 13, color: "#888" }}>
-            Enter your email and <strong>either</strong> your Order ID <strong>or</strong> the phone number used at checkout.
+          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("trackYourOrder")}</p>
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>
+            {t("trackSub")}
           </p>
         </div>
         <div style={{ textAlign: "center", marginBottom: 28, color: "#C9A84C" }}>✦</div>
@@ -86,66 +90,52 @@ export default function TrackOrder() {
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <label style={{ display: "block", marginBottom: 12, fontSize: 14, fontWeight: 500 }}>
-            Email Address <span style={{ color: "#C62828" }}>*</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={styles.input}
-            />
-          </label>
-
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: 16 }}>
             <div style={{ flex: 1, minWidth: "140px" }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
-                Order ID
+              <label className="form-label">
+                {t("orderId")}
                 <input
+                  className="input"
                   type="text"
                   value={orderId}
                   onChange={e => setOrderId(e.target.value)}
-                  placeholder="e.g., 65f3a8b2..."
-                  style={styles.input}
+                  placeholder={t("orderIdHint")}
                 />
               </label>
             </div>
             <div style={{ flex: 1, minWidth: "140px" }}>
-              <label style={{ display: "block", fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
-                Phone Number
+              <label className="form-label">
+                {t("phoneNumber")}
                 <input
+                  className="input"
                   type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  placeholder="01XXXXXXXXX"
-                  style={styles.input}
+                  placeholder={t("phonePlaceholder")}
                 />
               </label>
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: 13,
-              fontSize: 14,
-              background: "#C9A84C",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            {loading ? "Searching…" : "🔍 Find My Order"}
+          <label className="form-label">
+            {t("emailAddress")}
+            <input
+              className="input"
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder={t("emailPlaceholderExample")}
+            />
+          </label>
+
+          <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+            {loading ? t("searching") : t("findMyOrder")}
           </button>
         </form>
 
         {orders && orders.length > 0 && (
-          <div style={{ marginTop: 28, borderTop: "1px solid #ddd", paddingTop: 24 }}>
+          <div style={{ marginTop: 28, borderTop: "1px solid var(--border)", paddingTop: 24 }}>
             {orders.map((order) => {
               const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
               const items = order.items || [];
@@ -154,62 +144,53 @@ export default function TrackOrder() {
                 <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid #eee" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
-                      <p style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 600 }}>
-                        Order #{order._id.slice(-8).toUpperCase()}
+                      <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
+                        {t("orderHash")}{order._id.slice(-8).toUpperCase()}
                       </p>
-                      <p style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                      <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                         {new Date(order.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
                       </p>
                     </div>
                     <span style={{
-                      background: status.bg,
-                      color: status.color,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: "4px 12px",
-                      borderRadius: 20,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
+                      background: status.bg, color: status.color,
+                      fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 20,
+                      textTransform: "uppercase", letterSpacing: "0.04em",
                     }}>
                       {status.label}
                     </span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    {items.length > 0 ? (
-                      items.map((item, i) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                          <span>{item.nameSnapshot || item.product?.name?.en || "Product"} × {item.quantity}</span>
-                          <span style={{ fontWeight: 600, color: "#C9A84C" }}>৳ {(item.price * item.quantity).toLocaleString()}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p style={{ fontSize: 13, color: "#999" }}>No items listed.</p>
-                    )}
+                    {items.map((item, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                        <span>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</span>
+                        <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
+                      </div>
+                    ))}
                   </div>
 
-                  <div style={{ background: "#FAF8F5", borderRadius: 6, padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "#888" }}>
-                      <span>Subtotal</span><span>৳ {order.subtotal?.toLocaleString() || "0"}</span>
+                  <div style={{ background: "var(--parchment)", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--muted)" }}>
+                      <span>{t("subtotal")}</span><span>৳ {formatPrice(order.subtotal, language)}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "#888" }}>
-                      <span>Delivery</span><span>৳ {order.deliveryCharge?.toLocaleString() || "0"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, color: "var(--muted)" }}>
+                      <span>{t("delivery")}</span><span>৳ {formatPrice(order.deliveryCharge, language)}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, borderTop: "1px solid #ddd", paddingTop: 10 }}>
-                      <span>Total</span>
-                      <span style={{ color: "#C9A84C", fontFamily: "Georgia, serif" }}>৳ {order.totalAmount?.toLocaleString() || "0"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                      <span>{t("total")}</span>
+                      <span style={{ color: "var(--gold-text)", fontFamily: "var(--font-display)" }}>৳ {formatPrice(order.totalAmount, language)}</span>
                     </div>
                   </div>
 
-                  <p style={{ fontSize: 13, color: "#333", lineHeight: 1.6 }}>
-                    <strong>Delivery Address:</strong><br />
-                    {order.address?.addressLine || "N/A"}, {order.address?.city || "N/A"}
-                    {order.address?.phone && <> · 📞 {order.address.phone}</>}
+                  <p style={{ fontSize: 13, color: "var(--charcoal)", lineHeight: 1.6 }}>
+                    <strong>{t("deliveryAddress")}:</strong><br />
+                    {order.address?.addressLine}, {order.address?.city}
+                    {order.address?.phone && <> · <Phone size={12} style={{ verticalAlign: "-1px" }} /> {order.address.phone}</>}
                   </p>
 
                   <div style={{ marginTop: 12 }}>
-                    <Link to={`/order-confirmation`} state={{ order }} style={{ color: "#C9A84C", fontWeight: 600, fontSize: 14 }}>
-                      View Full Details →
+                    <Link to="/order-confirmation" state={{ order }} style={{ color: "var(--gold-text)", fontWeight: 600, fontSize: 14 }}>
+                      {t("viewFullDetails")}
                     </Link>
                   </div>
                 </div>
@@ -218,8 +199,8 @@ export default function TrackOrder() {
           </div>
         )}
 
-        <p style={{ textAlign: "center", fontSize: 13, color: "#888", marginTop: 20 }}>
-          Have an account? <Link to="/login" style={{ color: "#8B1A1A", fontWeight: 600 }}>Log in</Link> to see all your orders in one place.
+        <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 20 }}>
+          {t("haveAccount")} <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("logIn")}</Link> {t("seeAllOrders")}
         </p>
       </div>
     </div>

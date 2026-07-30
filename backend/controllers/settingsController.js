@@ -10,6 +10,7 @@ export const getPublicPricing = async (req, res) => {
       vatRate: settings.vatRate,
       defaultDeliveryCharge: settings.defaultDeliveryCharge,
       districtDeliveryCharges: settings.districtDeliveryCharges,
+      defaultLanguage: settings.defaultLanguage,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

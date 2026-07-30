@@ -13,7 +13,7 @@ export const getStats = async (req, res) => {
     trendStart.setDate(trendStart.getDate() - 6);
     trendStart.setHours(0, 0, 0, 0);
 
-    const [totalOrders, totalUsers, totalProducts, revenueAgg, recentOrders, statusAgg, revenueTrendAgg] =
+    const [totalOrders, totalUsers, totalProducts, revenueAgg, recentOrders, statusAgg, revenueTrendAgg, settings] =
       await Promise.all([
         Order.countDocuments(),
         User.countDocuments(),
@@ -38,6 +38,7 @@ export const getStats = async (req, res) => {
             },
           },
         ]),
+        Setting.getSingleton(),
       ]);
 
     const statusCounts = ORDER_STATUSES.reduce((acc, st) => ({ ...acc, [st]: 0 }), {});
@@ -52,6 +53,11 @@ export const getStats = async (req, res) => {
       revenueTrend.push({ date: key, total: revenueByDay[key] || 0 });
     }
 
+    const lowStockCount = await Product.countDocuments({
+      isActive: true,
+      totalStock: { $lte: settings.lowStockThreshold },
+    });
+
     res.json({
       totalOrders,
       totalUsers,
@@ -60,7 +66,93 @@ export const getStats = async (req, res) => {
       recentOrders,
       statusCounts,
       revenueTrend,
+      lowStockCount,
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// GET /api/admin/products/low-stock
+export const getLowStockProducts = async (req, res) => {
+  try {
+    const settings = await Setting.getSingleton();
+    const threshold = req.query.threshold !== undefined ? Number(req.query.threshold) : settings.lowStockThreshold;
+
+    const products = await Product.find({
+      isActive: true,
+      totalStock: { $lte: threshold },
+    })
+      .populate("category", "name slug")
+      .sort({ totalStock: 1 });
+
+    res.json({ threshold, products });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Wraps a CSV field in quotes and escapes embedded quotes if it contains a
+// comma, quote, or newline — keeps the export valid for Excel/Sheets import.
+const csvField = (value) => {
+  const str = value === undefined || value === null ? "" : String(value);
+  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+};
+
+// GET /api/admin/sales/export?from=&to=&status=  -> streams a CSV of orders
+export const exportSalesCSV = async (req, res) => {
+  try {
+    const { from, to, status } = req.query;
+    const query = {};
+    if (from || to) {
+      query.createdAt = {};
+      if (from) query.createdAt.$gte = new Date(from);
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+    if (status) query.status = status;
+
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .populate("user", "name email");
+
+    const header = [
+      "Order ID", "Date", "Customer", "Email", "Items", "Subtotal", "VAT",
+      "Delivery", "Total", "Payment Method", "Payment Status", "Order Status",
+    ];
+
+    const rows = orders.map((o) => {
+      const customerName = o.isGuest ? o.guestInfo?.name : o.user?.name;
+      const customerEmail = o.isGuest ? o.guestInfo?.email : o.user?.email;
+      const itemsSummary = o.items.map((i) => `${i.nameSnapshot} x${i.quantity}`).join("; ");
+      return [
+        o._id.toString(),
+        o.createdAt.toISOString().slice(0, 10),
+        customerName || "",
+        customerEmail || "",
+        itemsSummary,
+        o.subtotal,
+        o.vat,
+        o.deliveryCharge,
+        o.totalAmount,
+        o.payment?.method || "",
+        o.payment?.status || "",
+        o.status,
+      ];
+    });
+
+    const csv = [header, ...rows]
+      .map((row) => row.map(csvField).join(","))
+      .join("\r\n");
+
+    const filename = `sales-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(csv);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -204,7 +296,7 @@ export const getSettings = async (req, res) => {
 // PUT /api/admin/settings
 export const updateSettings = async (req, res) => {
   try {
-    const { vatRate, defaultDeliveryCharge, districtDeliveryCharges } = req.body;
+    const { vatRate, defaultDeliveryCharge, districtDeliveryCharges, lowStockThreshold, defaultLanguage } = req.body;
 
     if (vatRate !== undefined && (isNaN(Number(vatRate)) || Number(vatRate) < 0 || Number(vatRate) > 1)) {
       return res.status(400).json({ message: "VAT rate must be a number between 0 and 1 (e.g. 0.10 for 10%)." });
@@ -219,6 +311,12 @@ export const updateSettings = async (req, res) => {
         return res.status(400).json({ message: "Each district charge needs a district name and a non-negative charge." });
       }
     }
+    if (lowStockThreshold !== undefined && (isNaN(Number(lowStockThreshold)) || Number(lowStockThreshold) < 0)) {
+      return res.status(400).json({ message: "Low stock threshold must be a non-negative number." });
+    }
+    if (defaultLanguage !== undefined && !["en", "bn"].includes(defaultLanguage)) {
+      return res.status(400).json({ message: "Default language must be 'en' or 'bn'." });
+    }
 
     const settings = await Setting.getSingleton();
     if (vatRate !== undefined) settings.vatRate = Number(vatRate);
@@ -229,6 +327,8 @@ export const updateSettings = async (req, res) => {
         charge: Number(d.charge),
       }));
     }
+    if (lowStockThreshold !== undefined) settings.lowStockThreshold = Number(lowStockThreshold);
+    if (defaultLanguage !== undefined) settings.defaultLanguage = defaultLanguage;
     await settings.save();
 
     res.json(settings);

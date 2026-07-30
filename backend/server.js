@@ -1,11 +1,12 @@
+import "./loadEnv.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
+import { ensureAdminUser } from "./utils/ensureAdmin.js";
 import authRoutes     from "./routes/authRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import productRoutes  from "./routes/productRoutes.js";
@@ -13,14 +14,17 @@ import cartRoutes     from "./routes/cartRoutes.js";
 import orderRoutes    from "./routes/orderRoutes.js";
 import adminRoutes    from "./routes/adminRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
+import uploadRoutes   from "./routes/uploadRoutes.js";
 import couponRoutes, { adminCouponRouter } from "./routes/couponRoutes.js";
 import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import { sanitizeInputs } from "./middleware/sanitize.js";
 
-dotenv.config();
-connectDB();
+await connectDB();
+await ensureAdminUser();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -32,6 +36,7 @@ app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(sanitizeInputs);
 app.use(apiLimiter);
 
 const frontendPublic = path.join(__dirname, "../frontend/public");
@@ -46,21 +51,12 @@ app.use("/api/orders",        orderRoutes);
 app.use("/api/admin",         adminRoutes);
 app.use("/api/admin/coupons", adminCouponRouter);
 app.use("/api/settings",      settingsRoutes);
+app.use("/api/upload",        uploadRoutes);
 app.use("/api/coupons",       couponRoutes);
 app.use("/api/contact",       contactRoutes);
 app.use("/api/wishlist",      wishlistRoutes);
-
-// ✅ Routes – combined from both branches
-app.use("/api/auth",       authRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/products",   productRoutes);
-app.use("/api/cart",       cartRoutes);
-app.use("/api/orders",     orderRoutes);
-app.use("/api/admin",      adminRoutes);
-app.use("/api/settings",   settingsRoutes);
-app.use("/api/coupons",    couponRoutes);          // Coupon system
-app.use("/api/admin/coupons", adminCouponRouter);  // Admin coupon routes
-app.use("/api/reviews",    reviewRoutes);          // Reviews system
+app.use("/api/reviews",       reviewRoutes);
+app.use("/api/chat",          chatRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
