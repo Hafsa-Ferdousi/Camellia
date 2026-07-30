@@ -80,14 +80,9 @@ export default function TrackOrder() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>
-            {t("trackYourOrder")}
-          </p>
+          <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("trackYourOrder")}</p>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>
             {t("trackSub")}
-          </p>
-          <p style={{ fontSize: 12, color: "#c9a84c", marginTop: 4 }}>
-            {t("trackHint")}
           </p>
         </div>
         <div style={{ textAlign: "center", marginBottom: 28, color: "#C9A84C" }}>✦</div>
@@ -97,91 +92,44 @@ export default function TrackOrder() {
         <form onSubmit={handleSubmit}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: 16 }}>
             <div style={{ flex: 1, minWidth: "140px" }}>
-              <label className="form-label" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+              <label className="form-label">
                 {t("orderId")}
+                <input
+                  className="input"
+                  type="text"
+                  value={orderId}
+                  onChange={e => setOrderId(e.target.value)}
+                  placeholder={t("orderIdHint")}
+                />
               </label>
-              <input
-                className="input"
-                type="text"
-                value={orderId}
-                onChange={e => setOrderId(e.target.value)}
-                placeholder={t("orderIdHint")}
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  border: "1px solid #ddd",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  marginTop: 0,
-                  background: "#FAFAFA",
-                  boxSizing: "border-box",
-                }}
-              />
             </div>
             <div style={{ flex: 1, minWidth: "140px" }}>
-              <label className="form-label" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+              <label className="form-label">
                 {t("phoneNumber")}
+                <input
+                  className="input"
+                  type="tel"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder={t("phonePlaceholder")}
+                />
               </label>
-              <input
-                className="input"
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder={t("phonePlaceholder")}
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  border: "1px solid #ddd",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  marginTop: 0,
-                  background: "#FAFAFA",
-                  boxSizing: "border-box",
-                }}
-              />
             </div>
           </div>
 
-          <label className="form-label" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
-            {t("emailAddress")} <span style={{ color: '#c62828' }}>*</span>
+          <label className="form-label">
+            {t("emailAddress")}
+            <input
+              className="input"
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder={t("emailPlaceholderExample")}
+            />
           </label>
-          <input
-            className="input"
-            type="email"
-            required
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder={t("emailPlaceholderExample")}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              border: "1px solid #ddd",
-              borderRadius: 6,
-              fontSize: 14,
-              marginTop: 0,
-              background: "#FAFAFA",
-              boxSizing: "border-box",
-            }}
-          />
 
-          <button 
-            className="btn" 
-            type="submit" 
-            disabled={loading} 
-            style={{ 
-              width: "100%", 
-              marginTop: 16, 
-              padding: 13, 
-              fontSize: 13,
-              background: "#c9a84c",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 600,
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
+          <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
             {loading ? t("searching") : t("findMyOrder")}
           </button>
         </form>
@@ -191,15 +139,13 @@ export default function TrackOrder() {
             {orders.map((order) => {
               const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
               const items = order.items || [];
-              // ✅ Use guestOrderId if available, otherwise fallback to shortened _id
-              const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
 
               return (
                 <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid #eee" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
                       <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
-                        {t("orderHash")}{displayOrderId}
+                        {t("orderHash")}{order._id.slice(-8).toUpperCase()}
                       </p>
                       <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                         {new Date(order.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
@@ -243,11 +189,7 @@ export default function TrackOrder() {
                   </p>
 
                   <div style={{ marginTop: 12 }}>
-                    <Link 
-                      to="/order-confirmation" 
-                      state={{ order }} 
-                      style={{ color: "var(--gold-text)", fontWeight: 600, fontSize: 14 }}
-                    >
+                    <Link to="/order-confirmation" state={{ order }} style={{ color: "var(--gold-text)", fontWeight: 600, fontSize: 14 }}>
                       {t("viewFullDetails")}
                     </Link>
                   </div>
@@ -291,5 +233,15 @@ const styles = {
     marginBottom: 16,
     fontSize: 13,
     border: "1px solid #FECACA",
+  },
+  input: {
+    width: "100%",
+    padding: "10px 14px",
+    border: "1px solid #ddd",
+    borderRadius: 6,
+    fontSize: 14,
+    marginTop: 4,
+    background: "#FAFAFA",
+    boxSizing: "border-box",
   },
 };

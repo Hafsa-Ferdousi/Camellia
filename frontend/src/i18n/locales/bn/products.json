@@ -64,6 +64,5 @@
   "loginForWishlist": "উইশলিস্ট ব্যবহার করতে লগইন করুন!",
   "productFallback": "পণ্য",
   "reviewCount_one": "({{count}}টি পর্যালোচনা)",
-  "reviewCount_other": "({{count}}টি পর্যালোচনা)",
-  "youMayAlsoLike": "আপনার পছন্দ হতে পারে"
+  "reviewCount_other": "({{count}}টি পর্যালোচনা)"
 }

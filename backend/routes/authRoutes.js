@@ -33,10 +33,6 @@ router.delete("/me", protect, sensitiveActionLimiter, deleteAccount);
 router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
 router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 
-// Email verification (OTP sent at registration)
-router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
-router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
-
 // Password reset — via the security question chosen at registration (no email service)
 router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);
 router.post("/forgot-password/reset", sensitiveActionLimiter, resetPasswordWithAnswer);

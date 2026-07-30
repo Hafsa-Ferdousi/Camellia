@@ -1,4 +1,3 @@
-// frontend/src/pages/OrderHistory.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -165,9 +164,6 @@ export default function OrderHistory() {
             const stepIndex = STATUS_STEPS.indexOf(order.status);
             const isPaid = order.payment?.status === 'paid';
 
-            // ✅ Friendly order ID: use guestOrderId if exists, else fallback to shortened _id
-            const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
-
             return (
               <div key={order._id} className="panel" style={{ overflow: "hidden" }}>
 
@@ -182,7 +178,7 @@ export default function OrderHistory() {
                 >
                   <div>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
-                      {t("orderHash")}{displayOrderId}
+                      {t("orderHash")}{order._id.slice(-8).toUpperCase()}
                     </p>
                     <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                       {new Date(order.createdAt).toLocaleDateString("en-GB", {

@@ -1,4 +1,3 @@
-// backend/controllers/orderController.js
 import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
@@ -7,37 +6,7 @@ import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
 
-// ===== GENERATE CUSTOMER‑FRIENDLY ORDER ID =====
-// Format: ORD-FirstName-PhoneLast3-RandomTime
-// Example: ORD-JOHN-789-42
-const generateGuestOrderId = (guestInfo, user) => {
-  // Get first name
-  let firstName = '';
-  if (user && user.name) {
-    firstName = user.name.split(' ')[0];
-  } else if (guestInfo && guestInfo.name) {
-    firstName = guestInfo.name.split(' ')[0];
-  } else {
-    firstName = 'Guest';
-  }
-  
-  // Get phone (last 3 digits)
-  let phoneLast3 = '000';
-  const phone = guestInfo?.phone || user?.phone || '';
-  if (phone && phone.length >= 3) {
-    phoneLast3 = phone.slice(-3);
-  }
-  
-  // Generate random 2-digit number for uniqueness (in case of same name+phone)
-  const random = String(Math.floor(Math.random() * 100)).padStart(2, '0');
-  
-  // Generate timestamp (last 4 digits of milliseconds)
-  const time = String(Date.now()).slice(-4);
-  
-  return `ORD-${firstName.toUpperCase()}-${phoneLast3}-${time}`;
-};
-
-// ===== INVOICE NUMBER GENERATION =====
+// Generate unique invoice number
 const generateInvoiceNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
@@ -149,7 +118,6 @@ export const checkout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
-      guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
@@ -240,7 +208,7 @@ export const guestCheckout = async (req, res) => {
     const originalTotal = subtotal + vat + deliveryCharge;
     const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
-    // Payment status is always "pending" – admin confirms later
+    // ✅ FIXED: Payment status is always "pending" – admin confirms later
     const order = await Order.create({
       user: null,
       isGuest: true,
@@ -256,7 +224,6 @@ export const guestCheckout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
-      guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
@@ -271,14 +238,13 @@ export const guestCheckout = async (req, res) => {
 };
 
 // ── POST /api/orders/guest-lookup  (public — no account required) ──────────
-// Now supports searching by:
-//   - Order ID (MongoDB _id) + Email
-//   - Guest Order ID (friendly format) + Email
-//   - Phone + Email (without order ID)
 export const guestLookupOrder = async (req, res) => {
   try {
     const { orderId, email, phone, name } = req.body;
 
+    // Email alone is never enough — it must be paired with the order ID or
+    // the checkout phone number, otherwise anyone who knows a victim's email
+    // could pull their name/address/order history.
     if (!email || (!orderId && !phone)) {
       return res.status(400).json({ message: "Email plus either an Order ID or phone number is required." });
     }
@@ -288,20 +254,12 @@ export const guestLookupOrder = async (req, res) => {
       "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
     };
 
-    // Option 1: Order ID or Guest Order ID + Email
+    // Option 1: Order ID + Email (most accurate)
     if (orderId) {
-      // Check if it's a MongoDB ObjectId (24 hex chars)
-      const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderId);
-      // Or check if it's our friendly format (starts with ORD-)
-      const isFriendly = orderId.startsWith('ORD-');
-
-      if (isObjectId) {
-        query._id = orderId;
-      } else if (isFriendly) {
-        query.guestOrderId = orderId;
-      } else {
+      if (!orderId.match(/^[0-9a-fA-F]{24}$/)) {
         return res.status(400).json({ message: "Invalid order ID format." });
       }
+      query._id = orderId;
     }
     // Option 2: Email + Phone
     else {

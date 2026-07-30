@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react"; // 👈 Added useRef, useEffect
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Search, ShoppingCart, Menu, X, User, Gem } from "lucide-react";
@@ -19,19 +19,21 @@ export default function Navbar() {
   const close = () => setOpen(false);
   const handleLogout = () => { logout(); navigate("/"); close(); };
 
-  // ✅ SMART SEARCH STATE
+  // 👇 NEW: Autocomplete states
   const [suggestions, setSuggestions] = useState([]);
-  const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Account menu
+  // Account menu — one icon button that opens a small dropdown anchored
+  // under it (Language / My Orders / Wishlist / Admin / Logout, or
+  // Login / Register), the same pattern commercial sites use for
+  // "Account" in the top bar rather than a full sidebar/drawer.
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef(null);
   const closeAccount = () => setAccountOpen(false);
 
-  // Click outside closes dropdowns
+  // 👇 NEW: Click outside closes dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -45,33 +47,29 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ SMART SEARCH: Debounced fetch (Products + Categories)
+  // 👇 NEW: Debounced fetch suggestions
   useEffect(() => {
     const timer = setTimeout(() => {
       if (q.trim().length >= 1) {
         fetchSuggestions(q.trim());
       } else {
         setSuggestions([]);
-        setCategorySuggestions([]);
         setShowSuggestions(false);
       }
     }, 200);
     return () => clearTimeout(timer);
   }, [q]);
 
-  // ✅ SMART SEARCH: Fetch products AND categories
   const fetchSuggestions = async (query) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
-        setSuggestions(data.products || []);
-        setCategorySuggestions(data.categories || []);
-        setShowSuggestions(data.products.length > 0 || data.categories.length > 0);
+        setSuggestions(data);
+        setShowSuggestions(data.length > 0);
       } else {
         setSuggestions([]);
-        setCategorySuggestions([]);
         setShowSuggestions(false);
       }
     } catch (err) {
@@ -135,8 +133,6 @@ export default function Navbar() {
             {navLink("/about", t("nav:about"))}
             {navLink("/contact", t("nav:contact"))}
           </nav>
-
-          {/* 🔍 SMART SEARCH BAR */}
           <div ref={wrapperRef} className="navbar-search-wrapper" style={{ flex: "0 1 220px", position: "relative" }}>
             <form
               className="navbar-search-form"
@@ -163,7 +159,7 @@ export default function Navbar() {
               </button>
             </form>
 
-            {/* ✅ SMART SEARCH DROPDOWN */}
+            {/* 👇 NEW: DROPDOWN SUGGESTIONS */}
             {showSuggestions && (
               <div style={{
                 position: "absolute",
@@ -173,7 +169,7 @@ export default function Navbar() {
                 background: "#fff",
                 border: "1px solid #ddd",
                 borderRadius: "8px",
-                maxHeight: "320px",
+                maxHeight: "280px",
                 overflowY: "auto",
                 zIndex: 999,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
@@ -181,112 +177,39 @@ export default function Navbar() {
                 {loading ? (
                   <div style={{ padding: "12px", textAlign: "center", color: "#888" }}>{t("common:loading")}</div>
                 ) : (
-                  <>
-                    {/* PRODUCT SUGGESTIONS */}
-                    {suggestions.map((product) => {
-                      const name = (language === "bn" ? product.name?.bn : product.name?.en) || t("common:productFallback");
-                      const image = product.images?.[0];
-                      return (
-                        <div
-                          key={product._id}
-                          onClick={() => handleSelectSuggestion(product)}
-                          style={{
-                            padding: "8px 14px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            borderBottom: "1px solid #f0f0f0",
-                            transition: "background 0.15s",
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
-                        >
-                          {image ? (
-                            <img src={image} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4 }} />
-                          ) : (
-                            <span style={{ color: "#c9a84c", display: "inline-flex" }}><Gem size={20} strokeWidth={1.5} /></span>
-                          )}
-                          <div>
-                            <div style={{ fontWeight: 500, fontSize: 14 }}>{name}</div>
-                            <div style={{ fontSize: 12, color: "#c9a84c" }}>
-                              ৳ {formatPrice(product.basePrice, language)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* ✅ CATEGORY SUGGESTIONS */}
-                    {categorySuggestions.length > 0 && (
-                      <div>
-                        <div style={{
-                          padding: "6px 14px",
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          color: "#999",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          borderTop: "1px solid #f0f0f0",
-                        }}>
-                          {t("common:categories")}
-                        </div>
-                        {categorySuggestions.map((cat) => {
-                          const name = (language === "bn" ? cat.name?.bn : cat.name?.en) || "Category";
-                          return (
-                            <div
-                              key={cat._id}
-                              onClick={() => {
-                                setQ(name);
-                                setShowSuggestions(false);
-                                navigate(`/products?category=${cat._id}`);
-                                close();
-                              }}
-                              style={{
-                                padding: "8px 14px",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px",
-                                borderBottom: "1px solid #f0f0f0",
-                                transition: "background 0.15s",
-                              }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
-                            >
-                              <span style={{ fontSize: "16px" }}>📂</span>
-                              <span style={{ fontWeight: 500, fontSize: "14px" }}>{name}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* ✅ VIEW ALL RESULTS LINK */}
-                    {(suggestions.length > 0 || categorySuggestions.length > 0) && (
+                  suggestions.map((product) => {
+                    const name = (language === "bn" ? product.name?.bn : product.name?.en) || t("common:productFallback");
+                    const image = product.images?.[0];
+                    return (
                       <div
-                        onClick={() => {
-                          setShowSuggestions(false);
-                          navigate(`/products?search=${encodeURIComponent(q)}`);
-                          close();
-                        }}
+                        key={product._id}
+                        onClick={() => handleSelectSuggestion(product)}
                         style={{
-                          padding: "10px 14px",
+                          padding: "8px 14px",
                           cursor: "pointer",
-                          textAlign: "center",
-                          color: "#c9a84c",
-                          fontWeight: 600,
-                          fontSize: "13px",
-                          borderTop: "1px solid #f0f0f0",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          borderBottom: "1px solid #f0f0f0",
                           transition: "background 0.15s",
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
                       >
-                        {t("common:viewAllResults", { query: q })}
+                        {image ? (
+                          <img src={image} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4 }} />
+                        ) : (
+                          <span style={{ color: "#c9a84c", display: "inline-flex" }}><Gem size={20} strokeWidth={1.5} /></span>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: 14 }}>{name}</div>
+                          <div style={{ fontSize: 12, color: "#c9a84c" }}>
+                            ৳ {formatPrice(product.basePrice, language)}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </>
+                    );
+                  })
                 )}
               </div>
             )}
