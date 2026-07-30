@@ -1,0 +1,20 @@
+{
+  "home": "হোম",
+  "products": "পণ্য",
+  "categories": "ক্যাটাগরি",
+  "about": "আমাদের সম্পর্কে",
+  "contact": "যোগাযোগ",
+  "admin": "অ্যাডমিন",
+  "adminPanel": "অ্যাডমিন প্যানেল",
+  "myOrders": "আমার অর্ডার",
+  "wishlist": "পছন্দের তালিকা",
+  "security": "নিরাপত্তা",
+  "login": "লগইন",
+  "register": "নিবন্ধন",
+  "logout": "লগআউট",
+  "greeting": "হ্যালো, {{name}}",
+  "trackOrder": "অর্ডার ট্র্যাক করুন",
+  "menu": "মেনু",
+  "account": "অ্যাকাউন্ট",
+  "language": "ভাষা"
+}
