@@ -1,3 +1,4 @@
+// backend/models/Order.js
 import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
@@ -39,18 +40,24 @@ const orderSchema = new mongoose.Schema(
     subtotal: { type: Number, required: true },
     vat: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 60 },
-    // Coupon snapshot at time of order — the discount is a flat amount off
-    // the subtotal, computed and re-validated server-side at checkout.
+    // Coupon snapshot at time of order
     couponCode: { type: String, default: null },
     discountAmount: { type: Number, default: 0 },
-    originalTotal: { type: Number, default: null }, // subtotal + vat + delivery, before discount
-    totalAmount: { type: Number, required: true }, // final total, after discount
+    originalTotal: { type: Number, default: null },
+    totalAmount: { type: Number, required: true },
     payment: paymentSchema,
 
-    //  INVOICE NUMBER FIELD ADDED HERE
+    // Invoice number (e.g., INV-20260730-1234)
     invoiceNumber: {
       type: String,
       unique: true,
+    },
+
+    // ✅ NEW: Customer‑friendly order ID for easy tracking (e.g., ORD-JOHN-789-42)
+    guestOrderId: {
+      type: String,
+      unique: true,
+      index: true, // for faster lookups in tracking page
     },
   },
   { timestamps: true }
