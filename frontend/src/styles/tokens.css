@@ -1182,3 +1182,19 @@ img { max-width: 100%; display: block; }
     position: static;
   }
 }
+
+/* ============================================================
+   GLOBAL PRINT RULES
+   The Navbar and Footer are rendered on every page (outside any
+   page-specific container), so a single page's own @media print
+   block can't hide them. Hiding them here, once, keeps every
+   printed page — receipts, invoices, anything else — free of
+   the site's chrome (nav bar, mobile drawer, footer).
+   ============================================================ */
+@media print {
+  .navbar,
+  .navbar-mobile-drawer,
+  .footer {
+    display: none !important;
+  }
+}
