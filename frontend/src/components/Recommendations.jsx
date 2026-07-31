@@ -33,7 +33,7 @@ const Recommendations = ({ productId }) => {
   return (
     <div style={{ marginTop: '40px', borderTop: '1px solid #e8e0d8', paddingTop: '30px' }}>
       <h3 style={{ fontFamily: 'Georgia, serif', fontSize: '22px', marginBottom: '16px' }}>
-        ✨ You May Also Like
+        You May Also Like
       </h3>
       <div style={{
         display: 'grid',
@@ -61,7 +61,7 @@ const Recommendations = ({ productId }) => {
                 {image ? (
                   <img src={image} alt={name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }} />
                 ) : (
-                  <div style={{ width: '100%', height: '160px', background: '#f8f5f0', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>💍</div>
+                  <div style={{ width: '100%', height: '160px', background: '#f8f5f0', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#b8ab98', textTransform: 'uppercase', letterSpacing: '0.5px' }}>No Image</div>
                 )}
                 <div style={{ fontWeight: '500', fontSize: '14px', marginBottom: '4px', flex: 1 }}>{name}</div>
                 <div style={{ fontWeight: '600', color: '#c9a84c', fontSize: '15px' }}>৳ {price.toLocaleString()}</div>
