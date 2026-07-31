@@ -81,6 +81,9 @@ export default function Products() {
   const activeCat    = categories.find(c => c._id === selectedCat);
   const activeCatName = activeCat ? localized(activeCat.name, language) : "";
 
+  // ✅ SMART SEARCH: Get the search query from URL for the header
+  const searchQuery = searchParams.get("search") || "";
+
   return (
     <div>
       {/* ── Page header ── */}
@@ -149,6 +152,18 @@ export default function Products() {
 
           {/* ── RIGHT: Products ── */}
           <div style={{ flex: 1, minWidth: 0 }}>
+
+            {/* ✅ SMART SEARCH HEADER */}
+            {searchQuery && (
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '22px', color: '#1a1a1a' }}>
+                  {t("searchResultsFor", { query: searchQuery })}
+                </h2>
+                <p style={{ color: '#888', fontSize: '14px' }}>
+                  {products.length} {t("productsFound", { count: products.length })}
+                </p>
+              </div>
+            )}
 
             {/* Search + result count bar */}
             <div style={s.topBar}>
