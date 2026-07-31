@@ -49,6 +49,8 @@ export const getProducts = async (req, res) => {
 
     if (limit) {
       q = q.limit(Number(limit));
+      const products = await q;
+      return res.json(products);
     } else {
       const currentPage = Math.max(1, Number(page));
       const size = Math.max(1, Number(pageSize));
