@@ -8,6 +8,7 @@ import {
   Ticket, Mail, MessageCircle, Trash2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { generateDescription } from "../api/admin";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
@@ -198,6 +199,7 @@ export default function Admin() {
   const [form, setForm]               = useState(BLANK_PRODUCT);
   const [formErr, setFormErr]         = useState("");
   const [formSaving, setFormSaving]   = useState(false);
+  const [aiLoading,  setAiLoading]    = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [pendingDeleteImages, setPendingDeleteImages] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -1568,6 +1570,56 @@ export default function Admin() {
                 {t("descriptionEnglish")}
                 <textarea className="input" name="descEn" value={form.descEn} onChange={setF} rows={2} placeholder={t("shortDescriptionPlaceholder")} style={{ resize: "vertical" }} />
               </label>
+
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {"বিবরণ (বাংলা)"}
+                <textarea className="input" name="descBn" value={form.descBn} onChange={setF} rows={2} placeholder="বাংলা বিবরণ…" style={{ resize: "vertical" }} />
+              </label>
+
+              {/* ── AI Description Generator Button ── */}
+              <div style={{ gridColumn: "1 / -1", marginTop: -8, marginBottom: 8 }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!form.nameEn.trim()) { setFormErr("Please enter product name first!"); return; }
+                    setFormErr("");
+                    setAiLoading(true);
+                    try {
+                      const r = await generateDescription(
+                        form.nameEn,
+                        categories.find(c => c._id === form.category)?.name?.en,
+                        form.basePrice
+                      );
+                      setForm(f => ({ ...f, nameBn: r.data.nameBn, descEn: r.data.en, descBn: r.data.bn }));
+                    } catch {
+                      setFormErr("AI generation failed. Please write manually.");
+                    } finally {
+                      setAiLoading(false);
+                    }
+                  }}
+                  disabled={aiLoading}
+                  style={{
+                    padding: "8px 16px",
+                    background: aiLoading ? "#ccc" : "var(--gold)",
+                    color: "#1C0A0F",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: aiLoading ? "not-allowed" : "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  {aiLoading ? "Generating..." : "Generate with AI"}
+                </button>
+                {form.descEn && !aiLoading && (
+                  <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 10 }}>
+                    Description ready! You can edit above.
+                  </span>
+                )}
+              </div>
               <label style={s.label}>
                 {t("category")}
                 <select className="input" name="category" value={form.category} onChange={setF}>

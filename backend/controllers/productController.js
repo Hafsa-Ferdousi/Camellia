@@ -1,6 +1,5 @@
 // backend/controllers/productController.js
 import Product from "../models/Product.js";
-import Category from "../models/Category.js";
 
 // Only these fields may be written via the admin product form — prevents
 // arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
@@ -18,10 +17,15 @@ const pickProductFields = (body) => {
   return payload;
 };
 
-// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
+// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&page=&pageSize=&featured=&sort= ──
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, limit, featured, sort } = req.query;
+    const {
+      search, category, minPrice, maxPrice,
+      limit, featured, sort,
+      page = 1, pageSize = 12,
+    } = req.query;
+
     const query = { isActive: true };
 
     // Save search term for ranking
@@ -44,15 +48,27 @@ export const getProducts = async (req, res) => {
     }
     if (featured === "true") query.isFeatured = true;
 
+    const total = await Product.countDocuments(query);
+
     let q = Product.find(query).populate("category", "name slug");
 
     if (sort === "price-asc") q = q.sort({ basePrice: 1 });
     else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
     else q = q.sort({ createdAt: -1 });
 
-    if (limit) q = q.limit(Number(limit));
+    // Handle limit parameter (for backward compatibility)
+    if (limit) {
+      q = q.limit(Number(limit));
+      const products = await q;
+      return res.json(products);
+    }
 
-    const products = await q;
+    // Handle pagination (default behavior)
+    const currentPage = Math.max(1, Number(page));
+    const size = Math.max(1, Number(pageSize));
+    q = q.skip((currentPage - 1) * size).limit(size);
+
+    let products = await q;
 
     // ✅ SMART SEARCH RANKING: Name matches > Description matches > Featured
     if (searchTerm && products.length > 0) {
@@ -81,7 +97,15 @@ export const getProducts = async (req, res) => {
       });
     }
 
-    res.json(products);
+    res.json({
+      products,
+      pagination: {
+        total,
+        page: currentPage,
+        pageSize: size,
+        totalPages: Math.ceil(total / size),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -99,7 +123,7 @@ export const getAllProductsAdmin = async (req, res) => {
   }
 };
 
-// ── GET /api/products/:id ───────────────────────────────────────────────────
+// ── GET /api/products/:id ────────────────────────────────────────────────────
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category", "name slug");
@@ -110,7 +134,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// ── POST /api/products (admin only) ──────────────────────────────────────────
+// ── POST /api/products (admin only) ─────────────────────────────────────────
 export const createProduct = async (req, res) => {
   try {
     const product = await Product.create(pickProductFields(req.body));
@@ -150,76 +174,47 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// ================================================================
-// ✅ AI RECOMMENDATIONS ── ONLY FROM SAME CATEGORY (NO FALLBACK!)
-// ── GET /api/products/recommendations/:productId ──────────────────
-export const getRecommendations = async (req, res) => {
+// ── GET /api/products/search?q=... ──────────────────────────────────────────
+export const searchProducts = async (req, res) => {
   try {
-    const { productId } = req.params;
-    const limit = Math.min(Number(req.query.limit) || 8, 12);
+    const query = req.query.q;
+    if (!query || query.length < 1) return res.json([]);
 
-    // 1. Get the source product to find its category
-    const source = await Product.findById(productId).select("category");
-    if (!source) return res.status(404).json({ message: "Product not found" });
-
-    // 2. Find ONLY products from the SAME category, excluding current product
-    const recommendations = await Product.find({
-      _id: { $ne: productId },
-      category: source.category,
+    const products = await Product.find({
       isActive: true,
-      totalStock: { $gt: 0 },
+      $or: [
+        { 'name.en': { $regex: query, $options: 'i' } },
+        { 'name.bn': { $regex: query, $options: 'i' } },
+        { 'description.en': { $regex: query, $options: 'i' } },
+        { 'description.bn': { $regex: query, $options: 'i' } },
+      ],
     })
-      .populate("category", "name slug")
-      .sort({ createdAt: -1 }) // Newest first within the category
-      .limit(limit)
-      .lean();
+    .select('_id name images basePrice')
+    .limit(10)
+    .lean();
 
-    // ✅ NO FALLBACK! If there are only 2 products, we return only 2.
-    // We do NOT add random products from other categories.
-
-    res.json(recommendations);
+    res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// ================================================================
-// ✅ SMART SEARCH / AUTOCOMPLETE ──────────────────────────────────
-// ── GET /api/products/search?q=... ──────────────────────────────
-export const searchProducts = async (req, res) => {
+// ── GET /api/products/recommendations/:productId ─────────────────────────────
+export const getRecommendations = async (req, res) => {
   try {
-    const query = req.query.q?.trim();
-    if (!query || query.length < 1) {
-      return res.json({ products: [], categories: [] });
-    }
+    const product = await Product.findById(req.params.productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
-    const regex = new RegExp(query, 'i');
-
-    // 1. Search Products (name only, for speed)
-    const products = await Product.find({
+    const recommendations = await Product.find({
+      _id: { $ne: req.params.productId },
+      category: product.category,
       isActive: true,
-      $or: [
-        { 'name.en': regex },
-        { 'name.bn': regex },
-      ],
     })
-    .select('_id name images basePrice')
-    .limit(8)
-    .lean();
+      .limit(4)
+      .select("name images basePrice totalStock category");
 
-    // 2. Search Categories
-    const categories = await Category.find({
-      $or: [
-        { 'name.en': regex },
-        { 'name.bn': regex },
-      ],
-    })
-    .select('_id name slug')
-    .limit(4)
-    .lean();
-
-    res.json({ products, categories });
+    res.json(recommendations);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch recommendations." });
   }
 };

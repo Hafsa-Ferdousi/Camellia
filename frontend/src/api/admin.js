@@ -39,3 +39,7 @@ export const uploadImage = (file) => {
   });
 };
 export const deleteUploadedImage = (url) => client.delete("/upload", { data: { url } });
+
+// ── AI Description Generator ──
+export const generateDescription = (productName, category, price) =>
+  client.post("/admin/generate-description", { productName, category, price });

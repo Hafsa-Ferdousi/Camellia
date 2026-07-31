@@ -12,7 +12,7 @@ const Recommendations = ({ productId }) => {
     const fetchRecommendations = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/products/recommendations/${productId}?limit=8`);
+        const res = await fetch(`/api/products/recommendations/${productId}`);
         if (!res.ok) throw new Error('Failed to load recommendations');
         const data = await res.json();
         setProducts(data);
