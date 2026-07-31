@@ -15,5 +15,8 @@
   "chatGreeting": "Hi! Ask me about products, orders, or shipping.",
   "chatPlaceholder": "Type a message…",
   "chatSend": "Send",
-  "chatError": "Sorry, something went wrong. Please try again."
+  "chatError": "Sorry, something went wrong. Please try again.",
+
+  "categories": "Categories",
+  "viewAllResults": "View all results for \"{{query}}\" →"
 }
