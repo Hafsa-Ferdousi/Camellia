@@ -1,9 +1,6 @@
 // backend/controllers/productController.js
 import Product from "../models/Product.js";
 
-// Only these fields may be written via the admin product form — prevents
-// arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
-// straight from req.body.
 const ALLOWED_PRODUCT_FIELDS = [
   "name", "description", "category", "basePrice", "images",
   "totalStock", "isFeatured", "isActive",
@@ -17,10 +14,15 @@ const pickProductFields = (body) => {
   return payload;
 };
 
-// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
+// ── GET /api/products ────────────────────────────────────────────────────────
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, limit, featured, sort } = req.query;
+    const {
+      search, category, minPrice, maxPrice,
+      limit, featured, sort,
+      page = 1, pageSize = 12,
+    } = req.query;
+
     const query = { isActive: true };
 
     if (search) {
@@ -37,16 +39,33 @@ export const getProducts = async (req, res) => {
     }
     if (featured === "true") query.isFeatured = true;
 
+    const total = await Product.countDocuments(query);
+
     let q = Product.find(query).populate("category", "name slug");
 
     if (sort === "price-asc") q = q.sort({ basePrice: 1 });
     else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
     else q = q.sort({ createdAt: -1 });
 
-    if (limit) q = q.limit(Number(limit));
+    if (limit) {
+      q = q.limit(Number(limit));
+    } else {
+      const currentPage = Math.max(1, Number(page));
+      const size = Math.max(1, Number(pageSize));
+      q = q.skip((currentPage - 1) * size).limit(size);
+    }
 
     const products = await q;
-    res.json(products);
+
+    res.json({
+      products,
+      pagination: {
+        total,
+        page: Number(page),
+        pageSize: Number(pageSize),
+        totalPages: Math.ceil(total / Number(pageSize)),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -64,7 +83,7 @@ export const getAllProductsAdmin = async (req, res) => {
   }
 };
 
-// ── GET /api/products/:id ───────────────────────────────────────────────────
+// ── GET /api/products/:id ────────────────────────────────────────────────────
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate("category", "name slug");
@@ -75,7 +94,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// ── POST /api/products (admin only) ──────────────────────────────────────────
+// ── POST /api/products (admin only) ─────────────────────────────────────────
 export const createProduct = async (req, res) => {
   try {
     const product = await Product.create(pickProductFields(req.body));
@@ -115,15 +134,11 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// ================================================================
-// ✅ NEW: SEARCH / AUTOCOMPLETE ENDPOINT (Added below)
 // ── GET /api/products/search?q=... ──────────────────────────────────────────
 export const searchProducts = async (req, res) => {
   try {
     const query = req.query.q;
-    if (!query || query.length < 1) {
-      return res.json([]);
-    }
+    if (!query || query.length < 1) return res.json([]);
 
     const products = await Product.find({
       isActive: true,
@@ -139,5 +154,25 @@ export const searchProducts = async (req, res) => {
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// ── GET /api/products/recommendations/:productId ─────────────────────────────
+export const getRecommendations = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const recommendations = await Product.find({
+      _id: { $ne: req.params.productId },
+      category: product.category,
+      isActive: true,
+    })
+      .limit(4)
+      .select("name images basePrice totalStock category");
+
+    res.json(recommendations);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch recommendations." });
   }
 };

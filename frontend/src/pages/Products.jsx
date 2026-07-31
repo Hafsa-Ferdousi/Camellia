@@ -8,6 +8,8 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
 
+const PAGE_SIZE = 12;
+
 export default function Products() {
   const { t } = useTranslation("products");
   const { language } = useLanguage();
@@ -22,47 +24,64 @@ export default function Products() {
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState("");
 
-  // Sync URL → local state when navigating from homepage category tiles
+  // ── Pagination state ──
+  const [currentPage,   setCurrentPage]   = useState(1);
+  const [totalPages,    setTotalPages]    = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+
+  // Sync URL → local state
   useEffect(() => {
-    const cat    = searchParams.get("category") || "";
-    const srch   = searchParams.get("search")   || "";
+    const cat  = searchParams.get("category") || "";
+    const srch = searchParams.get("search")   || "";
     setSelectedCat(cat);
     setSearch(srch);
+    setCurrentPage(1);
   }, [searchParams]);
 
   useEffect(() => {
     getCategories().then(r => setCategories(r.data)).catch(() => {});
   }, []);
 
-  // Fetch products whenever filters change
+  // Fetch products whenever filters or page changes
   useEffect(() => {
     setLoading(true);
     setError("");
     const timer = setTimeout(() => {
-      const params = {};
+      const params = { page: currentPage, pageSize: PAGE_SIZE };
       if (selectedCat) params.category = selectedCat;
       if (search)      params.search   = search;
       if (minPrice)    params.minPrice  = minPrice;
       if (maxPrice)    params.maxPrice  = maxPrice;
 
-      // Keep the URL in sync with the typed search term so results are
-      // shareable/bookmarkable, same as the category filter already is.
       const next = {};
       if (selectedCat) next.category = selectedCat;
       if (search)      next.search   = search;
       setSearchParams(next, { replace: true });
 
       getProducts(params)
-        .then(r => setProducts(r.data))
+        .then(r => {
+          if (r.data.products) {
+            setProducts(r.data.products);
+            setTotalPages(r.data.pagination.totalPages);
+            setTotalProducts(r.data.pagination.total);
+          } else {
+            setProducts(r.data);
+            setTotalPages(1);
+            setTotalProducts(r.data.length);
+          }
+        })
         .catch(() => { setProducts([]); setError(t("loadError")); })
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timer);
-  }, [selectedCat, search, minPrice, maxPrice]);
+  }, [selectedCat, search, minPrice, maxPrice, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [selectedCat, search, minPrice, maxPrice]);
 
   const selectCategory = useCallback((catId) => {
     setSelectedCat(catId);
-    // Update URL to reflect selection (for shareable links)
+    setCurrentPage(1);
     const next = {};
     if (catId) next.category = catId;
     if (search) next.search = search;
@@ -74,11 +93,12 @@ export default function Products() {
     setMinPrice("");
     setMaxPrice("");
     setSelectedCat("");
+    setCurrentPage(1);
     setSearchParams({}, { replace: true });
   };
 
-  const hasFilters   = search || minPrice || maxPrice || selectedCat;
-  const activeCat    = categories.find(c => c._id === selectedCat);
+  const hasFilters    = search || minPrice || maxPrice || selectedCat;
+  const activeCat     = categories.find(c => c._id === selectedCat);
   const activeCatName = activeCat ? localized(activeCat.name, language) : "";
 
   return (
@@ -143,7 +163,9 @@ export default function Products() {
             </div>
 
             {hasFilters && (
-              <button onClick={clearAll} style={{ ...s.clearBtn, display: "inline-flex", alignItems: "center", gap: 4 }}>{t("clearFilters")} <X size={12} /></button>
+              <button onClick={clearAll} style={{ ...s.clearBtn, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                {t("clearFilters")} <X size={12} />
+              </button>
             )}
           </aside>
 
@@ -167,7 +189,7 @@ export default function Products() {
               </div>
               {!loading && (
                 <p style={s.count}>
-                  {products.length} {t(products.length === 1 ? "product_one" : "product_other")}
+                  {totalProducts} {t(totalProducts === 1 ? "product_one" : "product_other")}
                   {activeCatName ? ` ${t("inCategory", { category: activeCatName })}` : ""}
                 </p>
               )}
@@ -210,6 +232,52 @@ export default function Products() {
             )}
 
             <ProductGrid products={products} loading={loading} />
+
+            {/* ── PAGINATION CONTROLS ── */}
+            {!loading && totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 32, flexWrap: "wrap" }}>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: "8px 14px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", background: "transparent", fontSize: 13, cursor: "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}
+                >
+                  ← Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === "..." ? (
+                      <span key={`dots-${idx}`} style={{ padding: "0 4px", color: "var(--muted)" }}>…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        style={{ padding: "8px 14px", border: "1px solid", borderRadius: "var(--radius-sm)", fontSize: 13, cursor: "pointer", background: currentPage === p ? "var(--maroon)" : "transparent", color: currentPage === p ? "#fff" : "var(--charcoal)", borderColor: currentPage === p ? "var(--maroon)" : "var(--border)", fontWeight: currentPage === p ? 700 : 400, minWidth: 40, textAlign: "center" }}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: "8px 14px", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", background: "transparent", fontSize: 13, cursor: "pointer", opacity: currentPage === totalPages ? 0.4 : 1 }}
+                >
+                  Next →
+                </button>
+
+                <span style={{ fontSize: 12, color: "var(--muted)", marginLeft: 8 }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
