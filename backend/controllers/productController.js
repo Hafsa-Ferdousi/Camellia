@@ -1,6 +1,9 @@
 // backend/controllers/productController.js
 import Product from "../models/Product.js";
 
+// Only these fields may be written via the admin product form — prevents
+// arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
+// straight from req.body.
 const ALLOWED_PRODUCT_FIELDS = [
   "name", "description", "category", "basePrice", "images",
   "totalStock", "isFeatured", "isActive",
@@ -14,7 +17,7 @@ const pickProductFields = (body) => {
   return payload;
 };
 
-// ── GET /api/products ────────────────────────────────────────────────────────
+// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&page=&pageSize=&featured=&sort= ──
 export const getProducts = async (req, res) => {
   try {
     const {
@@ -25,10 +28,16 @@ export const getProducts = async (req, res) => {
 
     const query = { isActive: true };
 
+    // Save search term for ranking
+    const searchTerm = search;
+
     if (search) {
+      // ✅ SMART: Search in name AND description
       query.$or = [
         { "name.en": { $regex: search, $options: "i" } },
         { "name.bn": { $regex: search, $options: "i" } },
+        { "description.en": { $regex: search, $options: "i" } },
+        { "description.bn": { $regex: search, $options: "i" } },
       ];
     }
     if (category) query.category = category;
@@ -47,25 +56,54 @@ export const getProducts = async (req, res) => {
     else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
     else q = q.sort({ createdAt: -1 });
 
+    // Handle limit parameter (for backward compatibility)
     if (limit) {
       q = q.limit(Number(limit));
       const products = await q;
       return res.json(products);
-    } else {
-      const currentPage = Math.max(1, Number(page));
-      const size = Math.max(1, Number(pageSize));
-      q = q.skip((currentPage - 1) * size).limit(size);
     }
 
-    const products = await q;
+    // Handle pagination (default behavior)
+    const currentPage = Math.max(1, Number(page));
+    const size = Math.max(1, Number(pageSize));
+    q = q.skip((currentPage - 1) * size).limit(size);
+
+    let products = await q;
+
+    // ✅ SMART SEARCH RANKING: Name matches > Description matches > Featured
+    if (searchTerm && products.length > 0) {
+      const searchLower = searchTerm.toLowerCase();
+      products.sort((a, b) => {
+        const nameA = (a.name?.en || '').toLowerCase();
+        const nameB = (b.name?.en || '').toLowerCase();
+        const descA = (a.description?.en || '').toLowerCase();
+        const descB = (b.description?.en || '').toLowerCase();
+
+        let scoreA = 0, scoreB = 0;
+
+        // Name match = 3 points (highest)
+        if (nameA.includes(searchLower)) scoreA += 3;
+        if (nameB.includes(searchLower)) scoreB += 3;
+
+        // Description match = 1 point (lower)
+        if (descA.includes(searchLower)) scoreA += 1;
+        if (descB.includes(searchLower)) scoreB += 1;
+
+        // If scores are equal, featured products come first
+        if (scoreA === scoreB) {
+          return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+        }
+        return scoreB - scoreA;
+      });
+    }
 
     res.json({
       products,
       pagination: {
         total,
-        page: Number(page),
-        pageSize: Number(pageSize),
-        totalPages: Math.ceil(total / Number(pageSize)),
+        page: currentPage,
+        pageSize: size,
+        totalPages: Math.ceil(total / size),
       },
     });
   } catch (error) {
@@ -147,6 +185,8 @@ export const searchProducts = async (req, res) => {
       $or: [
         { 'name.en': { $regex: query, $options: 'i' } },
         { 'name.bn': { $regex: query, $options: 'i' } },
+        { 'description.en': { $regex: query, $options: 'i' } },
+        { 'description.bn': { $regex: query, $options: 'i' } },
       ],
     })
     .select('_id name images basePrice')
