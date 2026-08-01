@@ -79,6 +79,12 @@ export default function Products() {
   // Reset to page 1 when filters change
   useEffect(() => { setCurrentPage(1); }, [selectedCat, search, minPrice, maxPrice]);
 
+  // Jumping pages should return to the top of the results, not leave the
+  // user scrolled to wherever the previous page's grid happened to end.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
   const selectCategory = useCallback((catId) => {
     setSelectedCat(catId);
     setCurrentPage(1);
@@ -109,7 +115,7 @@ export default function Products() {
       {/* ── Page header ── */}
       <div style={s.pageHeader}>
         <div className="container">
-          <span className="eyebrow" style={{ color: "rgba(212,160,23,0.7)" }}>{t("collection")}</span>
+          <span className="eyebrow" style={{ color: "rgba(244,196,48,0.7)" }}>{t("collection")}</span>
           <h1 style={s.pageTitle}>
             {activeCatName ? activeCatName : t("allJewellery")}
           </h1>
@@ -181,8 +187,8 @@ export default function Products() {
                 <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '22px', color: '#1a1a1a' }}>
                   {t("searchResultsFor", { query: searchQuery })}
                 </h2>
-                <p style={{ color: '#888', fontSize: '14px' }}>
-                  {products.length} {t("productsFound", { count: products.length })}
+                <p style={{ color: '#555', fontSize: '14px' }}>
+                  {totalProducts} {t("productsFound", { count: totalProducts })}
                 </p>
               </div>
             )}
@@ -303,7 +309,7 @@ export default function Products() {
 const s = {
   pageHeader: {
     background: "var(--maroon-dark)",
-    borderBottom: "1px solid rgba(212,160,23,0.2)",
+    borderBottom: "1px solid rgba(244,196,48,0.2)",
     padding: "48px 0 36px",
     textAlign: "center",
   },
@@ -311,7 +317,7 @@ const s = {
     fontFamily: "var(--font-display)", fontSize: 40, fontStyle: "italic",
     color: "#FDF6EC", margin: "8px 0 10px", fontWeight: 600,
   },
-  pageSub: { fontSize: 14, color: "rgba(232,217,192,0.5)", letterSpacing: "0.04em" },
+  pageSub: { fontSize: 14, color: "rgba(232,217,192,0.85)", letterSpacing: "0.04em" },
   sidebar: {
     background: "var(--ivory)",
     border: "1px solid var(--border)",
