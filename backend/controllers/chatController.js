@@ -2,6 +2,8 @@ import Conversation from "../models/Conversation.js";
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
 import Order from "../models/Order.js";
+import User from "../models/User.js";
+import Setting from "../models/Setting.js";
 import { getChatCompletion } from "../services/aiService.js";
 
 const FALLBACK_REPLY =
@@ -52,6 +54,63 @@ Rules:
 - Keep replies short — a few sentences, not an essay.`;
 }
 
+// Store-management grounding for admins — order/revenue/stock overview
+// instead of the customer's own order history, since an admin isn't shopping.
+async function buildAdminSystemPrompt() {
+  const [totalOrders, totalUsers, totalProducts, revenueAgg, statusAgg, settings] = await Promise.all([
+    Order.countDocuments(),
+    User.countDocuments(),
+    Product.countDocuments({ isActive: true }),
+    Order.aggregate([
+      { $match: { "payment.status": "paid" } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+    ]),
+    Order.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
+    Setting.getSingleton(),
+  ]);
+
+  const statusSummary = statusAgg.map((s) => `${s._id}: ${s.count}`).join(", ") || "no orders yet";
+
+  const lowStockProducts = await Product.find({ isActive: true, totalStock: { $lte: settings.lowStockThreshold } })
+    .select("name totalStock")
+    .sort({ totalStock: 1 })
+    .limit(10);
+  const lowStockList =
+    lowStockProducts.map((p) => `${p.name.en} — ${p.totalStock} left`).join("\n") || "None currently low on stock.";
+
+  const recentOrders = await Order.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate("user", "name")
+    .select("invoiceNumber status totalAmount user guestInfo createdAt");
+  const recentOrdersList =
+    recentOrders
+      .map((o) => `Invoice ${o.invoiceNumber}: ${o.user?.name || o.guestInfo?.name || "guest"} — "${o.status}", ৳${o.totalAmount}`)
+      .join("\n") || "No orders yet.";
+
+  return `You are the store-management assistant for Camellia, an online jewelry store, speaking with a logged-in ADMIN — not a customer. Be concise and helpful. Answer in the same language they write in.
+
+Store snapshot:
+- Total orders: ${totalOrders}
+- Total customers: ${totalUsers}
+- Active products: ${totalProducts}
+- Total revenue (paid orders): ৳${revenueAgg[0]?.total || 0}
+- Orders by status: ${statusSummary}
+- Low-stock threshold: ${settings.lowStockThreshold}
+
+Products low on stock (threshold ${settings.lowStockThreshold}):
+${lowStockList}
+
+Most recent orders:
+${recentOrdersList}
+
+Rules:
+- Help with store-management questions: inventory, order status, sales figures, customers.
+- The admin is not a shopper — never suggest they add items to a cart or place an order; admin accounts can't check out on this store.
+- Never invent numbers, order statuses, or stock levels that aren't in the context above — for anything more specific, point them to the Admin dashboard.
+- Keep replies short — a few sentences, not an essay.`;
+}
+
 // ── POST /api/chat/message  (public — works for guests and logged-in users) ─
 export const sendChatMessage = async (req, res) => {
   try {
@@ -87,7 +146,8 @@ export const sendChatMessage = async (req, res) => {
 
     let reply;
     try {
-      const systemPrompt = await buildSystemPrompt(req.user);
+      const systemPrompt =
+        req.user?.role === "admin" ? await buildAdminSystemPrompt() : await buildSystemPrompt(req.user);
       reply = await getChatCompletion({ systemPrompt, history, message: message.trim() });
     } catch (aiError) {
       console.error("AI chat completion failed:", aiError.message);
@@ -122,6 +182,31 @@ export const getChatHistory = async (req, res) => {
     res.json({ messages: conversation?.messages || [] });
   } catch (error) {
     res.status(500).json({ message: "Failed to load chat history." });
+  }
+};
+
+// ── GET /api/chat/conversations  (own account — powers the history sidebar) ─
+export const getUserConversations = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ user: req.user._id })
+      .sort({ updatedAt: -1 })
+      .select("sessionId messages updatedAt createdAt");
+
+    const list = conversations
+      .filter((c) => c.messages.length > 0)
+      .map((c) => {
+        const firstUserMessage = c.messages.find((m) => m.role === "user")?.content || "New chat";
+        return {
+          sessionId: c.sessionId,
+          title: firstUserMessage.length > 40 ? `${firstUserMessage.slice(0, 40)}…` : firstUserMessage,
+          updatedAt: c.updatedAt,
+          createdAt: c.createdAt,
+        };
+      });
+
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch conversations." });
   }
 };
 

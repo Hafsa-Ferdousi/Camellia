@@ -21,11 +21,13 @@ router.get("/search", searchProducts);
 // ✅ AI Recommendations (MUST come before /:id)
 router.get("/recommendations/:productId", getRecommendations);
 
+// ── ADMIN ROUTES ──
+// ✅ MUST come before /:id, otherwise "/admin/all" matches /:id with id="admin"
+router.get("/admin/all", protect, adminOnly, getAllProductsAdmin);
+
 router.get("/", getProducts);
 router.get("/:id", getProductById);
 
-// ── ADMIN ROUTES ──
-router.get("/admin/all", protect, adminOnly, getAllProductsAdmin);
 router.post("/", protect, adminOnly, createProduct);
 router.put("/:id", protect, adminOnly, updateProduct);
 router.delete("/:id", protect, adminOnly, deleteProduct);
