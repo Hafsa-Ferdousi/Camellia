@@ -24,6 +24,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Legal from "./pages/Legal";
 import WishlistPage from "./pages/Wishlist";
+import Settings from "./pages/Settings";
+import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function SiteLayout() {
@@ -55,8 +57,8 @@ export default function App() {
                 <Route path="/forgot-password"     element={<ForgotPassword />} />
                 <Route path="/verify-email"        element={<VerifyEmail />} />
                 <Route path="/security"            element={<ProtectedRoute><Security /></ProtectedRoute>} />
-                <Route path="/cart"                element={<Cart />} />
-                <Route path="/checkout"            element={<Checkout />} />
+                <Route path="/cart"                element={<ProtectedRoute blockAdmin><Cart /></ProtectedRoute>} />
+                <Route path="/checkout"            element={<ProtectedRoute blockAdmin><Checkout /></ProtectedRoute>} />
                 <Route path="/order-confirmation"  element={<OrderConfirmation />} />
                 <Route path="/orders"              element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
                 <Route path="/track-order"         element={<TrackOrder />} />
@@ -64,6 +66,8 @@ export default function App() {
                 <Route path="/contact"             element={<Contact />} />
                 <Route path="/legal/:page"         element={<Legal />} />
                 <Route path="/wishlist"            element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+                <Route path="/settings"             element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/notifications"        element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               </Route>
             </Routes>
           </BrowserRouter>
