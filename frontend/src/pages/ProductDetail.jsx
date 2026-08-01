@@ -324,7 +324,7 @@ export default function ProductDetail() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <StarRating rating={averageRating} totalReviews={totalReviews} />
-              <span style={{ fontSize: 14, color: "#888" }}>
+              <span style={{ fontSize: 14, color: "#555" }}>
                 {totalReviews > 0 ? t("averageRatingLabel", { rating: averageRating.toFixed(1) }) : t("noReviewsYetShort")}
               </span>
             </div>
@@ -334,7 +334,7 @@ export default function ProductDetail() {
               {reviewsError ? (
                 <p style={{ color: "var(--red)", fontSize: 14 }}>{t("reviewsLoadError")}</p>
               ) : reviews.length === 0 ? (
-                <p style={{ color: "#999", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
+                <p style={{ color: "#555", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
               ) : (
                 reviews.map((rev) => (
                   <div key={rev._id} style={{ borderBottom: "1px solid #f0ebe5", padding: "14px 0" }}>
@@ -348,7 +348,7 @@ export default function ProductDetail() {
                       }}
                     >
                       <strong style={{ fontSize: 15 }}>{rev.userName}</strong>
-                      <span style={{ fontSize: 12, color: "#999" }}>
+                      <span style={{ fontSize: 12, color: "#555" }}>
                         {new Date(rev.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
                           day: "numeric",
                           month: "short",
