@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, ShoppingCart, Menu, X, User, Gem } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, Gem, Globe, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { formatPrice } from "../utils/formatPrice";
+import { searchProducts } from "../api/products";
+import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { count } = useCart();
-  const { t } = useTranslation(["nav", "common"]);
+  const { t } = useTranslation(["nav", "common", "notifications"]);
   const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +33,40 @@ export default function Navbar() {
   const accountRef = useRef(null);
   const closeAccount = () => setAccountOpen(false);
 
+  // Notification bell (customers only)
+  const isCustomer = !!user && user.role !== "admin";
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef(null);
+
+  const loadNotifications = () => {
+    getNotifications()
+      .then(({ data }) => { setNotifications(data.notifications); setUnreadCount(data.unreadCount); })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!isCustomer) return;
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [isCustomer]);
+
+  const handleBellItemClick = async (n) => {
+    if (!n.read) {
+      setNotifications((list) => list.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
+      setUnreadCount((c) => Math.max(0, c - 1));
+      try { await markAsRead(n._id); } catch { /* best-effort */ }
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications((list) => list.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try { await markAllAsRead(); } catch { /* best-effort */ }
+  };
+
   // Click outside closes dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
@@ -40,6 +76,9 @@ export default function Navbar() {
       if (accountRef.current && !accountRef.current.contains(event.target)) {
         setAccountOpen(false);
       }
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
+        setBellOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -47,37 +86,38 @@ export default function Navbar() {
 
   // ✅ SMART SEARCH: Debounced fetch (Products + Categories)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (q.trim().length >= 1) {
-        fetchSuggestions(q.trim());
-      } else {
-        setSuggestions([]);
-        setCategorySuggestions([]);
-        setShowSuggestions(false);
-      }
-    }, 200);
-    return () => clearTimeout(timer);
+    const trimmed = q.trim();
+    if (trimmed.length < 1) {
+      setSuggestions([]);
+      setCategorySuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => fetchSuggestions(trimmed, controller.signal), 200);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [q]);
 
   // ✅ SMART SEARCH: Fetch products AND categories
-  const fetchSuggestions = async (query) => {
+  const fetchSuggestions = async (query, signal) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSuggestions(data.products || []);
-        setCategorySuggestions(data.categories || []);
-        setShowSuggestions(data.products.length > 0 || data.categories.length > 0);
-      } else {
-        setSuggestions([]);
-        setCategorySuggestions([]);
-        setShowSuggestions(false);
-      }
+      const { data } = await searchProducts(query, signal);
+      setSuggestions(data.products || []);
+      setCategorySuggestions(data.categories || []);
+      setShowSuggestions((data.products?.length || 0) > 0 || (data.categories?.length || 0) > 0);
     } catch (err) {
+      // A newer keystroke aborted this request — its own fetch will update state instead.
+      if (err.code === "ERR_CANCELED") return;
       console.error("Search error:", err);
+      setSuggestions([]);
+      setCategorySuggestions([]);
+      setShowSuggestions(false);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   };
 
@@ -124,6 +164,10 @@ export default function Navbar() {
     <>
       <header className="navbar">
         <div className="navbar-inner">
+          <button className="navbar-burger" onClick={() => setOpen(o => !o)} aria-label={t("nav:menu")}>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
           <Link to="/" className="navbar-logo" onClick={close}>{t("common:brand")}</Link>
 
           <nav className="navbar-links">
@@ -136,8 +180,11 @@ export default function Navbar() {
             {navLink("/contact", t("nav:contact"))}
           </nav>
 
-          {/* 🔍 SMART SEARCH BAR */}
-          <div ref={wrapperRef} className="navbar-search-wrapper" style={{ flex: "0 1 220px", position: "relative" }}>
+          {/* 🔍 SMART SEARCH BAR — a light, high-contrast bar with an
+              attached gold button, the Amazon/Daraz pattern where search
+              is the one control styled to stand out from a dark header
+              instead of blending into it. */}
+          <div ref={wrapperRef} className="navbar-search-wrapper" style={{ flex: "1 1 320px", maxWidth: 460, minWidth: 140, position: "relative" }}>
             <form
               className="navbar-search-form"
               onSubmit={e => {
@@ -148,7 +195,7 @@ export default function Navbar() {
                   close();
                 }
               }}
-              style={{ alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 12px" }}
+              style={{ alignItems: "center", background: "var(--parchment)", border: "1px solid rgba(244,196,48,0.5)", borderRadius: 8, padding: "2px 2px 2px 14px", boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }}
             >
               <input
                 type="text"
@@ -156,10 +203,10 @@ export default function Navbar() {
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 onFocus={() => q.trim().length >= 1 && setShowSuggestions(true)}
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 13, padding: "6px 4px" }}
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#2A160F", fontSize: 14, padding: "9px 4px" }}
               />
-              <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", display: "inline-flex", alignItems: "center", padding: "5px 8px", cursor: "pointer", flexShrink: 0 }}>
-                <Search size={14} strokeWidth={2.5} />
+              <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 6, color: "#2A1206", display: "inline-flex", alignItems: "center", padding: "9px 14px", cursor: "pointer", flexShrink: 0 }}>
+                <Search size={16} strokeWidth={2.5} />
               </button>
             </form>
 
@@ -179,7 +226,7 @@ export default function Navbar() {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}>
                 {loading ? (
-                  <div style={{ padding: "12px", textAlign: "center", color: "#888" }}>{t("common:loading")}</div>
+                  <div style={{ padding: "12px", textAlign: "center", color: "#555" }}>{t("common:loading")}</div>
                 ) : (
                   <>
                     {/* PRODUCT SUGGESTIONS */}
@@ -224,7 +271,7 @@ export default function Navbar() {
                           padding: "6px 14px",
                           fontSize: "10px",
                           fontWeight: 600,
-                          color: "#999",
+                          color: "#555",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                           borderTop: "1px solid #f0f0f0",
@@ -293,20 +340,88 @@ export default function Navbar() {
           </div>
 
           <div className="navbar-actions">
-            <Link to="/cart" className="navbar-cart" onClick={close} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-              <ShoppingCart size={16} />
-              {count > 0 ? (
-                <span style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  background: "var(--gold)", color: "#1C0A0F", borderRadius: "50%",
-                  fontSize: 10, fontWeight: 700, width: 17, height: 17, lineHeight: 1,
-                }}>
-                  {count > 9 ? "9+" : count}
-                </span>
-              ) : (
-                <span>{t("common:cart")}</span>
-              )}
-            </Link>
+            {/* ✅ Language switcher — standalone icon button next to cart/account,
+                the placement commercial sites (Amazon, Daraz) use rather than
+                burying it inside the account menu. */}
+            <button
+              type="button"
+              className="navbar-lang-btn"
+              onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+              aria-label={t("nav:language")}
+              title={t("nav:language")}
+            >
+              <Globe size={15} />
+              <span>{language === "en" ? "EN" : "বাং"}</span>
+            </button>
+            {user?.role !== "admin" && (
+              <Link to="/cart" className="navbar-cart" onClick={close} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <ShoppingCart size={16} />
+                {count > 0 ? (
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    background: "var(--gold)", color: "#2A1206", borderRadius: "50%",
+                    fontSize: 10, fontWeight: 700, width: 17, height: 17, lineHeight: 1,
+                  }}>
+                    {count > 9 ? "9+" : count}
+                  </span>
+                ) : (
+                  <span>{t("common:cart")}</span>
+                )}
+              </Link>
+            )}
+            {isCustomer && (
+              <div ref={bellRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  className="navbar-lang-btn"
+                  onClick={() => setBellOpen((o) => !o)}
+                  aria-expanded={bellOpen}
+                  aria-label={t("nav:notifications")}
+                  title={t("nav:notifications")}
+                  style={{ position: "relative" }}
+                >
+                  <Bell size={15} />
+                  {unreadCount > 0 && (
+                    <span style={{
+                      position: "absolute", top: -4, right: -4,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      background: "var(--gold)", color: "#2A1206", borderRadius: "50%",
+                      fontSize: 10, fontWeight: 700, width: 16, height: 16, lineHeight: 1,
+                    }}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {bellOpen && (
+                  <div className="navbar-account-dropdown" style={{ width: 300 }}>
+                    {notifications.length === 0 ? (
+                      <p style={{ padding: "10px 14px", fontSize: 13, color: "rgba(232,217,192,0.65)" }}>{t("notifications:empty")}</p>
+                    ) : (
+                      notifications.slice(0, 5).map((n) => (
+                        <div
+                          key={n._id}
+                          onClick={() => handleBellItemClick(n)}
+                          style={{ padding: "8px 14px", fontSize: 13, cursor: n.read ? "default" : "pointer", opacity: n.read ? 0.65 : 1, borderBottom: "1px solid rgba(244,196,48,0.15)" }}
+                        >
+                          <div style={{ fontWeight: 600, color: "var(--nav-text)" }}>{n.title}</div>
+                          <div style={{ color: "rgba(232,217,192,0.65)", fontSize: 12 }}>{n.message}</div>
+                        </div>
+                      ))
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 14px" }}>
+                      {unreadCount > 0 && (
+                        <button type="button" onClick={handleMarkAllRead} style={{ background: "none", border: "none", color: "var(--gold-light)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                          {t("notifications:markAllRead")}
+                        </button>
+                      )}
+                      <Link to="/notifications" onClick={() => { setBellOpen(false); close(); }} style={{ fontSize: 12, fontWeight: 600 }}>
+                        {t("notifications:viewAll")}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div ref={accountRef} style={{ position: "relative" }}>
               <button
                 type="button"
@@ -320,13 +435,6 @@ export default function Navbar() {
               </button>
               {accountOpen && (
                 <div className="navbar-account-dropdown">
-                  <button
-                    type="button"
-                    onClick={() => { setLanguage(language === "en" ? "bn" : "en"); }}
-                  >
-                    {t("nav:language")}: {language === "en" ? "বাংলা" : "English"}
-                  </button>
-                  <div className="navbar-account-dropdown-divider" />
                   {user ? (
                     <>
                       {user.role === "admin" ? (
@@ -338,6 +446,7 @@ export default function Navbar() {
                         <>
                           <Link to="/orders" onClick={() => { closeAccount(); close(); }}>{t("nav:myOrders")}</Link>
                           <Link to="/wishlist" onClick={() => { closeAccount(); close(); }}>{t("nav:wishlist")}</Link>
+                          <Link to="/settings" onClick={() => { closeAccount(); close(); }}>{t("nav:settings")}</Link>
                           <Link to="/security" onClick={() => { closeAccount(); close(); }}>{t("nav:security")}</Link>
                         </>
                       )}
@@ -353,12 +462,12 @@ export default function Navbar() {
               )}
             </div>
           </div>
-
-          <button className="navbar-burger" onClick={() => setOpen(o => !o)} aria-label={t("nav:menu")}>
-            {open ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </header>
+
+      {open && (
+        <div className="navbar-drawer-backdrop" onClick={close} />
+      )}
 
       {open && (
         <div className="navbar-mobile-drawer" onClick={e => e.stopPropagation()}>
@@ -368,16 +477,16 @@ export default function Navbar() {
               e.preventDefault();
               if (q.trim()) { navigate(`/products?search=${encodeURIComponent(q.trim())}`); close(); }
             }}
-            style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(212,160,23,0.3)", borderRadius: 30, padding: "4px 6px 4px 14px", marginBottom: 8 }}
+            style={{ alignItems: "center", background: "var(--parchment)", border: "1px solid rgba(244,196,48,0.5)", borderRadius: 8, padding: "2px 2px 2px 14px", marginBottom: 8, boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }}
           >
             <input
               type="text"
               placeholder={t("common:search")}
               value={q}
               onChange={e => setQ(e.target.value)}
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#E8D9C0", fontSize: 14, padding: "8px 4px" }}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#2A160F", fontSize: 14, padding: "9px 4px" }}
             />
-            <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 20, color: "#1C0A0F", display: "inline-flex", alignItems: "center", padding: "7px 10px", cursor: "pointer" }}>
+            <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 6, color: "#2A1206", display: "inline-flex", alignItems: "center", padding: "9px 12px", cursor: "pointer" }}>
               <Search size={15} strokeWidth={2.5} />
             </button>
           </form>

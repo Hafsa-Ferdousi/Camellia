@@ -16,6 +16,7 @@
   "search": "Search",
   "loadError": "Could not load products.",
   "loadErrorHint": "Make sure the backend is running and you have run",
+  "noImage": "No Image",
   "inStock": "In stock",
   "onlyLeft": "Only {{count}} left",
   "outOfStock": "Out of stock",

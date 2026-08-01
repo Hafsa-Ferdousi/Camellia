@@ -3,6 +3,8 @@ import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
+import Notification from "../models/Notification.js";
+import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
@@ -52,6 +54,20 @@ const getDeliveryCharge = (settings, district) => {
   return match ? match.charge : settings.defaultDeliveryCharge;
 };
 
+// Fires a low-stock alert only on the decrement that crosses the threshold
+// (pre-decrement stock was above it, post-decrement is at/below it), so a
+// steady trickle of orders on an already-low product doesn't spam admins.
+const notifyIfLowStock = (product, quantityJustSold, threshold) => {
+  const preStock = product.totalStock + quantityJustSold;
+  if (product.totalStock <= threshold && preStock > threshold) {
+    notifyAdmins({
+      type: "low_stock",
+      title: "Low stock alert",
+      message: `${product.name.en} is down to ${product.totalStock} unit(s) in stock.`,
+    }).catch(() => {});
+  }
+};
+
 // Escapes regex metacharacters in user-supplied input before it's used inside
 // a RegExp — otherwise a crafted email/name lets a caller inject arbitrary
 // regex (ReDoS or overly-broad matches) into the Mongo query.
@@ -59,6 +75,10 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // ── POST /api/orders/checkout (logged-in user) ──────────────────────────────
 export const checkout = async (req, res) => {
+  if (req.user.role === "admin") {
+    return res.status(403).json({ message: "Admin accounts cannot place orders. Please use a customer account." });
+  }
+
   const { address, paymentMethod = "cod", items, couponCode } = req.body;
 
   if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
@@ -103,6 +123,7 @@ export const checkout = async (req, res) => {
         throw new Error(`Not enough stock for ${existing.name.en}`);
       }
       decrements.push({ productId, quantity });
+      notifyIfLowStock(product, quantity, settings.lowStockThreshold);
 
       const price = product.basePrice;
       subtotal += price * quantity;
@@ -158,6 +179,17 @@ export const checkout = async (req, res) => {
 
     await CartItem.deleteMany({ user: req.user._id });
 
+    notifyAdmins({
+      type: "new_order",
+      title: "New order placed",
+      message: `${req.user.name} placed order ${order.invoiceNumber} for ৳${order.totalAmount}.`,
+      order: order._id,
+    }).catch(() => {});
+
+    // The confirmation page and invoice show the customer's name/email, so
+    // the response needs the populated user, not just its ObjectId.
+    await order.populate("user", "name email");
+
     res.status(201).json(order);
   } catch (error) {
     await rollbackStock();
@@ -210,6 +242,7 @@ export const guestCheckout = async (req, res) => {
         throw new Error(`Not enough stock for ${existing.name.en}`);
       }
       decrements.push({ productId: line.productId, quantity });
+      notifyIfLowStock(product, quantity, settings.lowStockThreshold);
 
       const price = product.basePrice;
       subtotal += price * quantity;
@@ -262,6 +295,13 @@ export const guestCheckout = async (req, res) => {
     if (coupon) {
       await recordCouponUsage(coupon, { guestEmail: guestInfo.email });
     }
+
+    notifyAdmins({
+      type: "new_order",
+      title: "New guest order placed",
+      message: `${guestInfo.name} (guest) placed order ${order.invoiceNumber} for ৳${order.totalAmount}.`,
+      order: order._id,
+    }).catch(() => {});
 
     res.status(201).json(order);
   } catch (error) {
@@ -379,11 +419,12 @@ export const updateOrderStatus = async (req, res) => {
 
     // Best-effort notification — never blocks the response if email fails
     // or isn't configured (see utils/mailer.js).
-    const recipientEmail = order.isGuest
-      ? order.guestInfo?.email
-      : (await User.findById(order.user).select("email"))?.email;
+    const recipient = order.isGuest
+      ? null
+      : await User.findById(order.user).select("email notificationsEnabled");
+    const recipientEmail = order.isGuest ? order.guestInfo?.email : recipient?.email;
 
-    if (recipientEmail) {
+    if (recipientEmail && (order.isGuest || recipient?.notificationsEnabled)) {
       sendOrderStatusEmail(recipientEmail, {
         orderId: order._id,
         invoiceNumber: order.invoiceNumber,
@@ -395,6 +436,28 @@ export const updateOrderStatus = async (req, res) => {
           orderId: order._id,
           invoiceNumber: order.invoiceNumber,
           amount: order.totalAmount,
+        }).catch(() => {});
+      }
+    }
+
+    // In-app notification — only for registered customers (guests have no
+    // account to view it in), independent of the email preference above.
+    if (!order.isGuest && order.user) {
+      Notification.create({
+        user: order.user,
+        type: "order_status",
+        title: "Order status updated",
+        message: `Your order ${order.invoiceNumber} is now ${order.status}.`,
+        order: order._id,
+      }).catch(() => {});
+
+      if (justMarkedPaid) {
+        Notification.create({
+          user: order.user,
+          type: "payment",
+          title: "Payment confirmed",
+          message: `Payment for order ${order.invoiceNumber} has been confirmed.`,
+          order: order._id,
         }).catch(() => {});
       }
     }

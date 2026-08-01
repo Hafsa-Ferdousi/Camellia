@@ -1,0 +1,10 @@
+{
+  "title": "Notifications",
+  "subtitle": "Updates about your orders and payments.",
+  "empty": "You have no notifications yet.",
+  "markAllRead": "Mark all as read",
+  "viewAll": "View all",
+  "loading": "Loading…",
+  "viewOrder": "View order",
+  "adminAlerts": "Alerts"
+}

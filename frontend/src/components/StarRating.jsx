@@ -48,7 +48,7 @@ const StarRating = ({ rating = 0, totalReviews = 0, onRatingChange, interactive 
         })}
       </div>
       {totalReviews !== undefined && (
-        <span style={{ color: '#888', fontSize: '14px' }}>
+        <span style={{ color: '#555', fontSize: '14px' }}>
           {t('reviewCount', { count: totalReviews })}
         </span>
       )}

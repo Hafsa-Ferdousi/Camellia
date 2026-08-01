@@ -1,6 +1,7 @@
 // frontend/src/components/Invoice.jsx
 import React, { useRef } from 'react';
 import html2pdf from 'html2pdf.js';
+import { Download } from 'lucide-react';
 
 const GOLD = '#b8935a';
 const GOLD_DARK = '#8a6d3f';
@@ -101,10 +102,11 @@ const Invoice = ({ order }) => {
     <div>
       <button
         onClick={downloadPDF}
-        className="btn btn-gold"
-        style={{ marginRight: '10px' }}
+        className="btn btn-print"
+        style={{ marginRight: '10px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
       >
-        ⬇️ Download PDF Invoice
+        <Download size={16} />
+        Download PDF Invoice
       </button>
 
       {/* ============ PRINTABLE INVOICE (A4, single page) ============ */}

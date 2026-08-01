@@ -30,6 +30,11 @@ export default function WishlistPage() {
       .finally(() => setLoading(false));
   }, [user, authLoading, navigate]);
 
+  // A wishlisted product can be deleted from the catalog later — populate()
+  // then returns product: null for that entry, so it's filtered out here
+  // rather than crashing the page on product._id below.
+  const validItems = items.filter((i) => i.product);
+
   const handleRemove = async (productId) => {
     setRemoving(productId);
     try {
@@ -83,7 +88,7 @@ export default function WishlistPage() {
             {t("wishlist:title")}
           </h1>
         </div>
-        {items.length > 0 && (
+        {validItems.length > 0 && (
           <button
             onClick={handleClear}
             style={{
@@ -108,7 +113,7 @@ export default function WishlistPage() {
         </div>
       )}
 
-      {items.length === 0 && !error ? (
+      {validItems.length === 0 && !error ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
           <Heart size={48} strokeWidth={1.5} style={{ marginBottom: 16, opacity: 0.25 }} />
           <p style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--charcoal)", marginBottom: 8 }}>
@@ -122,10 +127,10 @@ export default function WishlistPage() {
       ) : (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
-            {t(items.length === 1 ? "wishlist:itemCount_one" : "wishlist:itemCount_other", { count: items.length })}
+            {t(validItems.length === 1 ? "wishlist:itemCount_one" : "wishlist:itemCount_other", { count: validItems.length })}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>
-            {items.map(({ product }) => (
+            {validItems.map(({ product }) => (
               <div key={product._id} className="panel" style={{ padding: 0, overflow: "hidden" }}>
                 <Link to={`/products/${product._id}`}>
                   <div style={{

@@ -14,6 +14,8 @@
   "loginInstead": "Login instead?",
   "logout": "Logout",
   "shippingAddress": "SHIPPING ADDRESS",
+  "editAddress": "Edit address",
+  "useSavedAddress": "Use saved address",
   "emailAddress": "Email Address *",
   "guestEmailHint": "We will send order confirmation to this email",
   "accountEmailHint": "Your account email",

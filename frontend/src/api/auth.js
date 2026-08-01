@@ -30,6 +30,10 @@ export const logout = async () => {
 export const getMe = () => client.get("/auth/me");
 export const deleteAccount = (password) => client.delete("/auth/me", { data: { password } });
 
+// --- Profile / settings ---
+export const updateProfile = (data) => client.patch("/auth/me", data);
+export const updateAddress = (data) => client.put("/auth/me/address", data);
+
 // --- Password reset (via security question — no email service) ---
 export const getSecurityQuestion = (identifier) => client.post("/auth/forgot-password/question", { identifier });
 export const resetPasswordWithAnswer = (identifier, answer, password) =>

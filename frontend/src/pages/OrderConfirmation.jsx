@@ -34,7 +34,7 @@ export default function OrderConfirmation() {
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>
-        <p style={{ color: "#888", marginBottom: 28 }}>
+        <p style={{ color: "#555", marginBottom: 28 }}>
           {t('checkHistory')}
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
@@ -172,14 +172,14 @@ export default function OrderConfirmation() {
             <Printer size={15} /> {t('printReceipt')}
           </button>
           {/* ✅ Use guestOrderId for tracking link */}
-          <Link 
-            to={order.user ? "/orders" : `/track-order?orderId=${trackIdentifier}`} 
-            className="btn btn-gold" 
+          <Link
+            to={order.user ? "/orders" : `/track-order?orderId=${trackIdentifier}`}
+            className="btn btn-print"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
             {!order.user && <Package size={15} />} {order.user ? t('viewMyOrders') : t('trackThisOrder')}
           </Link>
-          <Link to="/" className="btn btn-secondary">
+          <Link to="/" className="btn btn-gold">
             {t('continueShopping')}
           </Link>
         </div>
