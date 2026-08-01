@@ -95,4 +95,18 @@ export async function sendVerificationOtpEmail(to, otp) {
   return sendMail({ to, subject, text });
 }
 
-export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendVerificationOtpEmail };
+// ── Contact form reply ──────────────────────────────────────────────────
+export async function sendContactReplyEmail(to, { name, originalMessage, reply }) {
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const subject = "Re: Your message to Camellia";
+  const text =
+    `Hi ${name || ""},\n\n` +
+    `Thanks for reaching out to Camellia. Here's our reply to your message:\n\n` +
+    `${reply}\n\n` +
+    `---\n` +
+    `Your original message:\n"${originalMessage}"\n\n` +
+    `Thank you for shopping with Camellia.`;
+  return sendMail({ to, subject, text });
+}
+
+export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendVerificationOtpEmail, sendContactReplyEmail };

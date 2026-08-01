@@ -13,9 +13,14 @@
   "productFallback": "পণ্য",
   "chatTitle": "আমাদের সাথে চ্যাট করুন",
   "chatGreeting": "হ্যালো! পণ্য, অর্ডার বা শিপিং সম্পর্কে জিজ্ঞাসা করুন।",
+  "chatTitleAdmin": "স্টোর সহকারী",
+  "chatGreetingAdmin": "হ্যালো! অর্ডার, স্টক বা বিক্রয় সম্পর্কে জিজ্ঞাসা করুন।",
   "chatPlaceholder": "একটি বার্তা লিখুন…",
   "chatSend": "পাঠান",
   "chatError": "দুঃখিত, কিছু ভুল হয়েছে। আবার চেষ্টা করুন။",
+  "chatHistory": "চ্যাট ইতিহাস",
+  "chatNew": "নতুন চ্যাট",
+  "chatNoHistory": "এখনো কোনো পুরনো কথোপকথন নেই।",
 
   "categories": "ক্যাটাগরি",
   "viewAllResults": "\"{{query}}\" এর জন্য সব ফলাফল দেখুন →"

@@ -1,6 +1,9 @@
 // backend/controllers/productController.js
+import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // Only these fields may be written via the admin product form — prevents
 // arbitrary/unexpected keys (e.g. isActive, averageRating) from being set
@@ -18,10 +21,19 @@ const pickProductFields = (body) => {
   return payload;
 };
 
-// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&featured= ──
+// Regex-special characters in user search input (e.g. "(", "[", "*") would
+// otherwise throw an invalid-regex error and turn a normal search into a 500.
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// ── GET /api/products?search=&category=&minPrice=&maxPrice=&limit=&page=&pageSize=&featured=&sort= ──
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, limit, featured, sort } = req.query;
+    const {
+      search, category, minPrice, maxPrice,
+      limit, featured, sort,
+      page = 1, pageSize = 12,
+    } = req.query;
+
     const query = { isActive: true };
 
     // Save search term for ranking
@@ -29,59 +41,103 @@ export const getProducts = async (req, res) => {
 
     if (search) {
       // ✅ SMART: Search in name AND description
+      const searchRegex = escapeRegex(search);
       query.$or = [
-        { "name.en": { $regex: search, $options: "i" } },
-        { "name.bn": { $regex: search, $options: "i" } },
-        { "description.en": { $regex: search, $options: "i" } },
-        { "description.bn": { $regex: search, $options: "i" } },
+        { "name.en": { $regex: searchRegex, $options: "i" } },
+        { "name.bn": { $regex: searchRegex, $options: "i" } },
+        { "description.en": { $regex: searchRegex, $options: "i" } },
+        { "description.bn": { $regex: searchRegex, $options: "i" } },
       ];
     }
-    if (category) query.category = category;
+    if (category) {
+      if (!isValidObjectId(category)) {
+        return res.status(400).json({ message: "Invalid category id" });
+      }
+      query.category = category;
+    }
     if (minPrice || maxPrice) {
       query.basePrice = {};
-      if (minPrice) query.basePrice.$gte = Number(minPrice);
-      if (maxPrice) query.basePrice.$lte = Number(maxPrice);
+      if (minPrice) {
+        const min = Number(minPrice);
+        if (Number.isNaN(min)) return res.status(400).json({ message: "Invalid minPrice" });
+        query.basePrice.$gte = min;
+      }
+      if (maxPrice) {
+        const max = Number(maxPrice);
+        if (Number.isNaN(max)) return res.status(400).json({ message: "Invalid maxPrice" });
+        query.basePrice.$lte = max;
+      }
     }
     if (featured === "true") query.isFeatured = true;
 
-    let q = Product.find(query).populate("category", "name slug");
+    const total = await Product.countDocuments(query);
 
-    if (sort === "price-asc") q = q.sort({ basePrice: 1 });
-    else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
-    else q = q.sort({ createdAt: -1 });
-
-    if (limit) q = q.limit(Number(limit));
-
-    const products = await q;
-
-    // ✅ SMART SEARCH RANKING: Name matches > Description matches > Featured
-    if (searchTerm && products.length > 0) {
-      const searchLower = searchTerm.toLowerCase();
-      products.sort((a, b) => {
-        const nameA = (a.name?.en || '').toLowerCase();
-        const nameB = (b.name?.en || '').toLowerCase();
-        const descA = (a.description?.en || '').toLowerCase();
-        const descB = (b.description?.en || '').toLowerCase();
-
-        let scoreA = 0, scoreB = 0;
-
-        // Name match = 3 points (highest)
-        if (nameA.includes(searchLower)) scoreA += 3;
-        if (nameB.includes(searchLower)) scoreB += 3;
-
-        // Description match = 1 point (lower)
-        if (descA.includes(searchLower)) scoreA += 1;
-        if (descB.includes(searchLower)) scoreB += 1;
-
-        // If scores are equal, featured products come first
-        if (scoreA === scoreB) {
-          return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
-        }
-        return scoreB - scoreA;
-      });
+    // Handle limit parameter (for backward compatibility)
+    if (limit) {
+      const limitNum = Number(limit);
+      if (Number.isNaN(limitNum)) return res.status(400).json({ message: "Invalid limit" });
+      let q = Product.find(query).populate("category", "name slug");
+      if (sort === "price-asc") q = q.sort({ basePrice: 1 });
+      else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
+      else q = q.sort({ createdAt: -1 });
+      q = q.limit(limitNum);
+      const products = await q;
+      return res.json(products);
     }
 
-    res.json(products);
+    const pageNum = Number(page);
+    const pageSizeNum = Number(pageSize);
+    if (Number.isNaN(pageNum) || Number.isNaN(pageSizeNum)) {
+      return res.status(400).json({ message: "Invalid page or pageSize" });
+    }
+    const currentPage = Math.max(1, pageNum);
+    const size = Math.max(1, pageSizeNum);
+
+    const rankBySearchRelevance = (products, term) => {
+      const searchLower = term.toLowerCase();
+      // Name match = 3 points (highest), description match = 1 point (lower)
+      const scoreOf = (p) => {
+        const name = (p.name?.en || "").toLowerCase();
+        const desc = (p.description?.en || "").toLowerCase();
+        let score = 0;
+        if (name.includes(searchLower)) score += 3;
+        if (desc.includes(searchLower)) score += 1;
+        return score;
+      };
+      return [...products].sort((a, b) => {
+        const scoreA = scoreOf(a), scoreB = scoreOf(b);
+        if (scoreA === scoreB) return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
+        return scoreB - scoreA;
+      });
+    };
+
+    let products;
+    if (searchTerm) {
+      // ✅ SMART SEARCH RANKING: rank the FULL match set before paginating,
+      // so a better match on a later page can't be hidden by DB sort order.
+      const allMatches = await Product.find(query)
+        .populate("category", "name slug")
+        .sort({ createdAt: -1 });
+      const ranked = rankBySearchRelevance(allMatches, searchTerm);
+      products = ranked.slice((currentPage - 1) * size, currentPage * size);
+    } else {
+      let q = Product.find(query).populate("category", "name slug");
+      if (sort === "price-asc") q = q.sort({ basePrice: 1 });
+      else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
+      else q = q.sort({ createdAt: -1 });
+      q = q.skip((currentPage - 1) * size).limit(size);
+      products = await q;
+    }
+
+    res.json({
+      products,
+      pagination: {
+        total,
+        page: currentPage,
+        pageSize: size,
+        totalPages: Math.ceil(total / size),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -99,9 +155,12 @@ export const getAllProductsAdmin = async (req, res) => {
   }
 };
 
-// ── GET /api/products/:id ───────────────────────────────────────────────────
+// ── GET /api/products/:id ────────────────────────────────────────────────────
 export const getProductById = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     const product = await Product.findById(req.params.id).populate("category", "name slug");
     if (!product || !product.isActive) return res.status(404).json({ message: "Product not found" });
     res.json(product);
@@ -110,7 +169,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// ── POST /api/products (admin only) ──────────────────────────────────────────
+// ── POST /api/products (admin only) ─────────────────────────────────────────
 export const createProduct = async (req, res) => {
   try {
     const product = await Product.create(pickProductFields(req.body));
@@ -123,6 +182,9 @@ export const createProduct = async (req, res) => {
 // ── PUT /api/products/:id (admin only) ──────────────────────────────────────
 export const updateProduct = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       pickProductFields(req.body),
@@ -138,6 +200,9 @@ export const updateProduct = async (req, res) => {
 // ── DELETE /api/products/:id (admin only) ───────────────────────────────────
 export const deleteProduct = async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
@@ -157,6 +222,10 @@ export const getRecommendations = async (req, res) => {
   try {
     const { productId } = req.params;
     const limit = Math.min(Number(req.query.limit) || 8, 12);
+
+    if (!isValidObjectId(productId)) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     // 1. Get the source product to find its category
     const source = await Product.findById(productId).select("category");
@@ -193,7 +262,7 @@ export const searchProducts = async (req, res) => {
       return res.json({ products: [], categories: [] });
     }
 
-    const regex = new RegExp(query, 'i');
+    const regex = new RegExp(escapeRegex(query), 'i');
 
     // 1. Search Products (name only, for speed)
     const products = await Product.find({

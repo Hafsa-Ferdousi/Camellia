@@ -46,7 +46,7 @@
 }
 
 .confirmation-subtitle {
-  color: #666;
+  color: #444;
   font-size: 15px;
   margin: 0 0 16px 0;
 }
@@ -57,7 +57,7 @@
   padding: 8px 24px;
   border-radius: 30px;
   font-size: 14px;
-  color: #555;
+  color: #333;
   border: 1px solid #e8e0d8;
 }
 
@@ -66,7 +66,7 @@
 }
 
 .order-date {
-  color: #999;
+  color: #555;
   font-size: 13px;
   margin-top: 10px;
 }
@@ -106,7 +106,7 @@
   text-align: left;
   padding: 10px 0 12px 0;
   border-bottom: 2px solid #e8e0d8;
-  color: #888;
+  color: #555;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   justify-content: space-between;
   padding: 6px 0;
   font-size: 14px;
-  color: #555;
+  color: #333;
 }
 
 .total-row span:last-child {
@@ -198,7 +198,7 @@
 
 .receipt-footer .brand-tagline {
   font-size: 13px;
-  color: #999;
+  color: #555;
   margin: 6px 0 0 0;
 }
 

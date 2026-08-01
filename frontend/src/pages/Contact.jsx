@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Phone, Mail, MapPin, AlertCircle } from "lucide-react";
+import { Mail, MapPin, AlertCircle } from "lucide-react";
 import client from "../api/client";
 
 export default function Contact() {
@@ -49,9 +49,6 @@ export default function Contact() {
           </p>
           <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}><MapPin size={14} /> {t("address")}</p>
           <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-            <Phone size={14} /> <a href="tel:+8801700000000" style={{ color: "var(--charcoal)" }}>+880 1700-000000</a>
-          </p>
-          <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
             <Mail size={14} /> <a href="mailto:camelliabyanandi@gmail.com" style={{ color: "var(--charcoal)" }}>camelliabyanandi@gmail.com</a>
           </p>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>{t("hours")}</p>
@@ -60,7 +57,6 @@ export default function Contact() {
             {[
               { name: "Facebook", href: "https://facebook.com" },
               { name: "Instagram", href: "https://instagram.com" },
-              { name: "WhatsApp", href: "https://wa.me/8801700000000" },
             ].map((n) => (
               <a
                 key={n.name}

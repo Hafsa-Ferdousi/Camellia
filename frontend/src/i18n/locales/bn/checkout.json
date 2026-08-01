@@ -14,6 +14,8 @@
   "loginInstead": "এর পরিবর্তে লগইন করবেন?",
   "logout": "লগআউট",
   "shippingAddress": "শিপিং ঠিকানা",
+  "editAddress": "ঠিকানা সম্পাদনা করুন",
+  "useSavedAddress": "সংরক্ষিত ঠিকানা ব্যবহার করুন",
   "emailAddress": "ইমেইল ঠিকানা *",
   "guestEmailHint": "এই ইমেইলে অর্ডার নিশ্চিতকরণ পাঠানো হবে",
   "accountEmailHint": "আপনার অ্যাকাউন্ট ইমেইল",

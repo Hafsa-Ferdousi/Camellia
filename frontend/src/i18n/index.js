@@ -15,6 +15,8 @@ import enPages from "./locales/en/pages.json";
 import enAdmin from "./locales/en/admin.json";
 import enWishlist from "./locales/en/wishlist.json";
 import enLegal from "./locales/en/legal.json";
+import enSettings from "./locales/en/settings.json";
+import enNotifications from "./locales/en/notifications.json";
 import bnCommon from "./locales/bn/common.json";
 import bnNav from "./locales/bn/nav.json";
 import bnFooter from "./locales/bn/footer.json";
@@ -28,6 +30,8 @@ import bnPages from "./locales/bn/pages.json";
 import bnAdmin from "./locales/bn/admin.json";
 import bnWishlist from "./locales/bn/wishlist.json";
 import bnLegal from "./locales/bn/legal.json";
+import bnSettings from "./locales/bn/settings.json";
+import bnNotifications from "./locales/bn/notifications.json";
 
 export const STORAGE_KEY = "camellia_language";
 
@@ -36,12 +40,12 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      en: { common: enCommon, nav: enNav, footer: enFooter, home: enHome, products: enProducts, cart: enCart, auth: enAuth, checkout: enCheckout, orders: enOrders, pages: enPages, admin: enAdmin, wishlist: enWishlist, legal: enLegal },
-      bn: { common: bnCommon, nav: bnNav, footer: bnFooter, home: bnHome, products: bnProducts, cart: bnCart, auth: bnAuth, checkout: bnCheckout, orders: bnOrders, pages: bnPages, admin: bnAdmin, wishlist: bnWishlist, legal: bnLegal },
+      en: { common: enCommon, nav: enNav, footer: enFooter, home: enHome, products: enProducts, cart: enCart, auth: enAuth, checkout: enCheckout, orders: enOrders, pages: enPages, admin: enAdmin, wishlist: enWishlist, legal: enLegal, settings: enSettings, notifications: enNotifications },
+      bn: { common: bnCommon, nav: bnNav, footer: bnFooter, home: bnHome, products: bnProducts, cart: bnCart, auth: bnAuth, checkout: bnCheckout, orders: bnOrders, pages: bnPages, admin: bnAdmin, wishlist: bnWishlist, legal: bnLegal, settings: bnSettings, notifications: bnNotifications },
     },
     fallbackLng: "en",
     supportedLngs: ["en", "bn"],
-    ns: ["common", "nav", "footer", "home", "products", "cart", "auth", "checkout", "orders", "pages", "admin", "wishlist", "legal"],
+    ns: ["common", "nav", "footer", "home", "products", "cart", "auth", "checkout", "orders", "pages", "admin", "wishlist", "legal", "settings", "notifications"],
     defaultNS: "common",
     interpolation: { escapeValue: false },
     detection: {

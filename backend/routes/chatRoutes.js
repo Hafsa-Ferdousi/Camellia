@@ -1,6 +1,6 @@
 import express from "express";
-import { sendChatMessage, getChatHistory } from "../controllers/chatController.js";
-import { optionalAuth } from "../middleware/authMiddleware.js";
+import { sendChatMessage, getChatHistory, getUserConversations } from "../controllers/chatController.js";
+import { optionalAuth, protect } from "../middleware/authMiddleware.js";
 import { chatLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
@@ -15,5 +15,9 @@ router.post("/message", chatLimiter, optionalAuth, sendChatMessage);
 // optionalAuth lets the controller check the requester's identity against
 // the conversation's owner (see getChatHistory) without blocking guests.
 router.get("/history/:sessionId", optionalAuth, getChatHistory);
+
+// Requires login — powers the account's chat history sidebar, so there's
+// no "guest" case to support here unlike the routes above.
+router.get("/conversations", protect, getUserConversations);
 
 export default router;

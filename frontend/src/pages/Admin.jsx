@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2,
+  Ticket, Mail, MessageCircle, Trash2, Bell,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { generateDescription } from "../api/admin";
+import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
@@ -157,13 +159,65 @@ const isCouponExpired = (c) => new Date(c.endDate) < new Date();
 const isCouponUpcoming = (c) => new Date(c.startDate) > new Date();
 const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+// Which admin tab a notification's "view" click should jump to.
+const NOTIFICATION_TAB = {
+  new_order: "orders",
+  low_stock: "products",
+  new_customer: "customers",
+  order_status: "orders",
+  payment: "orders",
+};
+
 // ═══════════════════════════════════════════════════════════════
 export default function Admin() {
-  const { t } = useTranslation("admin");
+  const { t } = useTranslation(["admin", "notifications"]);
   const { language, setLanguage } = useLanguage();
   const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
+
+  // ── admin alert bell ────────────────────────────────────────
+  const [alerts, setAlerts]           = useState([]);
+  const [alertsUnread, setAlertsUnread] = useState(0);
+  const [bellOpen, setBellOpen]       = useState(false);
+  const bellRef = useRef(null);
+
+  const loadAlerts = useCallback(() => {
+    getNotifications()
+      .then(({ data }) => { setAlerts(data.notifications); setAlertsUnread(data.unreadCount); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") return;
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 60000);
+    return () => clearInterval(interval);
+  }, [user, loadAlerts]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (bellRef.current && !bellRef.current.contains(event.target)) setBellOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleAlertClick = async (n) => {
+    if (!n.read) {
+      setAlerts((list) => list.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
+      setAlertsUnread((c) => Math.max(0, c - 1));
+      try { await markAsRead(n._id); } catch { /* best-effort */ }
+    }
+    setBellOpen(false);
+    setTab(NOTIFICATION_TAB[n.type] || "overview");
+  };
+
+  const handleAlertsMarkAllRead = async () => {
+    setAlerts((list) => list.map((n) => ({ ...n, read: true })));
+    setAlertsUnread(0);
+    try { await markAllAsRead(); } catch { /* best-effort */ }
+  };
 
   const [stats, setStats]       = useState(null);
   const [statsErr, setStatsErr] = useState("");
@@ -198,6 +252,7 @@ export default function Admin() {
   const [form, setForm]               = useState(BLANK_PRODUCT);
   const [formErr, setFormErr]         = useState("");
   const [formSaving, setFormSaving]   = useState(false);
+  const [aiLoading,  setAiLoading]    = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [pendingDeleteImages, setPendingDeleteImages] = useState([]);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -240,6 +295,9 @@ export default function Admin() {
   const [messages, setMessages]         = useState([]);
   const [messagesLoading, setML]        = useState(false);
   const [messageFilter, setMessageFilter] = useState("all");
+  const [replyTarget, setReplyTarget]   = useState(null);
+  const [replyText, setReplyText]       = useState("");
+  const [replySending, setReplySending] = useState(false);
 
   // ── CHATS (AI conversations) state ──────────────────────────
   const [conversations, setConversations] = useState([]);
@@ -317,6 +375,20 @@ export default function Admin() {
       await client.delete(`/contact/${id}`);
       setMessages(prev => prev.filter(m => m._id !== id));
     } catch { /* ignore */ }
+  };
+
+  const openReplyModal = (m) => { setReplyTarget(m); setReplyText(""); };
+  const closeReplyModal = () => { setReplyTarget(null); setReplyText(""); };
+
+  const handleSendReply = async () => {
+    if (!replyTarget || !replyText.trim()) return;
+    setReplySending(true);
+    try {
+      await client.post(`/contact/${replyTarget._id}/reply`, { reply: replyText.trim() });
+      setMessages(prev => prev.map(m => m._id === replyTarget._id ? { ...m, status: "replied", reply: replyText.trim() } : m));
+      closeReplyModal();
+    } catch { /* ignore */ }
+    finally { setReplySending(false); }
   };
 
   // ── CHATS loader ────────────────────────────────────────────
@@ -689,8 +761,78 @@ export default function Admin() {
     <div className="admin-layout">
       {/* SIDEBAR */}
       <aside className="admin-sidebar">
-        <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
-        <div className="admin-sidebar-role">{t("adminPanel")}</div>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
+            <div className="admin-sidebar-role">{t("adminPanel")}</div>
+          </div>
+
+          {/* ADMIN ALERT BELL */}
+          <div ref={bellRef} style={{ position: "relative", marginRight: 16 }}>
+            <button
+              type="button"
+              onClick={() => setBellOpen((o) => !o)}
+              aria-expanded={bellOpen}
+              aria-label={t("notifications:adminAlerts")}
+              title={t("notifications:adminAlerts")}
+              style={{
+                position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(244,196,48,0.3)",
+                background: "rgba(255,255,255,0.05)", color: "var(--nav-text, #E8D9C0)", cursor: "pointer",
+              }}
+            >
+              <Bell size={15} />
+              {alertsUnread > 0 && (
+                <span style={{
+                  position: "absolute", top: -4, right: -4,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  background: "var(--red)", color: "#fff", borderRadius: "50%",
+                  fontSize: 10, fontWeight: 700, width: 16, height: 16, lineHeight: 1,
+                }}>
+                  {alertsUnread > 9 ? "9+" : alertsUnread}
+                </span>
+              )}
+            </button>
+            {bellOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", left: 0, width: 320,
+                background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 10,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.25)", overflow: "hidden", zIndex: 200,
+              }}>
+                <div style={{ maxHeight: 360, overflowY: "auto" }}>
+                  {alerts.length === 0 ? (
+                    <p style={{ padding: "14px 16px", fontSize: 13, color: "var(--muted)" }}>{t("notifications:empty")}</p>
+                  ) : (
+                    alerts.slice(0, 10).map((n) => (
+                      <div
+                        key={n._id}
+                        onClick={() => handleAlertClick(n)}
+                        style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)" }}
+                      >
+                        <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)" }}>{n.title}</div>
+                        <div style={{ color: "var(--muted)", fontSize: 12 }}>{n.message}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 16px", borderTop: "1px solid var(--border)" }}>
+                  {alertsUnread > 0 ? (
+                    <button type="button" onClick={handleAlertsMarkAllRead} style={{ background: "none", border: "none", color: "var(--maroon)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                      {t("notifications:markAllRead")}
+                    </button>
+                  ) : <span />}
+                  <button
+                    type="button"
+                    onClick={() => { setBellOpen(false); setTab("notifications"); }}
+                    style={{ background: "none", border: "none", color: "var(--maroon)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}
+                  >
+                    {t("notifications:viewAll")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         {[
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
@@ -1241,7 +1383,8 @@ export default function Admin() {
                           </td>
                           <td style={{ ...s.td, whiteSpace: "nowrap" }}>
                             {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
-                            {m.status === "read" && <button onClick={() => handleUpdateMessageStatus(m._id, "replied")} style={{ ...s.editBtn, background: "var(--green)" }}>{t("markReplied")}</button>}
+                            {m.status !== "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--green)" }}>{t("reply")}</button>}
+                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("viewReply")}</button>}
                             <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
                           </td>
                         </tr>
@@ -1285,6 +1428,38 @@ export default function Admin() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── NOTIFICATIONS ── */}
+        {tab === "notifications" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={s.pageTitle}>{t("notifications:title")}</h2>
+              {alertsUnread > 0 && (
+                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--charcoal)" }}>
+                  {t("notifications:markAllRead")}
+                </button>
+              )}
+            </div>
+            {alerts.length === 0 ? (
+              <p style={{ color: "var(--muted)" }}>{t("notifications:empty")}</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {alerts.map((n) => (
+                  <div
+                    key={n._id}
+                    onClick={() => handleAlertClick(n)}
+                    className="panel"
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                  >
+                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                    <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1568,6 +1743,56 @@ export default function Admin() {
                 {t("descriptionEnglish")}
                 <textarea className="input" name="descEn" value={form.descEn} onChange={setF} rows={2} placeholder={t("shortDescriptionPlaceholder")} style={{ resize: "vertical" }} />
               </label>
+
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {"বিবরণ (বাংলা)"}
+                <textarea className="input" name="descBn" value={form.descBn} onChange={setF} rows={2} placeholder="বাংলা বিবরণ…" style={{ resize: "vertical" }} />
+              </label>
+
+              {/* ── AI Description Generator Button ── */}
+              <div style={{ gridColumn: "1 / -1", marginTop: -8, marginBottom: 8 }}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!form.nameEn.trim()) { setFormErr("Please enter product name first!"); return; }
+                    setFormErr("");
+                    setAiLoading(true);
+                    try {
+                      const r = await generateDescription(
+                        form.nameEn,
+                        categories.find(c => c._id === form.category)?.name?.en,
+                        form.basePrice
+                      );
+                      setForm(f => ({ ...f, nameBn: r.data.nameBn, descEn: r.data.en, descBn: r.data.bn }));
+                    } catch {
+                      setFormErr("AI generation failed. Please write manually.");
+                    } finally {
+                      setAiLoading(false);
+                    }
+                  }}
+                  disabled={aiLoading}
+                  style={{
+                    padding: "8px 16px",
+                    background: aiLoading ? "#ccc" : "var(--gold)",
+                    color: "#2A1206",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: aiLoading ? "not-allowed" : "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  {aiLoading ? "Generating..." : "Generate with AI"}
+                </button>
+                {form.descEn && !aiLoading && (
+                  <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 10 }}>
+                    Description ready! You can edit above.
+                  </span>
+                )}
+              </div>
               <label style={s.label}>
                 {t("category")}
                 <select className="input" name="category" value={form.category} onChange={setF}>
@@ -1799,6 +2024,39 @@ export default function Admin() {
               <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedBy?.length || 0}</div><div style={s.statLabel}>{t("uniqueCustomers")}</div></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="btn btn-outline" onClick={() => setCouponStatsTarget(null)}>{t("close")}</button></div>
+          </div>
+        </div>
+      )}
+      {/* ── MESSAGE REPLY MODAL ── */}
+      {replyTarget && (
+        <div style={s.overlay} onClick={closeReplyModal}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("replyToTitle", { name: replyTarget.name })}</h3>
+            <div style={{ background: "var(--cream-dark)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--muted)" }}>
+              {replyTarget.message}
+            </div>
+            {replyTarget.status === "replied" && replyTarget.reply && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("previousReply")}</div>
+                <div style={{ fontSize: 13, color: "var(--charcoal)", whiteSpace: "pre-wrap" }}>{replyTarget.reply}</div>
+              </div>
+            )}
+            <label style={s.label}>
+              {t("yourReply")}
+              <textarea
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                rows={5}
+                placeholder={t("replyPlaceholder")}
+                style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-outline" onClick={closeReplyModal}>{t("cancel")}</button>
+              <button className="btn" disabled={!replyText.trim() || replySending} onClick={handleSendReply}>
+                {replySending ? t("sending") : t("sendReply")}
+              </button>
+            </div>
           </div>
         </div>
       )}
