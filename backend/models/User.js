@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 const addressSchema = new mongoose.Schema({
   label: String,
   addressLine: String,
+  district: String,
   city: String,
   phone: String,
   isDefault: { type: Boolean, default: false },
@@ -31,6 +32,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["customer", "admin"], default: "customer" },
     addresses: [addressSchema],
     preferredLanguage: { type: String, enum: ["en", "bn"], default: "en" },
+    notificationsEnabled: { type: Boolean, default: true },
 
     // --- Email verification (OTP sent at registration) ---
     // Defaults to true so existing/seeded users and any other creation path

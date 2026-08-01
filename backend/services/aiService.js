@@ -10,6 +10,15 @@ function getClient() {
   return client;
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Groq returns 429 (rate limit) and transient 5xx errors as retryable —
+// everything else (bad request, auth) fails fast since retrying won't help.
+const isRetryable = (error) => {
+  const status = error?.status ?? error?.response?.status;
+  return status === 429 || (status >= 500 && status < 600);
+};
+
 // history: [{ role: "user" | "model", content: string }] (oldest first, excludes the new message)
 // Returns the assistant's reply text, or throws on failure — callers handle the fallback message.
 export async function getChatCompletion({ systemPrompt, history = [], message }) {
@@ -28,12 +37,22 @@ export async function getChatCompletion({ systemPrompt, history = [], message })
     { role: "user", content: message },
   ];
 
-  const completion = await groq.chat.completions.create({
-    model: MODEL_NAME,
-    messages,
-    max_tokens: 512,
-    temperature: 0.6,
-  });
-
-  return completion.choices[0].message.content.trim();
+  const MAX_ATTEMPTS = 3;
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const completion = await groq.chat.completions.create({
+        model: MODEL_NAME,
+        messages,
+        max_tokens: 512,
+        temperature: 0.6,
+      });
+      return completion.choices[0].message.content.trim();
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_ATTEMPTS || !isRetryable(error)) throw error;
+      await sleep(300 * 2 ** (attempt - 1)); // 300ms, 600ms
+    }
+  }
+  throw lastError;
 }
