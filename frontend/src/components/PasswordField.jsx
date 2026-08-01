@@ -37,7 +37,7 @@ export default function PasswordField({
         aria-label={visible ? t("hidePassword") : t("showPassword")}
         tabIndex={-1}
       >
-        {visible ? <EyeOff size={16} /> : <Eye size={16} />}
+        {visible ? <Eye size={16} /> : <EyeOff size={16} />}
       </button>
     </div>
   );
