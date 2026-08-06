@@ -3,6 +3,7 @@ import {
   sendMessage,
   getMessages,
   updateMessageStatus,
+  replyToMessage,
   deleteMessage,
 } from "../controllers/contactController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
@@ -15,6 +16,7 @@ router.post("/", sendMessage);
 // Admin only — view, update, delete messages
 router.get("/",           protect, adminOnly, getMessages);
 router.patch("/:id/status", protect, adminOnly, updateMessageStatus);
+router.post("/:id/reply",   protect, adminOnly, replyToMessage);
 router.delete("/:id",     protect, adminOnly, deleteMessage);
 
 export default router;

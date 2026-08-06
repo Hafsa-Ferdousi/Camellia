@@ -153,8 +153,8 @@ export default function Home() {
         .cta-banner::before {
           content: '';
           position: absolute; inset: 0;
-          background: radial-gradient(ellipse at 30% 30%, rgba(212,160,23,0.18) 0%, transparent 55%),
-                      radial-gradient(ellipse at 75% 70%, rgba(212,160,23,0.12) 0%, transparent 55%);
+          background: radial-gradient(ellipse at 30% 30%, rgba(244,196,48,0.18) 0%, transparent 55%),
+                      radial-gradient(ellipse at 75% 70%, rgba(244,196,48,0.12) 0%, transparent 55%);
         }
         .cta-banner > * { position: relative; }
       `}</style>

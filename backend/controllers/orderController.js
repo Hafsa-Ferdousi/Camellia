@@ -1,12 +1,45 @@
+// backend/controllers/orderController.js
 import CartItem from "../models/CartItem.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Setting from "../models/Setting.js";
+import Notification from "../models/Notification.js";
+import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
 
-// Generate unique invoice number
+// ===== GENERATE CUSTOMER‑FRIENDLY ORDER ID =====
+// Format: ORD-FirstName-PhoneLast3-RandomTime
+// Example: ORD-JOHN-789-42
+const generateGuestOrderId = (guestInfo, user) => {
+  // Get first name
+  let firstName = '';
+  if (user && user.name) {
+    firstName = user.name.split(' ')[0];
+  } else if (guestInfo && guestInfo.name) {
+    firstName = guestInfo.name.split(' ')[0];
+  } else {
+    firstName = 'Guest';
+  }
+  
+  // Get phone (last 3 digits)
+  let phoneLast3 = '000';
+  const phone = guestInfo?.phone || user?.phone || '';
+  if (phone && phone.length >= 3) {
+    phoneLast3 = phone.slice(-3);
+  }
+  
+  // Generate random 2-digit number for uniqueness (in case of same name+phone)
+  const random = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+  
+  // Generate timestamp (last 4 digits of milliseconds)
+  const time = String(Date.now()).slice(-4);
+  
+  return `ORD-${firstName.toUpperCase()}-${phoneLast3}-${time}`;
+};
+
+// ===== INVOICE NUMBER GENERATION =====
 const generateInvoiceNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
@@ -21,6 +54,20 @@ const getDeliveryCharge = (settings, district) => {
   return match ? match.charge : settings.defaultDeliveryCharge;
 };
 
+// Fires a low-stock alert only on the decrement that crosses the threshold
+// (pre-decrement stock was above it, post-decrement is at/below it), so a
+// steady trickle of orders on an already-low product doesn't spam admins.
+const notifyIfLowStock = (product, quantityJustSold, threshold) => {
+  const preStock = product.totalStock + quantityJustSold;
+  if (product.totalStock <= threshold && preStock > threshold) {
+    notifyAdmins({
+      type: "low_stock",
+      title: "Low stock alert",
+      message: `${product.name.en} is down to ${product.totalStock} unit(s) in stock.`,
+    }).catch(() => {});
+  }
+};
+
 // Escapes regex metacharacters in user-supplied input before it's used inside
 // a RegExp — otherwise a crafted email/name lets a caller inject arbitrary
 // regex (ReDoS or overly-broad matches) into the Mongo query.
@@ -28,6 +75,10 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // ── POST /api/orders/checkout (logged-in user) ──────────────────────────────
 export const checkout = async (req, res) => {
+  if (req.user.role === "admin") {
+    return res.status(403).json({ message: "Admin accounts cannot place orders. Please use a customer account." });
+  }
+
   const { address, paymentMethod = "cod", items, couponCode } = req.body;
 
   if (!address || !address.addressLine || !address.district || !address.city || !address.phone) {
@@ -72,6 +123,7 @@ export const checkout = async (req, res) => {
         throw new Error(`Not enough stock for ${existing.name.en}`);
       }
       decrements.push({ productId, quantity });
+      notifyIfLowStock(product, quantity, settings.lowStockThreshold);
 
       const price = product.basePrice;
       subtotal += price * quantity;
@@ -118,6 +170,7 @@ export const checkout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
+      guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
@@ -125,6 +178,17 @@ export const checkout = async (req, res) => {
     }
 
     await CartItem.deleteMany({ user: req.user._id });
+
+    notifyAdmins({
+      type: "new_order",
+      title: "New order placed",
+      message: `${req.user.name} placed order ${order.invoiceNumber} for ৳${order.totalAmount}.`,
+      order: order._id,
+    }).catch(() => {});
+
+    // The confirmation page and invoice show the customer's name/email, so
+    // the response needs the populated user, not just its ObjectId.
+    await order.populate("user", "name email");
 
     res.status(201).json(order);
   } catch (error) {
@@ -178,6 +242,7 @@ export const guestCheckout = async (req, res) => {
         throw new Error(`Not enough stock for ${existing.name.en}`);
       }
       decrements.push({ productId: line.productId, quantity });
+      notifyIfLowStock(product, quantity, settings.lowStockThreshold);
 
       const price = product.basePrice;
       subtotal += price * quantity;
@@ -208,7 +273,7 @@ export const guestCheckout = async (req, res) => {
     const originalTotal = subtotal + vat + deliveryCharge;
     const totalAmount = Math.round((originalTotal - discountAmount) * 100) / 100;
 
-    // ✅ FIXED: Payment status is always "pending" – admin confirms later
+    // Payment status is always "pending" – admin confirms later
     const order = await Order.create({
       user: null,
       isGuest: true,
@@ -224,11 +289,19 @@ export const guestCheckout = async (req, res) => {
       totalAmount,
       payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
       invoiceNumber: generateInvoiceNumber(),
+      guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
 
     if (coupon) {
       await recordCouponUsage(coupon, { guestEmail: guestInfo.email });
     }
+
+    notifyAdmins({
+      type: "new_order",
+      title: "New guest order placed",
+      message: `${guestInfo.name} (guest) placed order ${order.invoiceNumber} for ৳${order.totalAmount}.`,
+      order: order._id,
+    }).catch(() => {});
 
     res.status(201).json(order);
   } catch (error) {
@@ -238,13 +311,14 @@ export const guestCheckout = async (req, res) => {
 };
 
 // ── POST /api/orders/guest-lookup  (public — no account required) ──────────
+// Now supports searching by:
+//   - Order ID (MongoDB _id) + Email
+//   - Guest Order ID (friendly format) + Email
+//   - Phone + Email (without order ID)
 export const guestLookupOrder = async (req, res) => {
   try {
     const { orderId, email, phone, name } = req.body;
 
-    // Email alone is never enough — it must be paired with the order ID or
-    // the checkout phone number, otherwise anyone who knows a victim's email
-    // could pull their name/address/order history.
     if (!email || (!orderId && !phone)) {
       return res.status(400).json({ message: "Email plus either an Order ID or phone number is required." });
     }
@@ -254,12 +328,20 @@ export const guestLookupOrder = async (req, res) => {
       "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
     };
 
-    // Option 1: Order ID + Email (most accurate)
+    // Option 1: Order ID or Guest Order ID + Email
     if (orderId) {
-      if (!orderId.match(/^[0-9a-fA-F]{24}$/)) {
+      // Check if it's a MongoDB ObjectId (24 hex chars)
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderId);
+      // Or check if it's our friendly format (starts with ORD-)
+      const isFriendly = orderId.startsWith('ORD-');
+
+      if (isObjectId) {
+        query._id = orderId;
+      } else if (isFriendly) {
+        query.guestOrderId = orderId;
+      } else {
         return res.status(400).json({ message: "Invalid order ID format." });
       }
-      query._id = orderId;
     }
     // Option 2: Email + Phone
     else {
@@ -337,11 +419,12 @@ export const updateOrderStatus = async (req, res) => {
 
     // Best-effort notification — never blocks the response if email fails
     // or isn't configured (see utils/mailer.js).
-    const recipientEmail = order.isGuest
-      ? order.guestInfo?.email
-      : (await User.findById(order.user).select("email"))?.email;
+    const recipient = order.isGuest
+      ? null
+      : await User.findById(order.user).select("email notificationsEnabled");
+    const recipientEmail = order.isGuest ? order.guestInfo?.email : recipient?.email;
 
-    if (recipientEmail) {
+    if (recipientEmail && (order.isGuest || recipient?.notificationsEnabled)) {
       sendOrderStatusEmail(recipientEmail, {
         orderId: order._id,
         invoiceNumber: order.invoiceNumber,
@@ -353,6 +436,28 @@ export const updateOrderStatus = async (req, res) => {
           orderId: order._id,
           invoiceNumber: order.invoiceNumber,
           amount: order.totalAmount,
+        }).catch(() => {});
+      }
+    }
+
+    // In-app notification — only for registered customers (guests have no
+    // account to view it in), independent of the email preference above.
+    if (!order.isGuest && order.user) {
+      Notification.create({
+        user: order.user,
+        type: "order_status",
+        title: "Order status updated",
+        message: `Your order ${order.invoiceNumber} is now ${order.status}.`,
+        order: order._id,
+      }).catch(() => {});
+
+      if (justMarkedPaid) {
+        Notification.create({
+          user: order.user,
+          type: "payment",
+          title: "Payment confirmed",
+          message: `Payment for order ${order.invoiceNumber} has been confirmed.`,
+          order: order._id,
         }).catch(() => {});
       }
     }

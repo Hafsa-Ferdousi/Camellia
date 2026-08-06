@@ -61,6 +61,6 @@ const styles = {
   },
   thumbActive: {
     border: "2px solid var(--gold)",
-    boxShadow: "0 0 0 2px rgba(184,134,11,0.2)",
+    boxShadow: "0 0 0 2px rgba(232,163,23,0.2)",
   },
 };

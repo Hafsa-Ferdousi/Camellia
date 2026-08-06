@@ -46,7 +46,7 @@
 }
 
 .confirmation-subtitle {
-  color: #666;
+  color: #444;
   font-size: 15px;
   margin: 0 0 16px 0;
 }
@@ -57,7 +57,7 @@
   padding: 8px 24px;
   border-radius: 30px;
   font-size: 14px;
-  color: #555;
+  color: #333;
   border: 1px solid #e8e0d8;
 }
 
@@ -66,7 +66,7 @@
 }
 
 .order-date {
-  color: #999;
+  color: #555;
   font-size: 13px;
   margin-top: 10px;
 }
@@ -106,7 +106,7 @@
   text-align: left;
   padding: 10px 0 12px 0;
   border-bottom: 2px solid #e8e0d8;
-  color: #888;
+  color: #555;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -147,7 +147,7 @@
   justify-content: space-between;
   padding: 6px 0;
   font-size: 14px;
-  color: #555;
+  color: #333;
 }
 
 .total-row span:last-child {
@@ -198,7 +198,7 @@
 
 .receipt-footer .brand-tagline {
   font-size: 13px;
-  color: #999;
+  color: #555;
   margin: 6px 0 0 0;
 }
 
@@ -319,30 +319,170 @@
   }
 }
 
+/* ============================================================
+   PRINT LAYOUT
+   Goal: fit the receipt on a single sheet, never split a section
+   (Customer / Payment / Delivery Address / totals) across a page
+   break, and hide anything that isn't part of the receipt itself.
+   ============================================================ */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
   .confirmation-page {
     background: #fff !important;
     padding: 0 !important;
+    min-height: 0 !important;
   }
 
   .confirmation-container {
+    max-width: 100% !important;
+    margin: 0 !important;
     box-shadow: none !important;
-    padding: 20px !important;
     border-radius: 0 !important;
+    padding: 0 !important;
   }
 
-  .confirmation-actions {
-    display: none !important;
-  }
-
+  /* Hide everything that isn't the receipt content */
+  .confirmation-actions,
   .btn-print,
-  .btn-download {
+  .btn-download,
+  .btn-gold,
+  .btn-secondary {
     display: none !important;
+  }
+
+  /* Compress vertical rhythm so the whole receipt fits on one page */
+  .confirmation-header {
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+  }
+
+  .confirmation-header h1 {
+    font-size: 22px;
+    margin: 0 0 4px 0;
+  }
+
+  .confirmation-subtitle {
+    font-size: 12px;
+    margin: 0 0 10px 0;
   }
 
   .success-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    margin: 0 auto 10px;
     background: #c9a84c !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-shadow: none !important;
+  }
+
+  .order-badge {
+    padding: 5px 16px;
+    font-size: 12px;
+  }
+
+  .order-date {
+    font-size: 11px;
+    margin-top: 6px;
+  }
+
+  .receipt-body {
+    margin-bottom: 10px;
+  }
+
+  .receipt-section {
+    margin-bottom: 14px;
+  }
+
+  .receipt-section h3 {
+    font-size: 14px;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+
+  .receipt-section h4 {
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+
+  .receipt-table,
+  .receipt-table thead th,
+  .receipt-table tbody td {
+    font-size: 11px;
+  }
+
+  .receipt-table thead th {
+    padding: 6px 0 8px 0;
+  }
+
+  .receipt-table tbody td {
+    padding: 7px 0;
+  }
+
+  .totals-section {
+    padding: 14px 18px;
+  }
+
+  .total-row {
+    font-size: 11.5px;
+    padding: 3px 0;
+  }
+
+  .total-row.grand-total {
+    font-size: 15px;
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+
+  .receipt-grid {
+    gap: 18px;
+    margin-bottom: 12px;
+  }
+
+  .detail-value {
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  .receipt-footer {
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+
+  .receipt-footer .brand-name {
+    font-size: 16px;
+  }
+
+  .receipt-footer .brand-tagline {
+    font-size: 10.5px;
+    margin: 3px 0 0 0;
+  }
+
+  /* Never split these blocks across a page boundary */
+  .confirmation-header,
+  .receipt-section,
+  .receipt-grid,
+  .totals-section,
+  .receipt-footer,
+  .receipt-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep a heading glued to the content that follows it */
+  .receipt-section h3,
+  .receipt-section h4 {
+    break-after: avoid;
+    page-break-after: avoid;
   }
 }

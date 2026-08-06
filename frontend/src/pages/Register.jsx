@@ -6,12 +6,14 @@ import PasswordField from "../components/PasswordField";
 import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
 import { isPasswordStrong } from "../utils/passwordRules";
 import { SECURITY_QUESTIONS } from "../utils/securityQuestions";
+import { districts } from "../data/districts";
 
 export default function Register() {
   const { t } = useTranslation("auth");
   const [form, setForm] = useState({
     username: "", name: "", email: "", password: "", phone: "",
     securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "",
+    addressLine: "", district: "", city: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error,   setError]   = useState("");
@@ -24,7 +26,8 @@ export default function Register() {
 
   const passwordsMatch = confirmPassword.length === 0 || confirmPassword === form.password;
   const strong = isPasswordStrong(form.password);
-  const canSubmit = strong && form.password === confirmPassword && form.securityAnswer.trim().length > 0 && !loading;
+  const canSubmit = strong && form.password === confirmPassword && form.securityAnswer.trim().length > 0
+    && form.addressLine.trim().length > 0 && form.district.trim().length > 0 && form.city.trim().length > 0 && !loading;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +43,10 @@ export default function Register() {
     }
     if (!form.securityAnswer.trim()) {
       setError(t("answerRequired"));
+      return;
+    }
+    if (!form.addressLine.trim() || !form.district.trim() || !form.city.trim()) {
+      setError(t("addressRequired"));
       return;
     }
 
@@ -84,6 +91,26 @@ export default function Register() {
             {t("phoneNumber")}
             <input className="input" name="phone" value={form.phone} onChange={set} placeholder={t("phonePlaceholder")} />
           </label>
+
+          <p style={{ fontSize: 13, fontWeight: 600, marginTop: 20, marginBottom: 4 }}>{t("addressSectionTitle")}</p>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{t("addressSectionNote")}</p>
+
+          <label className="form-label">
+            {t("streetAddress")}
+            <input className="input" name="addressLine" value={form.addressLine} onChange={set} placeholder={t("addressPlaceholder")} required />
+          </label>
+          <label className="form-label">
+            {t("district")}
+            <select className="input" name="district" value={form.district} onChange={set} required>
+              <option value="">{t("selectDistrict")}</option>
+              {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+          <label className="form-label">
+            {t("city")}
+            <input className="input" name="city" value={form.city} onChange={set} required />
+          </label>
+
           <label className="form-label">
             {t("password")}
             <PasswordField name="password" value={form.password} onChange={set} placeholder={t("createPasswordPlaceholder")} />
@@ -120,9 +147,6 @@ export default function Register() {
               required
             />
           </label>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -10, marginBottom: 16 }}>
-            {t("recoveryNote")}
-          </p>
 
           <button className="btn" type="submit" disabled={!canSubmit} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
             {loading ? t("creatingAccount") : t("createAccount")}

@@ -9,28 +9,28 @@
   --cream-dark:   #F5ECD8;   /* section tint */
   --parchment:    #EDE0C8;   /* deeper section bg */
   --ivory:        #FFFDF7;   /* card surface */
-  --gold:         #B8860B;   /* primary gold */
-  --gold-light:   #D4A017;   /* lighter gold for hover */
-  --gold-pale:    #F5E6C3;   /* very pale gold tint */
+  --gold:         #E8A317;   /* primary accent — rich gold-yellow */
+  --gold-light:   #F4C430;   /* brighter saffron-gold for hover */
+  --gold-pale:    #FCEFC7;   /* very pale gold tint */
   --gold-text:    #8B6914;   /* gold text on light bg */
-  --maroon:       #6B1F2A;   /* deep maroon accent */
-  --maroon-dark:  #4A1019;   /* darker maroon */
-  --maroon-light: #8B2535;   /* hover maroon */
+  --maroon:       #B3430A;   /* rich burnt-orange — structural */
+  --maroon-dark:  #7A2D06;   /* darker burnt-orange */
+  --maroon-light: #D65A14;   /* hover burnt-orange */
   --charcoal:     #1C1C1C;   /* headings */
   --ink:          #2D2D2D;   /* body text */
-  --muted:        #6B5B4E;   /* muted text */
-  --faint:        #9C8A7A;   /* placeholder text */
+  --muted:        #4A3D33;   /* muted text */
+  --faint:        #6B5B4E;   /* placeholder text */
   --border:       #E8D9C0;   /* card borders */
   --border-light: #F0E6D3;   /* subtle borders */
   --green:        #2E7D32;   /* in-stock */
   --red:          #C62828;   /* out-of-stock, error */
-  --nav-bg:       #1C0A0F;   /* very dark maroon navbar */
+  --nav-bg:       #8A3B0A;   /* deep rich orange navbar */
   --nav-text:     #E8D9C0;   /* navbar text */
-  --footer-bg:    #120609;   /* near-black footer */
-  --shadow-sm:    0 1px 3px rgba(107,31,42,0.08);
-  --shadow-md:    0 4px 16px rgba(107,31,42,0.12);
-  --shadow-lg:    0 8px 32px rgba(107,31,42,0.16);
-  --shadow-gold:  0 2px 12px rgba(184,134,11,0.25);
+  --footer-bg:    #170A03;   /* near-black warm footer */
+  --shadow-sm:    0 1px 3px rgba(179,67,10,0.08);
+  --shadow-md:    0 4px 16px rgba(179,67,10,0.12);
+  --shadow-lg:    0 8px 32px rgba(179,67,10,0.16);
+  --shadow-gold:  0 2px 12px rgba(232,163,23,0.25);
 
   /* ── Aliases for older component code ── */
   --navy:          var(--maroon);
@@ -99,34 +99,38 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   padding: 11px 28px;
-  background: var(--maroon);
+  background: linear-gradient(135deg, var(--maroon-light), var(--maroon));
   color: #fff;
   border: 1px solid var(--maroon);
   border-radius: var(--radius-sm);
   font-size: 13.5px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: var(--font-body);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
   cursor: pointer;
   white-space: nowrap;
 }
 .btn:hover:not(:disabled) {
-  background: var(--maroon-light);
+  background: linear-gradient(135deg, var(--maroon-light), var(--maroon));
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-gold {
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
   border-color: var(--gold);
-  color: #fff;
+  color: #2A1206;
   box-shadow: var(--shadow-gold);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 .btn-gold:hover:not(:disabled) {
-  background: var(--gold-light);
+  background: linear-gradient(135deg, var(--gold-pale), var(--gold-light));
   border-color: var(--gold-light);
+  box-shadow: 0 6px 20px rgba(232,163,23,0.4);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
@@ -176,7 +180,7 @@ img { max-width: 100%; display: block; }
 }
 .input:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(184,134,11,0.12);
+  box-shadow: 0 0 0 3px rgba(232,163,23,0.12);
 }
 .input::placeholder { color: var(--faint); }
 
@@ -214,7 +218,7 @@ img { max-width: 100%; display: block; }
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--gold-text);
-  font-weight: 500;
+  font-weight: 600;
   display: block;
 }
 
@@ -241,7 +245,7 @@ img { max-width: 100%; display: block; }
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(212,160,23,0.2);
+  border-bottom: 1px solid rgba(244,196,48,0.2);
 }
 .navbar-inner {
   max-width: var(--max-width);
@@ -276,7 +280,7 @@ img { max-width: 100%; display: block; }
   font-size: 13px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  opacity: 0.8;
+  opacity: 0.95;
   transition: opacity 0.15s, color 0.15s;
 }
 .navbar-link { user-select: none; }
@@ -293,7 +297,7 @@ img { max-width: 100%; display: block; }
 .navbar-btn-login {
   user-select: none;
   padding: 6px 16px;
-  border: 1px solid rgba(212,160,23,0.4);
+  border: 1px solid rgba(244,196,48,0.4);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--nav-text);
@@ -309,7 +313,7 @@ img { max-width: 100%; display: block; }
   padding: 6px 18px;
   border-radius: var(--radius-sm);
   background: var(--gold);
-  color: #fff;
+  color: #2A1206;
   font-size: 13px;
   border: none;
   cursor: pointer;
@@ -325,11 +329,33 @@ img { max-width: 100%; display: block; }
   font-size: 13px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  opacity: 0.8;
+  opacity: 0.95;
   transition: opacity 0.15s, color 0.15s;
 }
 .navbar-cart:hover { opacity: 1; color: var(--gold-light); }
 .navbar-burger { display: none; background: none; border: none; color: var(--gold-light); font-size: 24px; cursor: pointer; }
+
+/* Language switcher — a standalone icon button beside cart/account, the
+   spot commercial sites (Amazon/Daraz) use for a language/region toggle
+   rather than nesting it inside the account menu. */
+.navbar-lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  border: none;
+  background: transparent;
+  color: var(--nav-text);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.95;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: opacity 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.navbar-lang-btn:hover { opacity: 1; color: var(--gold-light); }
 
 /* Account button + its dropdown — the standard "Account" menu pattern used
    by commercial sites (Amazon/Daraz-style): one compact button in the top
@@ -339,19 +365,19 @@ img { max-width: 100%; display: block; }
   align-items: center;
   gap: 6px;
   user-select: none;
-  padding: 6px 12px;
-  border: 1px solid rgba(212,160,23,0.4);
-  border-radius: var(--radius-sm);
+  border: none;
   background: transparent;
   color: var(--nav-text);
   font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.95;
   cursor: pointer;
   font-family: var(--font-body);
-  letter-spacing: 0.02em;
-  transition: all 0.15s;
+  transition: opacity 0.15s, color 0.15s;
   white-space: nowrap;
 }
-.navbar-account-btn:hover { border-color: var(--gold-light); color: var(--gold-light); }
+.navbar-account-btn:hover { opacity: 1; color: var(--gold-light); }
 .navbar-account-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -362,12 +388,12 @@ img { max-width: 100%; display: block; }
   gap: 2px;
   padding: 6px;
   background: var(--nav-bg);
-  border: 1px solid rgba(212,160,23,0.3);
+  border: 1px solid rgba(244,196,48,0.3);
   border-radius: var(--radius-sm);
   box-shadow: 0 12px 28px rgba(0,0,0,0.4);
   z-index: 200;
 }
-.navbar-account-dropdown-divider { height: 1px; background: rgba(212,160,23,0.2); margin: 4px 6px; }
+.navbar-account-dropdown-divider { height: 1px; background: rgba(244,196,48,0.2); margin: 4px 6px; }
 .navbar-account-dropdown a,
 .navbar-account-dropdown button {
   display: block;
@@ -384,7 +410,7 @@ img { max-width: 100%; display: block; }
 }
 .navbar-account-dropdown a:hover,
 .navbar-account-dropdown button:hover {
-  background: rgba(212,160,23,0.14);
+  background: rgba(244,196,48,0.14);
   color: var(--gold-light);
 }
 
@@ -393,31 +419,40 @@ img { max-width: 100%; display: block; }
    an inline `display` style would always win over a stylesheet rule. */
 .navbar-search-form { display: flex; }
 
-/* Only the primary nav links and search collapse into the hamburger drawer
-   — the cart icon and account button stay visible at every width. Once the
-   nav links are gone there's no room (or need) for a bordered "Asrafun"
-   pill next to the cart, so the account button drops to an icon-only
-   control here — the same compact icon-row pattern commercial sites
-   (Amazon, Daraz, Zara) use once their header collapses. */
+/* The primary nav links collapse into the hamburger drawer first — the
+   search bar, cart icon, and account button stay visible at this width.
+   Once the nav links are gone there's no room (or need) for a bordered
+   "Asrafun" pill next to the cart, so the account button drops to an
+   icon-only control here — the same compact icon-row pattern commercial
+   sites (Amazon, Daraz, Zara) use once their header collapses. */
 @media (max-width: 1024px) {
-  /* No margin-left here: .navbar-actions already carries margin-left:auto,
-     which pushes itself *and* every sibling after it (the burger) to the
-     right edge as one cluster. A second auto margin on the burger would
-     claim its own share of the leftover space instead, prying it away
-     from the cart/account icons with an extra gap. */
   .navbar-burger { display: block; }
-  .navbar-links, .navbar-search-wrapper { display: none; }
-  .navbar-account-btn {
-    border: none;
-    padding: 6px;
-    gap: 0;
-  }
+  .navbar-links { display: none; }
+  .navbar-account-btn { gap: 0; }
   .navbar-account-label { display: none; }
+}
+
+/* Only below this narrower point (true small/split-window territory) does
+   the search bar itself give way and move into the hamburger drawer's own
+   search field — it keeps its spot in the top bar through medium widths
+   (e.g. two windows side by side on a wide monitor) where the nav links
+   alone have already freed up enough room. */
+@media (max-width: 680px) {
+  .navbar-search-wrapper { display: none; }
+}
+
+/* The drawer's own search field is a fallback for when the top bar's
+   search has already given way (below 680px) — above that width the top
+   bar's search is still visible, so showing this one too would just be
+   a duplicate search box in the drawer. */
+.mobile-search-form { display: none; }
+@media (max-width: 680px) {
+  .mobile-search-form { display: flex; }
 }
 
 /* ── Hero ── */
 .hero {
-  background: linear-gradient(135deg, #1C0A0F 0%, #2D1018 40%, #1C0A0F 100%);
+  background: linear-gradient(135deg, #8A3B0A 0%, #B34A12 40%, #8A3B0A 100%);
   padding: 80px 0 70px;
   position: relative;
   overflow: hidden;
@@ -428,16 +463,16 @@ img { max-width: 100%; display: block; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(184,134,11,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 50%, rgba(184,134,11,0.06) 0%, transparent 60%);
+    radial-gradient(ellipse at 20% 50%, rgba(232,163,23,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(232,163,23,0.06) 0%, transparent 60%);
 }
 .hero-eyebrow {
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--gold-light);
+  color: var(--gold-pale);
   font-family: var(--font-body);
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 20px;
   display: block;
   position: relative;
@@ -448,13 +483,14 @@ img { max-width: 100%; display: block; }
   font-weight: 600;
   font-style: italic;
   color: #FDF6EC;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.35);
   margin-bottom: 12px;
   position: relative;
   line-height: 1.1;
 }
-.hero-accent { color: var(--gold-light); }
+.hero-accent { color: var(--gold-light); text-shadow: 0 0 18px rgba(244,196,48,0.5); }
 .hero-sub {
-  color: rgba(232,217,192,0.7);
+  color: #FDF6EC;
   font-size: 15px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -468,7 +504,8 @@ img { max-width: 100%; display: block; }
   gap: 12px;
   margin-bottom: 36px;
   color: var(--gold);
-  font-size: 18px;
+  text-shadow: 0 0 14px rgba(232,163,23,0.6);
+  font-size: 20px;
   position: relative;
 }
 .hero-ornament::before,
@@ -482,20 +519,24 @@ img { max-width: 100%; display: block; }
 .hero-btns { display: flex; gap: 14px; justify-content: center; position: relative; flex-wrap: wrap; }
 .hero-btn-primary {
   padding: 13px 36px;
-  background: var(--gold);
-  color: #fff;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #2A1206;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   font-family: var(--font-body);
   box-shadow: var(--shadow-gold);
-  transition: background 0.2s, transform 0.15s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
 }
-.hero-btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+.hero-btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold-pale), var(--gold-light));
+  box-shadow: 0 6px 22px rgba(232,163,23,0.45);
+  transform: translateY(-1px);
+}
 .hero-btn-outline {
   padding: 13px 36px;
   background: transparent;
@@ -548,7 +589,8 @@ img { max-width: 100%; display: block; }
 }
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 2px 16px rgba(232,163,23,0.14);
+  border-color: var(--gold-pale);
 }
 .product-img-wrap {
   width: 100%;
@@ -754,7 +796,7 @@ img { max-width: 100%; display: block; }
   font-size: 13.5px;
   cursor: pointer;
   font-family: var(--font-body);
-  color: var(--muted);
+  color: var(--ink);
   transition: all 0.15s;
 }
 .pay-tab:hover { border-color: var(--gold); color: var(--gold-text); }
@@ -771,7 +813,7 @@ img { max-width: 100%; display: block; }
   width: 200px;
   min-width: 200px;
   background: var(--nav-bg);
-  border-right: 1px solid rgba(212,160,23,0.15);
+  border-right: 1px solid rgba(244,196,48,0.15);
   display: flex;
   flex-direction: column;
   padding: 24px 0;
@@ -810,7 +852,7 @@ img { max-width: 100%; display: block; }
 }
 .admin-sidebar-role {
   font-size: 11px;
-  color: rgba(212,160,23,0.6);
+  color: rgba(244,196,48,0.85);
   padding: 0 20px 24px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -818,7 +860,7 @@ img { max-width: 100%; display: block; }
 .admin-nav-btn {
   background: none;
   border: none;
-  color: rgba(232,217,192,0.82);
+  color: rgba(232,217,192,0.95);
   text-align: left;
   padding: 10px 20px;
   font-size: 13.5px;
@@ -831,13 +873,13 @@ img { max-width: 100%; display: block; }
 .admin-nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--nav-text); }
 .admin-nav-btn.active {
   background: var(--gold);
-  color: #1C0A0F;
+  color: #2A1206;
   font-weight: 600;
 }
 .admin-logout-btn {
-  border-top: 1px solid rgba(212,160,23,0.15);
+  border-top: 1px solid rgba(244,196,48,0.15);
   padding-top: 12px !important;
-  color: rgba(232,217,192,0.85) !important;
+  color: rgba(232,217,192,0.95) !important;
 }
 .admin-logout-btn:hover { color: var(--gold-light) !important; }
 .admin-main {
@@ -860,7 +902,7 @@ img { max-width: 100%; display: block; }
 /* ── Footer ── */
 .footer {
   background: var(--footer-bg);
-  border-top: 1px solid rgba(212,160,23,0.2);
+  border-top: 1px solid rgba(244,196,48,0.2);
   padding: 40px 0 0;
   margin-top: 60px;
   font-size: 13px;
@@ -870,11 +912,11 @@ img { max-width: 100%; display: block; }
   padding: 16px 24px;
   text-align: center;
   font-size: 12px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.65);
   margin-top: 32px;
 }
 .footer-links { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
-.footer-links a { color: rgba(232,217,192,0.5); font-size: 12.5px; letter-spacing: 0.04em; }
+.footer-links a { color: rgba(232,217,192,0.85); font-size: 12.5px; letter-spacing: 0.04em; }
 .footer-links a:hover { color: var(--gold-light); }
 
 /* ── Order confirmation ── */
@@ -916,19 +958,43 @@ img { max-width: 100%; display: block; }
    ============================================================ */
 
 /* ── Navbar mobile drawer ── */
+/* Slide-in-from-left sidebar (Amazon/Daraz-style mobile menu) rather than
+   a full-width dropdown panel — a dimmed backdrop sits behind it so a tap
+   outside closes the menu, matching the click-outside behavior the rest
+   of the navbar's dropdowns already use. */
+.navbar-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 64px;
+  background: rgba(0,0,0,0.45);
+  z-index: 97;
+  animation: navbar-backdrop-in 0.15s ease-out;
+}
+@keyframes navbar-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .navbar-mobile-drawer {
   position: fixed;
   top: 64px;
   left: 0;
-  right: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 80vw;
+  overflow-y: auto;
   background: var(--nav-bg);
-  border-bottom: 1px solid rgba(212,160,23,0.2);
-  padding: 16px 24px 20px;
+  border-right: 1px solid rgba(244,196,48,0.2);
+  padding: 16px 20px 20px;
   z-index: 98;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 8px 0 32px rgba(0,0,0,0.4);
+  animation: navbar-drawer-in 0.18s ease-out;
+}
+@keyframes navbar-drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 .mobile-nav-link {
   user-select: none;
@@ -937,7 +1003,7 @@ img { max-width: 100%; display: block; }
   padding: 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   display: block;
-  opacity: 0.85;
+  opacity: 0.97;
 }
 .mobile-nav-link:hover { opacity: 1; color: var(--gold-light); }
 .mobile-nav-link.navbar-link-btn { width: 100%; text-align: left; }
@@ -945,7 +1011,7 @@ img { max-width: 100%; display: block; }
   margin-top: 8px;
   padding: 10px 20px;
   background: var(--gold);
-  color: #fff;
+  color: #2A1206;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 14px;
@@ -990,7 +1056,7 @@ img { max-width: 100%; display: block; }
   border-radius: 3px;
 }
 .badge-lowstock {
-  background: rgba(184,134,11,0.15);
+  background: rgba(232,163,23,0.15);
   color: var(--gold-text);
   font-size: 10.5px;
   font-weight: 600;
@@ -1032,8 +1098,8 @@ img { max-width: 100%; display: block; }
 }
 .category-tile:hover {
   border-color: var(--gold);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(232,163,23,0.18);
+  transform: translateY(-3px);
 }
 .category-tile.active {
   background: var(--maroon);
@@ -1050,7 +1116,7 @@ img { max-width: 100%; display: block; }
   border-radius: 50%;
   overflow: hidden;
   background: var(--parchment);
-  color: var(--faint);
+  color: var(--gold-light);
   font-size: 24px;
   line-height: 1;
   margin-bottom: 10px;
@@ -1154,7 +1220,7 @@ img { max-width: 100%; display: block; }
 }
 
 /* ── Hero search bar ── */
-.hero-search-input::placeholder { color: rgba(232,217,192,0.38); }
+.hero-search-input::placeholder { color: rgba(232,217,192,0.75); }
 
 /* ── About page ── */
 .about-grid {
@@ -1180,5 +1246,21 @@ img { max-width: 100%; display: block; }
   .products-sidebar {
     width: 100%;
     position: static;
+  }
+}
+
+/* ============================================================
+   GLOBAL PRINT RULES
+   The Navbar and Footer are rendered on every page (outside any
+   page-specific container), so a single page's own @media print
+   block can't hide them. Hiding them here, once, keeps every
+   printed page — receipts, invoices, anything else — free of
+   the site's chrome (nav bar, mobile drawer, footer).
+   ============================================================ */
+@media print {
+  .navbar,
+  .navbar-mobile-drawer,
+  .footer {
+    display: none !important;
   }
 }

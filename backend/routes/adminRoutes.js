@@ -9,6 +9,12 @@ import {
   getLowStockProducts,
   exportSalesCSV,
 } from "../controllers/adminController.js";
+import {
+  getAllConversations,
+  getConversationById,
+  deleteConversation,
+} from "../controllers/chatController.js";
+import { generateDescription } from "../controllers/descriptionController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -22,5 +28,11 @@ router.get("/settings", getSettings);
 router.put("/settings", updateSettings);
 router.get("/products/low-stock", getLowStockProducts);
 router.get("/sales/export", exportSalesCSV);
+router.get("/chats", getAllConversations);
+router.get("/chats/:id", getConversationById);
+router.delete("/chats/:id", deleteConversation);
+
+// ── AI Description Generator ──
+router.post("/generate-description", generateDescription);
 
 export default router;

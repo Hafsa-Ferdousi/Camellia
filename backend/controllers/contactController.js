@@ -1,4 +1,5 @@
 import Contact from "../models/Contact.js";
+import { sendContactReplyEmail } from "../utils/mailer.js";
 
 // ── POST /api/contact  (anyone can send a message) ────────────────────────
 export const sendMessage = async (req, res) => {
@@ -61,6 +62,35 @@ export const updateMessageStatus = async (req, res) => {
     res.json(contact);
   } catch (error) {
     res.status(500).json({ message: "Failed to update message status." });
+  }
+};
+
+// ── POST /api/contact/:id/reply  (admin only — send reply email) ──────────
+export const replyToMessage = async (req, res) => {
+  try {
+    const { reply } = req.body;
+
+    if (!reply || !reply.trim()) {
+      return res.status(400).json({ message: "Reply message is required." });
+    }
+
+    const contact = await Contact.findById(req.params.id);
+    if (!contact) return res.status(404).json({ message: "Message not found." });
+
+    const result = await sendContactReplyEmail(contact.email, {
+      name: contact.name,
+      originalMessage: contact.message,
+      reply,
+    });
+
+    contact.reply = reply;
+    contact.repliedAt = new Date();
+    contact.status = "replied";
+    await contact.save();
+
+    res.json({ contact, emailSent: result.sent });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to send reply." });
   }
 };
 

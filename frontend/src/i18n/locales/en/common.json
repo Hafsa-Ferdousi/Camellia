@@ -10,5 +10,18 @@
   "tryDifferentFilter": "Try a different keyword or category filter.",
   "accessRestricted": "Access Restricted",
   "adminOnlyArea": "This area is only available to administrators.",
-  "productFallback": "Product"
+  "productFallback": "Product",
+  "chatTitle": "Chat with us",
+  "chatGreeting": "Hi! Ask me about products, orders, or shipping.",
+  "chatTitleAdmin": "Store assistant",
+  "chatGreetingAdmin": "Hi! Ask me about orders, inventory, or sales.",
+  "chatPlaceholder": "Type a message…",
+  "chatSend": "Send",
+  "chatError": "Sorry, something went wrong. Please try again.",
+  "chatHistory": "Chat history",
+  "chatNew": "New chat",
+  "chatNoHistory": "No past conversations yet.",
+
+  "categories": "Categories",
+  "viewAllResults": "View all results for \"{{query}}\" →"
 }

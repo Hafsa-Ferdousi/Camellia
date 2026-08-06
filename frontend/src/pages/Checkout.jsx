@@ -1,5 +1,5 @@
 // frontend/src/pages/Checkout.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -12,6 +12,8 @@ import { formatPrice } from '../utils/formatPrice';
 import { checkout as checkoutApi, guestCheckout as guestCheckoutApi } from '../api/cart';
 import { getPricing } from '../api/settings';
 import { validateCoupon } from '../api/coupons';
+import { districts } from '../data/districts';
+import { cityMap } from '../data/cities';
 
 const PAYMENT_METHOD_MAP = {
   'Cash on Delivery': 'cod',
@@ -20,7 +22,7 @@ const PAYMENT_METHOD_MAP = {
   'Bank Transfer': 'bank',
 };
 
-// Helper to safely get string value from object or string
+// ===== HELPERS =====
 const getString = (value) => {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -29,7 +31,6 @@ const getString = (value) => {
   return JSON.stringify(value);
 };
 
-// Helper to safely get a number from any price format
 const getNumber = (value) => {
   if (value === undefined || value === null) return 0;
   if (typeof value === 'number') return value;
@@ -46,6 +47,135 @@ const getNumber = (value) => {
   return 0;
 };
 
+// ===== SEARCHABLE CITY DROPDOWN =====
+const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, required }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCities, setFilteredCities] = useState([]);
+  const dropdownRef = useRef(null);
+
+  const cityOptions = selectedDistrict ? (cityMap[selectedDistrict] || []) : [];
+
+  useEffect(() => {
+    setSearchTerm('');
+    setIsOpen(false);
+    if (selectedCity && !cityOptions.includes(selectedCity)) {
+      onChange({ target: { name: 'city', value: '' } });
+    }
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      setFilteredCities(cityOptions.filter(city => city.toLowerCase().includes(term)));
+    } else {
+      setFilteredCities(cityOptions);
+    }
+  }, [searchTerm, cityOptions]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (city) => {
+    onChange({ target: { name: 'city', value: city } });
+    setSearchTerm(city);
+    setIsOpen(false);
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    onChange({ target: { name: 'city', value } });
+  };
+
+  const handleFocus = () => {
+    if (selectedDistrict) {
+      setIsOpen(true);
+      setFilteredCities(cityOptions);
+    }
+  };
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+      <input
+        type="text"
+        placeholder={selectedDistrict ? 'Type city name or select from list...' : 'Select a district first'}
+        value={searchTerm || selectedCity || ''}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        disabled={!selectedDistrict}
+        required={required && selectedDistrict}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          border: '1px solid #ddd',
+          borderRadius: '6px',
+          fontSize: '14px',
+          background: selectedDistrict ? '#fff' : '#f5f5f5',
+          boxSizing: 'border-box',
+          outline: 'none',
+        }}
+      />
+      {isOpen && selectedDistrict && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 2px)',
+            left: 0,
+            right: 0,
+            background: '#fff',
+            border: '1px solid #ddd',
+            borderRadius: '6px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          }}
+        >
+          {filteredCities.length > 0 ? (
+            filteredCities.map((city) => (
+              <div
+                key={city}
+                onClick={() => handleSelect(city)}
+                style={{
+                  padding: '8px 14px',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #f0ebe5',
+                  transition: 'background 0.15s',
+                  fontSize: '14px',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f8f5f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+              >
+                {city}
+              </div>
+            ))
+          ) : searchTerm.trim() ? (
+            <div style={{ padding: '10px 14px', color: '#333', fontSize: '14px', borderBottom: '1px solid #f0ebe5' }}>
+              No matches found for "<strong>{searchTerm}</strong>".<br />
+              <span style={{ color: '#c9a84c', fontSize: '13px' }}>
+                ✅ You can type any city name – it will be saved.
+              </span>
+            </div>
+          ) : (
+            <div style={{ padding: '10px 14px', color: '#555', fontSize: '14px' }}>
+              No cities listed for this district. Type your city name above.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===== MAIN CHECKOUT COMPONENT =====
 const Checkout = () => {
   const { t } = useTranslation('checkout');
   const { language } = useLanguage();
@@ -56,27 +186,30 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
 
+  // Registered customers with a saved default address get a read-only
+  // summary instead of retyping the address every time — "Edit address"
+  // drops back to the normal editable form.
+  const savedAddress = user?.addresses?.find((a) => a.isDefault) || user?.addresses?.[0] || null;
+  const [useSavedAddress, setUseSavedAddress] = useState(!!savedAddress);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [toast, setToast] = useState(null);
 
-// ✅ Coupon state (from develop/HEAD)
-const [couponInput, setCouponInput] = useState('');
-const [appliedCoupon, setAppliedCoupon] = useState(null);
-const [couponLoading, setCouponLoading] = useState(false);
-const [couponError, setCouponError] = useState('');
-const [toast, setToast] = useState(null);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    window.clearTimeout(showToast._t);
+    showToast._t = window.setTimeout(() => setToast(null), 3000);
+  };
 
-const showToast = (type, message) => {
-  setToast({ type, message });
-  window.clearTimeout(showToast._t);
-  showToast._t = window.setTimeout(() => setToast(null), 3000);
-};
-
-// ✅ Pricing settings (from your jamie branch)
-const [pricing, setPricing] = useState({
-  vatRate: 0.10,
-  defaultDeliveryCharge: 150,
-  districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }]
-});
+  const [pricing, setPricing] = useState({
+    vatRate: 0.10,
+    defaultDeliveryCharge: 150,
+    districtDeliveryCharges: [{ district: "Cox's Bazar", charge: 70 }]
+  });
 
   useEffect(() => {
     getPricing().then(({ data }) => setPricing(data)).catch(() => {});
@@ -100,18 +233,12 @@ const [pricing, setPricing] = useState({
   const { subtotal, vat } = calculateTotals();
   const discount = appliedCoupon?.discount || 0;
 
-  // If the cart changes after a coupon was applied (item added/removed,
-  // quantity changed), the previously-validated discount no longer reflects
-  // reality — clear it rather than show a stale number. The server
-  // re-validates from scratch at checkout regardless, but the UI shouldn't
-  // promise a discount it can't guarantee.
   const cartSignature = cartItems.map(i => `${i.productId || i.product?._id}:${i.quantity}`).join('|');
   useEffect(() => {
     if (appliedCoupon) {
       setAppliedCoupon(null);
       setCouponError('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartSignature]);
 
   const handleApplyCoupon = async () => {
@@ -158,7 +285,6 @@ const [pricing, setPricing] = useState({
     total: subtotal + vat
   });
 
-  // Prefill user data if logged in
   useEffect(() => {
     if (user) {
       const [firstName, ...rest] = (user.name || '').split(' ');
@@ -171,12 +297,29 @@ const [pricing, setPricing] = useState({
     }
   }, [user]);
 
-  // ✅ AUTO-GUEST: If not logged in, automatically enable guest mode
   useEffect(() => {
     if (!user) {
       setIsGuest(true);
     }
   }, [user]);
+
+  // When using the saved address, keep the delivery charge (and the rest of
+  // the summary math, which reads off formData.deliveryCharge) in sync with
+  // its district as soon as pricing data is available.
+  useEffect(() => {
+    if (useSavedAddress && savedAddress) {
+      const charge = deliveryCharges[savedAddress.district] || deliveryCharges['default'];
+      setFormData(prev => ({
+        ...prev,
+        district: savedAddress.district,
+        city: savedAddress.city,
+        streetAddress: savedAddress.addressLine,
+        mobileNumber: savedAddress.phone || prev.mobileNumber,
+        deliveryCharge: charge,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useSavedAddress, savedAddress, pricing]);
 
   const handleDistrictChange = (e) => {
     const district = e.target.value;
@@ -185,6 +328,7 @@ const [pricing, setPricing] = useState({
       ...formData,
       district: district,
       deliveryCharge: charge,
+      city: '',
       total: subtotal + vat + charge
     });
   };
@@ -193,8 +337,6 @@ const [pricing, setPricing] = useState({
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
-  // ---- SUBMIT FUNCTIONS ----
 
   const submitGuestOrder = async () => {
     const items = cartItems.map((item) => ({
@@ -227,28 +369,26 @@ const [pricing, setPricing] = useState({
       quantity: item.quantity || 1,
     }));
 
-    const addressLine = [formData.streetAddress, formData.zipCode]
-      .filter(Boolean)
-      .join(', ');
+    const address = useSavedAddress && savedAddress
+      ? { addressLine: savedAddress.addressLine, district: savedAddress.district, city: savedAddress.city, phone: savedAddress.phone }
+      : {
+          addressLine: [formData.streetAddress, formData.zipCode].filter(Boolean).join(', '),
+          district: formData.district,
+          city: formData.city,
+          phone: formData.mobileNumber,
+        };
     const paymentMethod = PAYMENT_METHOD_MAP[formData.paymentMethod] || 'cod';
 
-    const { data: order } = await checkoutApi(
-      items,
-      { addressLine, district: formData.district, city: formData.city, phone: formData.mobileNumber },
-      paymentMethod,
-      appliedCoupon?.code
-    );
+    const { data: order } = await checkoutApi(items, address, paymentMethod, appliedCoupon?.code);
     return order;
   };
 
-  // ✅ HANDLE SUBMIT – automatically chooses guest or logged-in endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // If user exists → logged-in checkout, else → guest checkout
       const order = user ? await submitLoggedInOrder() : await submitGuestOrder();
 
       clearCart();
@@ -260,7 +400,6 @@ const [pricing, setPricing] = useState({
     }
   };
 
-  // Empty cart check
   if (cartItems.length === 0) {
     return (
       <div className="checkout-page">
@@ -270,7 +409,7 @@ const [pricing, setPricing] = useState({
           <div className="empty-cart-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, opacity: 0.5 }}><ShoppingCart size={32} /></div>
             <h2>{t('emptyCart')}</h2>
-            <p style={{ color: '#888', marginBottom: 20 }}>{t('emptyCartSub')}</p>
+            <p style={{ color: '#555', marginBottom: 20 }}>{t('emptyCartSub')}</p>
             <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
           </div>
         </div>
@@ -332,7 +471,7 @@ const [pricing, setPricing] = useState({
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('firstName')}</label>
+                  <label>{t('firstName')} <span style={{ color: '#c62828' }}>*</span></label>
                   <input
                     type="text"
                     name="firstName"
@@ -342,107 +481,120 @@ const [pricing, setPricing] = useState({
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('lastName')}</label>
+                  <label>{t('lastName')} <span style={{ color: '#555', fontSize: '12px' }}>(optional)</span></label>
                   <input
                     type="text"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    required
+                    // ✅ required removed – last name is optional
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>{t('mobileNumber')}</label>
-                <input
-                  type="tel"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                  placeholder={t('phonePlaceholder')}
-                  required
-                />
-              </div>
+              {useSavedAddress && savedAddress ? (
+                <div className="form-group saved-address-summary" style={{ border: '1px solid #f0ebe5', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+                  <p style={{ fontWeight: 600, marginBottom: 6 }}>{savedAddress.addressLine}</p>
+                  <p style={{ color: '#333', margin: 0 }}>{savedAddress.city}, {savedAddress.district}</p>
+                  <p style={{ color: '#333', margin: '4px 0 10px' }}>{savedAddress.phone}</p>
+                  <button
+                    type="button"
+                    className="coupon-remove-btn"
+                    onClick={() => setUseSavedAddress(false)}
+                  >
+                    {t('editAddress')}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {savedAddress && (
+                    <button
+                      type="button"
+                      className="coupon-remove-btn"
+                      style={{ marginBottom: 16 }}
+                      onClick={() => setUseSavedAddress(true)}
+                    >
+                      {t('useSavedAddress')}
+                    </button>
+                  )}
 
-              <div className="form-group">
-                <label>{t('streetAddress')}</label>
-                <input
-                  type="text"
-                  name="streetAddress"
-                  value={formData.streetAddress}
-                  onChange={handleChange}
-                  placeholder={t('addressPlaceholder')}
-                  required
-                />
-              </div>
+                  <div className="form-group">
+                    <label>{t('mobileNumber')}</label>
+                    <input
+                      type="tel"
+                      name="mobileNumber"
+                      value={formData.mobileNumber}
+                      onChange={handleChange}
+                      placeholder={t('phonePlaceholder')}
+                      required
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label>{t('country')}</label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="Bangladesh">Bangladesh</option>
-                </select>
-              </div>
+                  <div className="form-group">
+                    <label>{t('streetAddress')}</label>
+                    <input
+                      type="text"
+                      name="streetAddress"
+                      value={formData.streetAddress}
+                      onChange={handleChange}
+                      placeholder={t('addressPlaceholder')}
+                      required
+                    />
+                  </div>
 
-              <div className="form-group">
-                <label>{t('district')}</label>
-                <select
-                  name="district"
-                  value={formData.district}
-                  onChange={handleDistrictChange}
-                  required
-                >
-                  <option value="">{t('selectDistrict')}</option>
-                  <option value="Cox's Bazar">Cox's Bazar</option>
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chattogram">Chattogram</option>
-                  <option value="Rajshahi">Rajshahi</option>
-                  <option value="Khulna">Khulna</option>
-                  <option value="Barishal">Barishal</option>
-                  <option value="Sylhet">Sylhet</option>
-                  <option value="Rangpur">Rangpur</option>
-                  <option value="Mymensingh">Mymensingh</option>
-                </select>
-                <small className="field-hint">{t('districtHint')}</small>
-              </div>
+                  <div className="form-group">
+                    <label>{t('country')}</label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="Bangladesh">{t('bangladesh')}</option>
+                    </select>
+                  </div>
 
-              <div className="form-group">
-                <label>{t('city')}</label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">{t('selectCity')}</option>
-                  <option value="Cox's Bazar">Cox's Bazar</option>
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chattogram">Chattogram</option>
-                  <option value="Rajshahi">Rajshahi</option>
-                  <option value="Khulna">Khulna</option>
-                  <option value="Barishal">Barishal</option>
-                  <option value="Sylhet">Sylhet</option>
-                  <option value="Rangpur">Rangpur</option>
-                  <option value="Mymensingh">Mymensingh</option>
-                  <option value="Other">{t('other')}</option>
-                </select>
-              </div>
+                  {/* ✅ DISTRICT – ALL 64 DISTRICTS (SORTED A-Z) */}
+                  <div className="form-group">
+                    <label>{t('district')}</label>
+                    <select
+                      name="district"
+                      value={formData.district}
+                      onChange={handleDistrictChange}
+                      required
+                    >
+                      <option value="">{t('selectDistrict')}</option>
+                      {districts.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                    <small className="field-hint">{t('districtHint')}</small>
+                  </div>
 
-              <div className="form-group">
-                <label>{t('zipCode')}</label>
-                <input
-                  type="text"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+                  {/* ✅ CITY – SEARCHABLE DROPDOWN */}
+                  <div className="form-group">
+                    <label>{t('city')}</label>
+                    <SearchableCityDropdown
+                      selectedDistrict={formData.district}
+                      selectedCity={formData.city}
+                      onChange={handleChange}
+                      required={true}
+                    />
+                    <small className="field-hint">Type the name of your city or select from the list.</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label>{t('zipCode')}</label>
+                    <input
+                      type="text"
+                      name="zipCode"
+                      value={formData.zipCode}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="payment-section">
                 <h3>{t('paymentMethod')}</h3>
@@ -500,13 +652,43 @@ const [pricing, setPricing] = useState({
                   const productPrice = getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0;
                   const productQty = item.quantity || 1;
                   const productDetails = localized(item.product?.description, language) || getString(item.details || '');
+                  const productImage = item.product?.images?.[0] || item.image || '';
 
                   return (
                     <div key={index} className="order-item">
-                      <div className="order-item-info">
-                        <div className="order-item-name">{productName}</div>
-                        {productDetails && <div className="order-item-details">{productDetails}</div>}
-                        <div className="order-item-quantity">{t('quantity', { count: productQty })}</div>
+                      <div className="order-item-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {productImage ? (
+                          <img
+                            src={productImage}
+                            alt={productName}
+                            style={{
+                              width: '50px',
+                              height: '50px',
+                              objectFit: 'cover',
+                              borderRadius: '4px',
+                              border: '1px solid #f0ebe5'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '50px',
+                            height: '50px',
+                            background: '#f8f5f0',
+                            borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '20px',
+                            color: '#888'
+                          }}>
+                            💍
+                          </div>
+                        )}
+                        <div>
+                          <div className="order-item-name">{productName}</div>
+                          {productDetails && <div className="order-item-details">{productDetails}</div>}
+                          <div className="order-item-quantity">{t('quantity', { count: productQty })}</div>
+                        </div>
                       </div>
                       <div className="order-item-price">৳ {formatPrice(productPrice, language, 2)}</div>
                     </div>
@@ -514,6 +696,7 @@ const [pricing, setPricing] = useState({
                 })}
               </div>
 
+              {/* ✅ COUPON SECTION – RESTORED */}
               <div className="coupon-section">
                 <label className="coupon-label">{t('couponCode')}</label>
                 {!appliedCoupon ? (

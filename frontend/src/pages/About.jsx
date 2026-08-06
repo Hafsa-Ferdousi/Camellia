@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Mail } from "lucide-react";
 
 export default function About() {
   const { t } = useTranslation("pages");
@@ -33,7 +33,6 @@ export default function About() {
       <div className="panel">
         <p style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, marginBottom: 14 }}>{t("contactUs")}</p>
         <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><MapPin size={14} /> {t("address")}</p>
-        <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Phone size={14} /> {t("phone")}</p>
         <p style={{ fontSize: 14, color: "var(--charcoal)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Mail size={14} /> {t("email")}</p>
         <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 10 }}>{t("hours")}</p>
       </div>
