@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { CheckCircle2, Clock, XCircle, Loader2, Upload } from "lucide-react";
 import { submitBkashPayment, uploadBkashScreenshot } from "../api/payments";
 import { getPricing } from "../api/settings";
-import QrCodeImage from "./QrCodeImage";
 
 // order: the order object — needs at least { _id, payment: { method, status, bkash } }.
 // guestEmail: required when the order has no logged-in user attached.
@@ -126,12 +125,10 @@ export default function BkashPaymentPanel({ order, guestEmail, onUpdated }) {
 
       {merchant.number && (
         <div style={{ display: "flex", gap: 14, alignItems: "center", background: "var(--cream-dark, #FAF6F0)", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
-          <QrCodeImage value={merchant.number} size={64} alt="bKash number QR code" />
           <div>
             <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{t("bkashSendMoneyTo")}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "var(--charcoal)" }}>{merchant.number}</div>
             <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{merchant.type === "merchant" ? t("bkashTypeMerchant") : t("bkashTypePersonal")}</div>
-            <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 4 }}>{t("bkashQrCameraNote")}</div>
           </div>
         </div>
       )}

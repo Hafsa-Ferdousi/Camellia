@@ -19,7 +19,12 @@ const paymentSchema = new mongoose.Schema({
   // here for an admin to cross-check against their bKash statement.
   bkash: {
     senderNumber: { type: String, default: null },
-    trxId: { type: String, default: null, uppercase: true, trim: true },
+    // No `default: null` here on purpose — Mongoose would then write an
+    // explicit `null` into every order's document (even non-bKash ones),
+    // and a sparse index only skips a field that's truly absent, not one
+    // that's present-but-null. Leaving it undefined when unset lets the
+    // sparse unique index below skip non-bKash orders as intended.
+    trxId: { type: String, uppercase: true, trim: true },
     screenshot: { type: String, default: null },
     submittedAt: { type: Date, default: null },
     verificationStatus: {
