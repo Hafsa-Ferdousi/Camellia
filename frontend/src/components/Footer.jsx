@@ -1,8 +1,28 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { getCategories } from "../api/products";
+
+const SHOP_LINKS = [
+  { slug: "kalira",              key: "categoryKalira" },
+  { slug: "chura",               key: "categoryChura" },
+  { slug: "bangles",             key: "categoryBangles" },
+  { slug: "necklace",            key: "categoryNecklaceSets" },
+  { slug: "diamond-cut",         key: "categoryDiamondCut" },
+  { slug: "wedding-accessories", key: "categoryWeddingSets" },
+  { slug: "nath",                key: "categoryNath" },
+  { slug: "earrings-tikli",      key: "categoryEarringsTikli" },
+];
 
 export default function Footer() {
   const { t } = useTranslation(["footer", "common"]);
+  const [categoryIdBySlug, setCategoryIdBySlug] = useState({});
+
+  useEffect(() => {
+    getCategories()
+      .then(r => setCategoryIdBySlug(Object.fromEntries(r.data.map(c => [c.slug, c._id]))))
+      .catch(() => {});
+  }, []);
 
   return (
     <footer className="footer" id="site-footer">
@@ -31,15 +51,14 @@ export default function Footer() {
           {/* Shop */}
           <div>
             <p style={s.colHead}>{t("footer:shop")}</p>
-            {[
-              { en: "Kalira", key: "categoryKalira" },
-              { en: "Chura", key: "categoryChura" },
-              { en: "Jhumka", key: "categoryJhumka" },
-              { en: "Necklace Sets", key: "categoryNecklaceSets" },
-              { en: "Diamond Cut", key: "categoryDiamondCut" },
-              { en: "Wedding Sets", key: "categoryWeddingSets" },
-            ].map(c => (
-              <Link key={c.en} to={`/products?search=${encodeURIComponent(c.en)}`} style={s.link}>{t(`footer:${c.key}`)}</Link>
+            {SHOP_LINKS.map(c => (
+              <Link
+                key={c.slug}
+                to={categoryIdBySlug[c.slug] ? `/products?category=${categoryIdBySlug[c.slug]}` : "/products"}
+                style={s.link}
+              >
+                {t(`footer:${c.key}`)}
+              </Link>
             ))}
           </div>
 

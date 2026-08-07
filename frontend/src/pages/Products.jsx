@@ -184,10 +184,10 @@ export default function Products() {
             {/* ✅ SMART SEARCH HEADER */}
             {searchQuery && (
               <div style={{ marginBottom: '16px' }}>
-                <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '22px', color: '#1a1a1a' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--charcoal)' }}>
                   {t("searchResultsFor", { query: searchQuery })}
                 </h2>
-                <p style={{ color: '#555', fontSize: '14px' }}>
+                <p style={{ color: 'var(--muted)', fontSize: '14px' }}>
                   {totalProducts} {t("productsFound", { count: totalProducts })}
                 </p>
               </div>
@@ -248,7 +248,7 @@ export default function Products() {
 
             {error && (
               <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "var(--radius)", padding: "14px 18px", marginBottom: 20, fontSize: 13, color: "var(--red)" }}>
-                {error} {t("loadErrorHint")} <code>node seed.js</code>.
+                {error} {t("loadErrorHint")}
               </div>
             )}
 

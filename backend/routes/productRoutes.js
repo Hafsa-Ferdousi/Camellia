@@ -9,6 +9,7 @@ import {
   deleteProduct,
   searchProducts,
   getRecommendations,   // 👈 AI RECOMMENDATIONS IMPORT
+  getBestSellers,
 } from "../controllers/productController.js";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
@@ -20,6 +21,9 @@ router.get("/search", searchProducts);
 
 // ✅ AI Recommendations (MUST come before /:id)
 router.get("/recommendations/:productId", getRecommendations);
+
+// ✅ Best sellers by units sold (MUST come before /:id)
+router.get("/best-sellers", getBestSellers);
 
 // ── ADMIN ROUTES ──
 // ✅ MUST come before /:id, otherwise "/admin/all" matches /:id with id="admin"

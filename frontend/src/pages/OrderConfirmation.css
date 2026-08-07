@@ -1,7 +1,7 @@
 /* frontend/src/pages/OrderConfirmation.css */
 
 .confirmation-page {
-  background: #f8f5f0;
+  background: var(--cream-dark);
   min-height: 100vh;
   padding: 40px 20px;
 }
@@ -9,7 +9,7 @@
 .confirmation-container {
   max-width: 820px;
   margin: 0 auto;
-  background: #ffffff;
+  background: var(--ivory);
   padding: 45px 50px;
   border-radius: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
@@ -18,7 +18,7 @@
 .confirmation-header {
   text-align: center;
   padding-bottom: 30px;
-  border-bottom: 2px solid #e8e0d8;
+  border-bottom: 2px solid var(--border);
   margin-bottom: 30px;
 }
 
@@ -26,47 +26,47 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #c9a84c;
-  color: #fff;
+  background: var(--gold);
+  color: #2A1206;
   font-size: 36px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  box-shadow: 0 4px 15px rgba(201, 168, 76, 0.3);
+  box-shadow: var(--shadow-gold);
 }
 
 .confirmation-header h1 {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-display);
   font-size: 30px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
   margin: 0 0 6px 0;
 }
 
 .confirmation-subtitle {
-  color: #444;
+  color: var(--muted);
   font-size: 15px;
   margin: 0 0 16px 0;
 }
 
 .order-badge {
   display: inline-block;
-  background: #f8f5f0;
+  background: var(--cream-dark);
   padding: 8px 24px;
   border-radius: 30px;
   font-size: 14px;
-  color: #333;
-  border: 1px solid #e8e0d8;
+  color: var(--ink);
+  border: 1px solid var(--border);
 }
 
 .order-badge strong {
-  color: #1a1a1a;
+  color: var(--charcoal);
 }
 
 .order-date {
-  color: #555;
+  color: var(--muted);
   font-size: 13px;
   margin-top: 10px;
 }
@@ -82,8 +82,8 @@
 .receipt-section h3 {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a1a;
-  border-bottom: 2px solid #e8e0d8;
+  color: var(--charcoal);
+  border-bottom: 2px solid var(--border);
   padding-bottom: 10px;
   margin-bottom: 16px;
 }
@@ -91,7 +91,7 @@
 .receipt-section h4 {
   font-size: 13px;
   font-weight: 700;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 8px;
   text-transform: uppercase;
 }
@@ -105,8 +105,8 @@
 .receipt-table thead th {
   text-align: left;
   padding: 10px 0 12px 0;
-  border-bottom: 2px solid #e8e0d8;
-  color: #555;
+  border-bottom: 2px solid var(--border);
+  color: var(--muted);
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
@@ -114,8 +114,8 @@
 
 .receipt-table tbody td {
   padding: 12px 0;
-  border-bottom: 1px solid #f0ebe5;
-  color: #333;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--ink);
   font-size: 14px;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .totals-section {
-  background: #f8f5f0;
+  background: var(--cream-dark);
   padding: 24px 28px;
   border-radius: 10px;
 }
@@ -147,7 +147,7 @@
   justify-content: space-between;
   padding: 6px 0;
   font-size: 14px;
-  color: #333;
+  color: var(--ink);
 }
 
 .total-row span:last-child {
@@ -155,16 +155,16 @@
 }
 
 .total-row.grand-total {
-  border-top: 2px solid #ddd;
+  border-top: 2px solid var(--border);
   padding-top: 14px;
   margin-top: 8px;
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
 }
 
 .total-row.grand-total span:last-child {
-  color: #c9a84c;
+  color: var(--gold-text);
 }
 
 .receipt-grid {
@@ -175,7 +175,7 @@
 }
 
 .detail-value {
-  color: #333;
+  color: var(--ink);
   font-size: 14px;
   line-height: 1.8;
   margin: 0;
@@ -184,21 +184,21 @@
 .receipt-footer {
   text-align: center;
   padding-top: 24px;
-  border-top: 2px solid #e8e0d8;
+  border-top: 2px solid var(--border);
   margin-top: 24px;
 }
 
 .receipt-footer .brand-name {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
   margin: 0;
 }
 
 .receipt-footer .brand-tagline {
   font-size: 13px;
-  color: #555;
+  color: var(--muted);
   margin: 6px 0 0 0;
 }
 
@@ -208,7 +208,7 @@
   gap: 12px;
   justify-content: center;
   padding-top: 24px;
-  border-top: 2px solid #e8e0d8;
+  border-top: 2px solid var(--border);
   margin-top: 10px;
 }
 
@@ -227,39 +227,39 @@
 }
 
 .btn-print {
-  background: #1a1a1a;
+  background: var(--maroon);
   color: #fff;
 }
 
 .btn-print:hover {
-  background: #333;
+  background: var(--maroon-light);
 }
 
 .btn-download {
-  background: #e8e0d8;
-  color: #1a1a1a;
+  background: var(--border);
+  color: var(--charcoal);
 }
 
 .btn-download:hover {
-  background: #ddd5cd;
+  background: var(--border-light);
 }
 
 .btn-gold {
-  background: #c9a84c;
-  color: #fff;
+  background: var(--gold);
+  color: #2A1206;
 }
 
 .btn-gold:hover {
-  background: #b8953a;
+  background: var(--gold-light);
 }
 
 .btn-secondary {
-  background: #f0ebe5;
-  color: #333;
+  background: var(--border-light);
+  color: var(--ink);
 }
 
 .btn-secondary:hover {
-  background: #e5dfd8;
+  background: var(--border);
 }
 
 @media (max-width: 768px) {
@@ -381,7 +381,7 @@
     height: 48px;
     font-size: 22px;
     margin: 0 auto 10px;
-    background: #c9a84c !important;
+    background: var(--gold) !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: none !important;

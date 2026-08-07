@@ -1,6 +1,5 @@
 // frontend/src/components/Invoice.jsx
 import React, { useRef } from 'react';
-import html2pdf from 'html2pdf.js';
 import { Download } from 'lucide-react';
 
 const GOLD = '#b8935a';
@@ -14,7 +13,11 @@ const PANEL = '#faf7f2';
 const Invoice = ({ order }) => {
   const invoiceRef = useRef();
 
-  const downloadPDF = () => {
+  // html2pdf.js bundles jsPDF + html2canvas (~1MB) — dynamically imported
+  // here so it's only downloaded when a customer actually clicks this
+  // button, instead of on every visit to the order confirmation page.
+  const downloadPDF = async () => {
+    const { default: html2pdf } = await import('html2pdf.js');
     const element = invoiceRef.current;
     const opt = {
       margin: 0,
@@ -265,7 +268,7 @@ const Invoice = ({ order }) => {
               <tr style={{ background: ACCENT_DARK }}>
                 <th
                   style={{
-                    textAlign: 'left',
+                    textAlign: 'center',
                     padding: '7px 10px',
                     fontSize: '8px',
                     textTransform: 'uppercase',
@@ -273,7 +276,6 @@ const Invoice = ({ order }) => {
                     color: '#fff',
                     fontWeight: 700,
                     width: '48px',
-                    textAlign: 'center',
                   }}
                 >
                   Qty

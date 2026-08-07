@@ -35,7 +35,7 @@ export default function CategorySection({ categories, error, onSelect }) {
                 title={t("browseCategory", { name })}
               >
                 <span className="category-tile-photo">
-                  {cat.image ? <img src={cat.image} alt="" /> : <Icon size={22} strokeWidth={1.5} />}
+                  {cat.image ? <img src={cat.image} alt="" loading="lazy" /> : <Icon size={22} strokeWidth={1.5} />}
                 </span>
                 <span className="category-tile-name">{name}</span>
               </button>
