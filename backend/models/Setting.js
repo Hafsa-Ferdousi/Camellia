@@ -10,7 +10,7 @@ const settingSchema = new mongoose.Schema(
       type: [{ district: String, charge: Number }],
       default: [{ district: "Cox's Bazar", charge: 70 }],
     },
-    lowStockThreshold: { type: Number, default: 10 },
+    lowStockThreshold: { type: Number, default: 5 },
     defaultLanguage: { type: String, enum: ["en", "bn"], default: "en" },
   },
   { timestamps: true }

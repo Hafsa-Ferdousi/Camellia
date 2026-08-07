@@ -47,8 +47,20 @@ const reviewSchema = new mongoose.Schema(
 // Prevent duplicate reviews:
 // - For logged-in users: same user + product
 // - For guests: same guestEmail + product
-reviewSchema.index({ product: 1, user: 1 }, { unique: true, sparse: true });
-reviewSchema.index({ product: 1, guestEmail: 1 }, { unique: true, sparse: true });
+// Partial (not sparse) indexes — every review document has both `user` and
+// `guestEmail` present, just set to null for whichever type doesn't apply.
+// A sparse index still indexes explicit nulls, so it would treat every
+// logged-in review as a duplicate of every other one (all sharing
+// guestEmail: null), and likewise for guest reviews sharing user: null. The
+// partial filter restricts the uniqueness check to only real values.
+reviewSchema.index(
+  { product: 1, user: 1 },
+  { unique: true, partialFilterExpression: { user: { $type: "objectId" } } }
+);
+reviewSchema.index(
+  { product: 1, guestEmail: 1 },
+  { unique: true, partialFilterExpression: { guestEmail: { $type: "string" } } }
+);
 
 const Review = mongoose.model("Review", reviewSchema);
 export default Review;
