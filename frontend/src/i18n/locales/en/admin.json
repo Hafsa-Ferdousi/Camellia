@@ -20,7 +20,6 @@
   "logout": "Logout",
   "loading": "Loading…",
   "couldNotLoadStats": "Could not load stats.",
-
   "overview": "Overview",
   "totalRevenue": "Total Revenue",
   "totalOrders": "Total Orders",
@@ -36,7 +35,6 @@
   "colAmount": "Amount",
   "colStatus": "Status",
   "guestBadge": "Guest",
-
   "allOrders": "All Orders",
   "searchOrdersPlaceholder": "Search order ID, name, or email…",
   "allStatuses": "All statuses",
@@ -50,7 +48,6 @@
   "colUpdate": "Update",
   "noOrdersMatch": "No orders match.",
   "couldNotExport": "Could not export sales data.",
-
   "customersTitle": "Customers",
   "allCount": "All ({{count}})",
   "registeredCount": "Registered ({{count}})",
@@ -68,7 +65,6 @@
   "noAccount": "No account",
   "lastOrder": "Last order {{date}}",
   "noCustomersYet": "No customers yet.",
-
   "productsTitle": "Products",
   "searchProductsPlaceholder": "Search products…",
   "lowStockFilter": "Low Stock ({{count}})",
@@ -88,7 +84,6 @@
   "edit": "Edit",
   "delete": "Delete",
   "noProductsFound": "No products found.",
-
   "categoriesTitle": "Categories",
   "addCategory": "+ Add Category",
   "loadingCategories": "Loading categories…",
@@ -100,7 +95,6 @@
   "fixed": "Fixed",
   "custom": "Custom",
   "noCategoriesFound": "No categories found.",
-
   "settingsTitle": "Settings",
   "loadingSettings": "Loading settings…",
   "pricing": "Pricing",
@@ -122,7 +116,6 @@
   "districtRowError": "Every district row needs a name (or remove it).",
   "saveFailed": "Save failed.",
   "settingsSaved": "Settings saved.",
-
   "orderHash": "Order #",
   "customer": "Customer",
   "deliveryAddress": "Delivery Address",
@@ -133,7 +126,6 @@
   "total": "Total",
   "payment": "Payment: {{method}} · {{status}}",
   "close": "Close",
-
   "orderHistoryCount": "Order History ({{count}})",
   "noOrdersYet": "No orders yet.",
   "adminResetPassword": "Admin: Reset Password",
@@ -143,7 +135,6 @@
   "confirm": "Confirm",
   "passwordResetSuccess": "Password reset successfully.",
   "couldNotResetPassword": "Could not reset password.",
-
   "addNewProduct": "Add New Product",
   "editProduct": "Edit Product",
   "nameEnglish": "Name (English) *",
@@ -167,11 +158,9 @@
   "validBasePriceRequired": "Enter a valid base price.",
   "validStockRequired": "Enter a valid stock quantity.",
   "imageUploadFailed": "Image upload failed.",
-
   "deleteProductTitle": "Delete Product?",
   "deleteProductBody": "\"{{name}}\" will be hidden from the store. This cannot be undone easily.",
   "yesDelete": "Yes, Delete",
-
   "addNewCategory": "Add New Category",
   "editCategory": "Edit Category",
   "createCategory": "Create Category",
@@ -181,10 +170,8 @@
   "fixedCategoryNote": "This is a fixed category and cannot be deleted. Its name, slug, and image can still be edited.",
   "categoryNameRequired": "Category name (English) is required.",
   "slugRequired": "Slug is required.",
-
   "deleteCategoryTitle": "Delete Category?",
   "deleteCategoryBody": "\"{{name}}\" will be removed. Products already in this category will keep their reference to it.",
-
   "couponsTitle": "Coupons",
   "searchCouponPlaceholder": "Search code or title…",
   "inactive": "Inactive",
@@ -204,7 +191,6 @@
   "viewUsageStatsTitle": "View usage stats",
   "clickToToggleTitle": "Click to toggle",
   "noCouponsFound": "No coupons found.",
-
   "createCouponModalTitle": "Create Coupon",
   "editCouponModalTitle": "Edit Coupon",
   "couponCodeLabel": "Coupon Code *",
@@ -231,14 +217,11 @@
   "applicableProductsLabel": "Applicable Products",
   "excludedProductsLabel": "Excluded Products",
   "activeCheckboxLabel": "Active",
-
   "deleteCouponTitle": "Delete Coupon?",
   "deleteCouponBody": "\"{{code}}\" will be permanently deleted.",
-
   "couponUsageTitle": "Usage — {{code}}",
   "totalUses": "Total Uses",
   "uniqueCustomers": "Unique Customers",
-
   "messagesTitle": "Contact Messages",
   "msgAll": "all",
   "msgUnread": "unread",
@@ -258,8 +241,38 @@
   "replyPlaceholder": "Type your reply here…",
   "sending": "Sending…",
   "sendReply": "Send Reply",
-
   "prev": "Prev",
   "next": "Next",
-  "pageOf": "Page {{page}} of {{totalPages}}"
+  "pageOf": "Page {{page}} of {{totalPages}}",
+  "colFiledOn": "Filed On",
+  "viewDetails": "View Details",
+  "attachedPhotos": "Attached Photos",
+  "orderReference": "Order",
+  "guestRequestBadge": "Guest",
+  "navBkash": "bKash Verify",
+  "bkashTitle": "bKash Payment Verification",
+  "bkashFilterPending": "Pending Verification",
+  "bkashFilterVerified": "Verified",
+  "bkashFilterRejected": "Rejected",
+  "bkashFilterAwaiting": "Awaiting Submission",
+  "bkashFilterAll": "All statuses",
+  "loadingBkash": "Loading submissions…",
+  "noBkashFound": "No bKash payment submissions found.",
+  "bkashColSenderNumber": "Sender Number",
+  "bkashColTrxId": "Transaction ID",
+  "bkashDetailTitle": "bKash Payment Submission",
+  "bkashAmount": "Order Amount",
+  "bkashRejectionReasonLabel": "Rejection reason (shown to customer)",
+  "bkashRejectionReasonPlaceholder": "e.g. Transaction ID doesn't match our bKash statement…",
+  "bkashApprove": "Verify & Mark Paid",
+  "bkashReject": "Reject",
+  "bkashSaving": "Saving…",
+  "bkashActionError": "Could not update this payment. Please try again.",
+  "bkashSectionTitle": "bKash Payment",
+  "bkashSectionHint": "Customers will send payment to this number and submit their Transaction ID for you to verify.",
+  "bkashMerchantNumberLabel": "bKash Number",
+  "bkashNumberTypeLabel": "Number Type",
+  "bkashTypePersonalOpt": "Personal",
+  "bkashTypeMerchantOpt": "Merchant",
+  "bkashQrPreviewHint": "For quick sharing only — customers scan with their phone's Camera app, not the bKash app (this isn't an official bKash Merchant QR)."
 }
