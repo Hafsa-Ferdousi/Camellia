@@ -168,7 +168,12 @@ export const checkout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
@@ -287,7 +292,12 @@ export const guestCheckout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
