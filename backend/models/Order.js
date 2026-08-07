@@ -13,6 +13,24 @@ const paymentSchema = new mongoose.Schema({
   status: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
   transactionId: { type: String, default: null },
   amount: { type: Number, required: true },
+
+  // Manual bKash "send money" verification — the customer pays a merchant/
+  // personal bKash number outside the app, then submits the transaction ID
+  // here for an admin to cross-check against their bKash statement.
+  bkash: {
+    senderNumber: { type: String, default: null },
+    trxId: { type: String, default: null, uppercase: true, trim: true },
+    screenshot: { type: String, default: null },
+    submittedAt: { type: Date, default: null },
+    verificationStatus: {
+      type: String,
+      enum: ["not_applicable", "awaiting_submission", "pending_verification", "verified", "rejected"],
+      default: "not_applicable",
+    },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    verifiedAt: { type: Date, default: null },
+    rejectionReason: { type: String, default: null },
+  },
 });
 
 const orderSchema = new mongoose.Schema(
@@ -62,6 +80,11 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// A given bKash transaction ID should never be attached to more than one
+// order — sparse so orders that never submit a bKash payment (null trxId)
+// don't collide with each other.
+orderSchema.index({ "payment.bkash.trxId": 1 }, { unique: true, sparse: true });
 
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

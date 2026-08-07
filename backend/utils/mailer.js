@@ -84,6 +84,17 @@ export async function sendPaymentConfirmedEmail(to, { orderId, invoiceNumber, am
   return sendMail({ to, subject, text });
 }
 
+export async function sendBkashStatusEmail(to, { invoiceNumber, approved, rejectionReason }) {
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const subject = `Camellia bKash Payment ${approved ? "Verified" : "Update"} — Order ${invoiceNumber || ""}`;
+  const text = approved
+    ? `Hi,\n\nGood news — we've verified your bKash payment for order (Invoice: ${invoiceNumber || "N/A"}). Your order is now confirmed.\n\nThank you for shopping with Camellia.`
+    : `Hi,\n\nWe couldn't verify the bKash payment submitted for order (Invoice: ${invoiceNumber || "N/A"}).\n\n` +
+      `Reason: ${rejectionReason || "Details did not match our records."}\n\n` +
+      `Please double check your Transaction ID and resubmit from your Order History page.\n\nThank you for your patience.`;
+  return sendMail({ to, subject, text });
+}
+
 // ── Email verification (OTP at registration) ───────────────────────────
 export async function sendVerificationOtpEmail(to, otp) {
   if (!to) return { sent: false, reason: "no_recipient" };
@@ -109,4 +120,4 @@ export async function sendContactReplyEmail(to, { name, originalMessage, reply }
   return sendMail({ to, subject, text });
 }
 
-export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendVerificationOtpEmail, sendContactReplyEmail };
+export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendVerificationOtpEmail, sendContactReplyEmail };

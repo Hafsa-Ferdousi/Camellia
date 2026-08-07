@@ -11,6 +11,8 @@ export const getPublicPricing = async (req, res) => {
       defaultDeliveryCharge: settings.defaultDeliveryCharge,
       districtDeliveryCharges: settings.districtDeliveryCharges,
       defaultLanguage: settings.defaultLanguage,
+      bkashMerchantNumber: settings.bkashMerchantNumber,
+      bkashNumberType: settings.bkashNumberType,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
