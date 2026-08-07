@@ -14,6 +14,7 @@ import { getPricing } from '../api/settings';
 import { validateCoupon } from '../api/coupons';
 import { districts } from '../data/districts';
 import { cityMap } from '../data/cities';
+import QrCodeImage from '../components/QrCodeImage';
 
 const PAYMENT_METHOD_MAP = {
   'Cash on Delivery': 'cod',
@@ -619,26 +620,38 @@ const Checkout = () => {
                     />
                     <span>bKash</span>
                   </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Bank Transfer' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Bank Transfer"
-                      checked={formData.paymentMethod === 'Bank Transfer'}
-                      onChange={handleChange}
-                    />
-                    <span>{t('bankTransfer')}</span>
-                  </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Nagad' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Nagad"
-                      checked={formData.paymentMethod === 'Nagad'}
-                      onChange={handleChange}
-                    />
-                    <span>Nagad</span>
-                  </label>
+                  {formData.paymentMethod === 'bKash' && (
+                    <div style={{
+                      gridColumn: '1 / -1', background: '#FFF7ED', border: '1px solid #FED7AA',
+                      borderRadius: 8, padding: '12px 16px', fontSize: 13, lineHeight: 1.6, color: '#7C2D12',
+                      display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap',
+                    }}>
+                      {pricing.bkashMerchantNumber && (
+                        <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                          <QrCodeImage value={pricing.bkashMerchantNumber} size={110} alt="bKash number QR code" />
+                          <p style={{ fontSize: 10.5, color: '#7C2D12', margin: '4px 0 0', maxWidth: 110 }}>{t('bkashScanHint')}</p>
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <strong>{t('bkashInstructionsTitle')}</strong>
+                        <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                          <li>
+                            {t('bkashStep1')}{' '}
+                            {pricing.bkashMerchantNumber ? (
+                              <strong style={{ fontSize: 14 }}>{pricing.bkashMerchantNumber}</strong>
+                            ) : (
+                              <em>{t('bkashNumberUnavailable')}</em>
+                            )}
+                            {pricing.bkashNumberType && (
+                              <> ({pricing.bkashNumberType === 'merchant' ? t('bkashTypeMerchant') : t('bkashTypePersonal')})</>
+                            )}
+                          </li>
+                          <li>{t('bkashStep2')}</li>
+                          <li>{t('bkashStep3')}</li>
+                        </ol>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

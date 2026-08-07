@@ -352,6 +352,7 @@
 
   /* Hide everything that isn't the receipt content */
   .confirmation-actions,
+  .bkash-payment-section,
   .btn-print,
   .btn-download,
   .btn-gold,

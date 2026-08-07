@@ -5,7 +5,7 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2, Bell,
+  Ticket, Mail, MessageCircle, Trash2, Bell, Wallet,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
@@ -45,6 +45,8 @@ import {
   deleteCoupon as deleteCouponApi,
   setCouponStatus,
 } from "../api/coupons";
+import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
+import QrCodeImage from "../components/QrCodeImage";
 import client from "../api/client";
 
 // ── helpers ──────────────────────────────────────────────────
@@ -71,6 +73,33 @@ const StatusBadge = ({ status }) => {
       textTransform: "capitalize", whiteSpace: "nowrap",
     }}>
       {t(statusLabelKey(status))}
+    </span>
+  );
+};
+
+const BKASH_STATUS_COLORS = {
+  awaiting_submission:  { bg: "#F3F4F6", color: "#4B5563" },
+  pending_verification: { bg: "#FEF9C3", color: "#854D0E" },
+  verified:              { bg: "#DCFCE7", color: "#166534" },
+  rejected:              { bg: "#FEE2E2", color: "#991B1B" },
+};
+const BKASH_STATUS_LABEL_KEYS = {
+  awaiting_submission: "bkashFilterAwaiting",
+  pending_verification: "bkashFilterPending",
+  verified: "bkashFilterVerified",
+  rejected: "bkashFilterRejected",
+};
+const BkashStatusBadge = ({ status }) => {
+  const { t } = useTranslation("admin");
+  const c = BKASH_STATUS_COLORS[status] || BKASH_STATUS_COLORS.awaiting_submission;
+  return (
+    <span style={{
+      background: c.bg, color: c.color,
+      padding: "3px 10px", borderRadius: 20,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
+      whiteSpace: "nowrap",
+    }}>
+      {t(BKASH_STATUS_LABEL_KEYS[status] || "bkashFilterAwaiting")}
     </span>
   );
 };
@@ -305,6 +334,15 @@ export default function Admin() {
   const [conversationDetail, setConversationDetail] = useState(null);
   const [conversationDetailLoading, setConvDL] = useState(false);
 
+  // ── bKash payment verification state ────────────────────────
+  const [bkashSubmissions, setBkashSubmissions] = useState([]);
+  const [bkashLoading, setBkashL] = useState(false);
+  const [bkashStatusFilter, setBkashStatusFilter] = useState("pending_verification");
+  const [bkashDetail, setBkashDetail] = useState(null);
+  const [bkashRejectReason, setBkashRejectReason] = useState("");
+  const [bkashActing, setBkashActing] = useState(false);
+  const [bkashActErr, setBkashActErr] = useState("");
+
   // ── data loaders ────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
@@ -414,6 +452,32 @@ export default function Admin() {
     } catch { /* ignore */ }
   };
 
+  // ── bKash loader / handlers ─────────────────────────────────
+  const loadBkash = useCallback(async () => {
+    setBkashL(true);
+    try { const r = await getBkashSubmissions(bkashStatusFilter); setBkashSubmissions(r.data); }
+    catch { setBkashSubmissions([]); }
+    finally { setBkashL(false); }
+  }, [bkashStatusFilter]);
+
+  const openBkashDetail = (order) => { setBkashDetail(order); setBkashRejectReason(""); setBkashActErr(""); };
+  const closeBkashDetail = () => { setBkashDetail(null); setBkashRejectReason(""); setBkashActErr(""); };
+
+  const handleBkashDecision = async (approve) => {
+    if (!bkashDetail) return;
+    setBkashActing(true);
+    setBkashActErr("");
+    try {
+      await verifyBkashPaymentApi(bkashDetail._id, { approve, rejectionReason: bkashRejectReason });
+      setBkashSubmissions(prev => prev.filter(o => o._id !== bkashDetail._id));
+      closeBkashDetail();
+    } catch (err) {
+      setBkashActErr(err.response?.data?.message || t("bkashActionError"));
+    } finally {
+      setBkashActing(false);
+    }
+  };
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -424,7 +488,8 @@ export default function Admin() {
     if (tab === "coupons")    loadCoupons();
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations]);
+    if (tab === "bkash")      loadBkash();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadBkash]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -836,6 +901,7 @@ export default function Admin() {
         {[
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
+          { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
@@ -1040,6 +1106,62 @@ export default function Admin() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* ── bKASH MANUAL VERIFICATION ── */}
+        {tab === "bkash" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("bkashTitle")}</h2>
+              <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
+                <option value="pending_verification">{t("bkashFilterPending")}</option>
+                <option value="verified">{t("bkashFilterVerified")}</option>
+                <option value="rejected">{t("bkashFilterRejected")}</option>
+                <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
+                <option value="all">{t("bkashFilterAll")}</option>
+              </select>
+            </div>
+
+            {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
+            {!bkashLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("bkashColSenderNumber"), t("bkashColTrxId"), t("colFiledOn"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bkashSubmissions.map(o => (
+                      <tr key={o._id} style={s.tr}>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <span style={s.mono}>#{(o._id || "").toString().slice(-6).toUpperCase()}</span>
+                        </td>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <div style={{ fontSize: 13 }}>
+                            {o.user?.name || o.guestInfo?.name || "—"}
+                            {o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestRequestBadge")}</span>}
+                          </div>
+                        </td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.senderNumber || "—"}</span></td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.trxId || "—"}</span></td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{o.payment?.bkash?.submittedAt ? fmtDate(o.payment.bkash.submittedAt) : "—"}</span></td>
+                        <td style={s.td}><BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} /></td>
+                        <td style={s.td}>
+                          <button onClick={() => openBkashDetail(o)} style={s.editBtn}>{t("viewDetails")}</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {bkashSubmissions.length === 0 && (
+                      <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noBkashFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -1541,6 +1663,44 @@ export default function Admin() {
                     <option value="bn">{t("bangla")}</option>
                   </select>
                 </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("bkashSectionTitle")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("bkashSectionHint")}
+                </p>
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <label style={s.label}>
+                      {t("bkashMerchantNumberLabel")}
+                      <input
+                        className="input"
+                        type="tel"
+                        placeholder="01XXXXXXXXX"
+                        value={settings.bkashMerchantNumber || ""}
+                        onChange={e => setSettings(s => ({ ...s, bkashMerchantNumber: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      />
+                    </label>
+                    <label style={s.label}>
+                      {t("bkashNumberTypeLabel")}
+                      <select
+                        className="input"
+                        value={settings.bkashNumberType || "personal"}
+                        onChange={e => setSettings(s => ({ ...s, bkashNumberType: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      >
+                        <option value="personal">{t("bkashTypePersonalOpt")}</option>
+                        <option value="merchant">{t("bkashTypeMerchantOpt")}</option>
+                      </select>
+                    </label>
+                  </div>
+                  {settings.bkashMerchantNumber && (
+                    <div style={{ textAlign: "center" }}>
+                      <QrCodeImage value={settings.bkashMerchantNumber} size={120} alt="bKash QR preview" />
+                      <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, maxWidth: 120 }}>{t("bkashQrPreviewHint")}</p>
+                    </div>
+                  )}
+                </div>
 
                 <div>
                   <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
@@ -2057,6 +2217,86 @@ export default function Admin() {
                 {replySending ? t("sending") : t("sendReply")}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {bkashDetail && (
+        <div style={s.overlay} onClick={closeBkashDetail}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
+
+            <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
+              {t("orderReference")}: <span style={s.mono}>#{(bkashDetail._id || "").toString().slice(-6).toUpperCase()}</span>
+              {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div style={s.modalSubTitle}>{t("colCustomer")}</div>
+                <div style={{ fontSize: 13 }}>{bkashDetail.user?.name || bkashDetail.guestInfo?.name || "—"}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{bkashDetail.user?.email || bkashDetail.guestInfo?.email || ""}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashAmount")}</div>
+                <div style={{ fontSize: 13 }}>{fmt(bkashDetail.payment?.amount || bkashDetail.totalAmount || 0)}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColSenderNumber")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.senderNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColTrxId")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.trxId || "—"}</div>
+              </div>
+            </div>
+
+            {bkashDetail.payment?.bkash?.screenshot && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("attachedPhotos")}</div>
+                <a href={bkashDetail.payment.bkash.screenshot} target="_blank" rel="noreferrer">
+                  <img
+                    src={bkashDetail.payment.bkash.screenshot}
+                    alt=""
+                    style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </a>
+              </div>
+            )}
+
+            {bkashDetail.payment?.bkash?.verificationStatus === "pending_verification" ? (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                {bkashActErr && <div style={s.formErr}>{bkashActErr}</div>}
+                <label style={s.label}>
+                  {t("bkashRejectionReasonLabel")}
+                  <textarea
+                    value={bkashRejectReason}
+                    onChange={e => setBkashRejectReason(e.target.value)}
+                    rows={2}
+                    placeholder={t("bkashRejectionReasonPlaceholder")}
+                    style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+                  />
+                </label>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                  <button className="btn btn-outline" onClick={closeBkashDetail}>{t("cancel")}</button>
+                  <button
+                    className="btn"
+                    style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
+                    disabled={bkashActing}
+                    onClick={() => handleBkashDecision(false)}
+                  >
+                    {t("bkashReject")}
+                  </button>
+                  <button className="btn" disabled={bkashActing} onClick={() => handleBkashDecision(true)}>
+                    {bkashActing ? t("bkashSaving") : t("bkashApprove")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
+              </div>
+            )}
           </div>
         </div>
       )}

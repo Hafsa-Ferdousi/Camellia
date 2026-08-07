@@ -1,17 +1,18 @@
 // frontend/src/pages/OrderConfirmation.jsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, Printer, Package } from 'lucide-react';
 import './OrderConfirmation.css';
 import Invoice from '../components/Invoice';
+import BkashPaymentPanel from '../components/BkashPaymentPanel';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
   const { language } = useLanguage();
   const { state } = useLocation();
-  const order = state?.order;
+  const [order, setOrder] = useState(state?.order || null);
   const receiptRef = useRef(null);
 
   // Backend stores payment.method as a short code (cod | bkash | nagad | bank)
@@ -165,6 +166,16 @@ export default function OrderConfirmation() {
             <p className="brand-tagline">{t('thankYouShopping')}</p>
           </div>
         </div>
+
+        {order.payment?.method === 'bkash' && (
+          <div className="bkash-payment-section" style={{ padding: '0 4px' }}>
+            <BkashPaymentPanel
+              order={order}
+              guestEmail={!order.user ? (order.guestInfo?.email || order.email) : undefined}
+              onUpdated={(payment) => setOrder((prev) => ({ ...prev, payment }))}
+            />
+          </div>
+        )}
 
         <div className="confirmation-actions">
           <Invoice order={order} />

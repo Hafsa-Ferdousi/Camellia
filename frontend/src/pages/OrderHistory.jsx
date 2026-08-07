@@ -8,6 +8,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
+import BkashPaymentPanel from "../components/BkashPaymentPanel";
 
 // Progress steps for order tracking
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
@@ -372,6 +373,15 @@ export default function OrderHistory() {
                     ৳ {formatPrice(order.totalAmount, language)}
                   </span>
                 </div>
+
+                {order.payment?.method === "bkash" && order.payment?.status !== "paid" && (
+                  <BkashPaymentPanel
+                    order={order}
+                    onUpdated={(payment) => {
+                      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, payment } : o));
+                    }}
+                  />
+                )}
               </div>
             );
           })}
