@@ -12,9 +12,9 @@ export default function TrackOrder() {
   const { language } = useLanguage();
   const STATUS_STYLE = {
     pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
-    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
-    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
-    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    confirmed:  { bg: "#FCEFC7", color: "#8B6914", label: t("statusConfirmed") },
+    processing: { bg: "#F5DCC0", color: "#9A4A0F", label: t("statusProcessing") },
+    shipped:    { bg: "#E8D9C0", color: "#6B4226", label: t("statusShipped") },
     delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
     cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
   };
@@ -86,11 +86,11 @@ export default function TrackOrder() {
           <p style={{ fontSize: 13, color: "var(--muted)" }}>
             {t("trackSub")}
           </p>
-          <p style={{ fontSize: 12, color: "#c9a84c", marginTop: 4 }}>
+          <p style={{ fontSize: 12, color: "var(--gold-text)", marginTop: 4 }}>
             {t("trackHint")}
           </p>
         </div>
-        <div style={{ textAlign: "center", marginBottom: 28, color: "#C9A84C" }}>✦</div>
+        <div style={{ textAlign: "center", marginBottom: 28, color: "var(--gold)" }}>✦</div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
@@ -109,11 +109,11 @@ export default function TrackOrder() {
                 style={{
                   width: "100%",
                   padding: "10px 14px",
-                  border: "1px solid #ddd",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 14,
                   marginTop: 0,
-                  background: "#FAFAFA",
+                  background: "var(--ivory)",
                   boxSizing: "border-box",
                 }}
               />
@@ -131,11 +131,11 @@ export default function TrackOrder() {
                 style={{
                   width: "100%",
                   padding: "10px 14px",
-                  border: "1px solid #ddd",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 14,
                   marginTop: 0,
-                  background: "#FAFAFA",
+                  background: "var(--ivory)",
                   boxSizing: "border-box",
                 }}
               />
@@ -143,7 +143,7 @@ export default function TrackOrder() {
           </div>
 
           <label className="form-label" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
-            {t("emailAddress")} <span style={{ color: '#c62828' }}>*</span>
+            {t("emailAddress")} <span style={{ color: 'var(--red)' }}>*</span>
           </label>
           <input
             className="input"
@@ -155,25 +155,25 @@ export default function TrackOrder() {
             style={{
               width: "100%",
               padding: "10px 14px",
-              border: "1px solid #ddd",
+              border: "1px solid var(--border)",
               borderRadius: 6,
               fontSize: 14,
               marginTop: 0,
-              background: "#FAFAFA",
+              background: "var(--ivory)",
               boxSizing: "border-box",
             }}
           />
 
-          <button 
-            className="btn" 
-            type="submit" 
-            disabled={loading} 
-            style={{ 
-              width: "100%", 
-              marginTop: 16, 
-              padding: 13, 
+          <button
+            className="btn"
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 16,
+              padding: 13,
               fontSize: 13,
-              background: "#c9a84c",
+              background: "var(--maroon)",
               color: "#fff",
               border: "none",
               borderRadius: 6,
@@ -195,7 +195,7 @@ export default function TrackOrder() {
               const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
 
               return (
-                <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid #eee" }}>
+                <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-light)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
                       <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
@@ -272,20 +272,20 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     padding: "48px 16px",
-    background: "#F8F5F0",
+    background: "var(--cream-dark)",
   },
   card: {
     width: "100%",
     maxWidth: 480,
-    background: "#FFFFFF",
-    border: "1px solid #E8E0D8",
+    background: "var(--ivory)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: "40px 36px",
     boxShadow: "0 4px 30px rgba(0,0,0,0.08)",
   },
   errorBox: {
     background: "#FEF2F2",
-    color: "#C62828",
+    color: "var(--red)",
     padding: "10px 14px",
     borderRadius: 6,
     marginBottom: 16,

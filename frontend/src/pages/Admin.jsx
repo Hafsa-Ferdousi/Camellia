@@ -5,7 +5,8 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2, Bell, Wallet,
+  Ticket, Mail, MessageCircle, Trash2, Bell, Wallet, TrendingUp,
+ 
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
@@ -50,11 +51,14 @@ import QrCodeImage from "../components/QrCodeImage";
 import client from "../api/client";
 
 // ── helpers ──────────────────────────────────────────────────
+// Warm, on-brand tones for the in-progress states (blue/indigo/cyan clashed
+// with the maroon/gold theme) — pending/delivered/cancelled keep their
+// universally-understood amber/green/red semantics.
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
-  confirmed:  { bg: "#DBEAFE", color: "#1E40AF" },
-  processing: { bg: "#EDE9FE", color: "#5B21B6" },
-  shipped:    { bg: "#CFFAFE", color: "#0E7490" },
+  confirmed:  { bg: "#FCEFC7", color: "#8B6914" },
+  processing: { bg: "#F5DCC0", color: "#9A4A0F" },
+  shipped:    { bg: "#E8D9C0", color: "#6B4226" },
   delivered:  { bg: "#DCFCE7", color: "#166534" },
   cancelled:  { bg: "#FEE2E2", color: "#991B1B" },
 };
@@ -171,12 +175,52 @@ const Pagination = ({ page, totalPages, onChange }) => {
 };
 const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
+// Click-to-check replacement for a native <select multiple> — the ctrl/cmd
+// click interaction on native multi-selects isn't discoverable, especially
+// for non-technical admins.
+const CheckboxMultiSelect = ({ options, selected, onToggle, placeholder }) => {
+  const { t } = useTranslation("admin");
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options;
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", overflow: "hidden" }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", padding: "7px 10px", border: "none", borderBottom: "1px solid var(--border)", fontSize: 12, boxSizing: "border-box", fontFamily: "var(--font-body)" }}
+      />
+      <div style={{ maxHeight: 150, overflowY: "auto", padding: 4 }}>
+        {filtered.length === 0 && <p style={{ fontSize: 12, color: "var(--muted)", padding: "6px 8px" }}>{t("noMatches")}</p>}
+        {filtered.map(o => (
+          <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", fontSize: 13, cursor: "pointer", borderRadius: 4 }}>
+            <input
+              type="checkbox"
+              checked={selected.includes(o.value)}
+              onChange={() => onToggle(o.value)}
+              style={{ width: 14, height: 14, accentColor: "var(--maroon)", flexShrink: 0 }}
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+      {selected.length > 0 && (
+        <div style={{ padding: "5px 8px", fontSize: 11, color: "var(--muted)", borderTop: "1px solid var(--border)" }}>
+          {t("selectedCount", { count: selected.length })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── blank product form ────────────────────────────────────────
 const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
   category: "", basePrice: "", totalStock: "",
-  images: [], isFeatured: false, isActive: true,
+  images: [], isFeatured: false, isBestSeller: false, isActive: true,
 };
 
 // ── blank category form ─────────────────────────────────────────
@@ -187,6 +231,9 @@ const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const isCouponExpired = (c) => new Date(c.endDate) < new Date();
 const isCouponUpcoming = (c) => new Date(c.startDate) > new Date();
 const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+// Only images living under our Cloudinary upload folder should ever be
+// deleted via the admin panel's cleanup calls.
+const isCloudinaryUploadUrl = (url) => typeof url === "string" && url.includes("/camellia/products/");
 
 // Which admin tab a notification's "view" click should jump to.
 const NOTIFICATION_TAB = {
@@ -485,7 +532,11 @@ export default function Admin() {
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
     if (tab === "settings")   loadSettings();
-    if (tab === "coupons")    loadCoupons();
+    // Products/categories are also loaded here so the coupon form's
+    // applicable/excluded product & category pickers have options to show —
+    // otherwise they'd render empty if this tab is opened before Products
+    // or Categories ever were.
+    if (tab === "coupons")    { loadCoupons(); loadProducts(); loadCategories(); }
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
     if (tab === "bkash")      loadBkash();
@@ -524,6 +575,7 @@ export default function Admin() {
 
   const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
   const setDefaultDelivery = (v) => setSettings(s => ({ ...s, defaultDeliveryCharge: Number(v) }));
+  const setLowStockThreshold = (v) => setSettings(s => ({ ...s, lowStockThreshold: Number(v) }));
   const setDistrictCharge = (idx, field, value) => setSettings(s => ({ ...s, districtDeliveryCharges: s.districtDeliveryCharges.map((d, i) => i === idx ? { ...d, [field]: field === "charge" ? Number(value) : value } : d) }));
   const addDistrictCharge = () => setSettings(s => ({ ...s, districtDeliveryCharges: [...s.districtDeliveryCharges, { district: "", charge: 0 }] }));
   const removeDistrictCharge = (idx) => setSettings(s => ({ ...s, districtDeliveryCharges: s.districtDeliveryCharges.filter((_, i) => i !== idx) }));
@@ -597,6 +649,7 @@ export default function Admin() {
       totalStock: p.totalStock ?? 0,
       images:     p.images || [],
       isFeatured: p.isFeatured || false,
+      isBestSeller: p.isBestSeller || false,
       isActive:   p.isActive !== false,
     });
     setEditTarget(p);
@@ -632,7 +685,7 @@ export default function Admin() {
   const removeProductImage = (idx) => {
     setForm(f => {
       const removed = f.images[idx];
-      if (removed && removed.startsWith("/uploads/")) {
+      if (isCloudinaryUploadUrl(removed)) {
         setPendingDeleteImages(prev => [...prev, removed]);
       }
       return { ...f, images: f.images.filter((_, i) => i !== idx) };
@@ -647,6 +700,7 @@ export default function Admin() {
     totalStock:  Number(form.totalStock) || 0,
     images:      form.images,
     isFeatured:  form.isFeatured,
+    isBestSeller: form.isBestSeller,
     isActive:    form.isActive,
   });
 
@@ -728,7 +782,7 @@ export default function Admin() {
     try {
       const r = await uploadImage(file);
       setCatForm(f => {
-        if (f.image && f.image.startsWith("/uploads/")) {
+        if (isCloudinaryUploadUrl(f.image)) {
           setPendingDeleteCatImages(prev => [...prev, f.image]);
         }
         return { ...f, image: r.data.url };
@@ -770,7 +824,7 @@ export default function Admin() {
     try {
       await deleteCategory(cat._id);
       setCategories(prev => prev.filter(c => c._id !== cat._id));
-      if (cat.image && cat.image.startsWith("/uploads/")) {
+      if (isCloudinaryUploadUrl(cat.image)) {
         deleteUploadedImage(cat.image).catch(() => {});
       }
     } catch (err) {
@@ -797,6 +851,10 @@ export default function Admin() {
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
   const setCouponF = (e) => { const { name, value, type, checked } = e.target; if (type === "select-multiple") { const values = Array.from(e.target.selectedOptions).map(o => o.value); setCouponForm(f => ({ ...f, [name]: values })); return; } setCouponForm(f => ({ ...f, [name]: type === "checkbox" ? checked : value })); };
+  const toggleCouponArrayField = (field, id) => setCouponForm(f => ({
+    ...f,
+    [field]: f[field].includes(id) ? f[field].filter(v => v !== id) : [...f[field], id],
+  }));
   const buildCouponPayload = () => ({ code: couponForm.code.trim().toUpperCase(), title: couponForm.title.trim(), description: couponForm.description.trim(), discountType: couponForm.discountType, discountValue: Number(couponForm.discountValue), minimumPurchase: couponForm.minimumPurchase === "" ? 0 : Number(couponForm.minimumPurchase), maximumDiscount: couponForm.maximumDiscount === "" ? null : Number(couponForm.maximumDiscount), usageLimit: couponForm.usageLimit === "" ? null : Number(couponForm.usageLimit), perUserLimit: couponForm.perUserLimit === "" ? null : Number(couponForm.perUserLimit), startDate: couponForm.startDate, endDate: couponForm.endDate, applicableProducts: couponForm.applicableProducts, applicableCategories: couponForm.applicableCategories, excludedProducts: couponForm.excludedProducts, isActive: couponForm.isActive });
 
   const handleSaveCoupon = async () => {
@@ -1082,7 +1140,17 @@ export default function Admin() {
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
                             </td>
                             <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
-                            <td style={{ ...s.td, textAlign: "center" }}>{o.items?.length}</td>
+                            <td style={{ ...s.td, cursor: "pointer", maxWidth: 220 }} onClick={() => setOrderDetail(o)}>
+                              {(o.items || []).slice(0, 2).map((item, i) => (
+                                <div key={i} style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {item.nameSnapshot || item.product?.name?.en || "—"}
+                                  <span style={{ color: "var(--muted)" }}> ×{item.quantity}</span>
+                                </div>
+                              ))}
+                              {(o.items?.length || 0) > 2 && (
+                                <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("moreItems", { count: o.items.length - 2 })}</div>
+                              )}
+                            </td>
                             <td style={s.td}>{fmt(o.totalAmount)}</td>
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
@@ -1176,7 +1244,7 @@ export default function Admin() {
                   { id: "registered", label: t("registeredCount", { count: customers.filter(c => c.type === "registered" || c.type === "admin").length }) },
                   { id: "guest", label: t("guestCount", { count: customers.filter(c => c.type === "guest").length }) },
                 ].map(f => (
-                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--charcoal)" : "var(--border)", background: customerFilter === f.id ? "var(--charcoal)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
+                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--maroon)" : "var(--border)", background: customerFilter === f.id ? "var(--maroon)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
                 ))}
               </div>
             </div>
@@ -1207,8 +1275,8 @@ export default function Admin() {
                             <span style={{
                               fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
                               textTransform: "uppercase", letterSpacing: "0.03em",
-                              background: c.type === "admin" ? "#EDE9FE" : c.type === "guest" ? "#F3F4F6" : "#DCFCE7",
-                              color: c.type === "admin" ? "#5B21B6" : c.type === "guest" ? "#4B5563" : "#166534",
+                              background: c.type === "admin" ? "var(--gold-pale)" : c.type === "guest" ? "#F3F4F6" : "#DCFCE7",
+                              color: c.type === "admin" ? "var(--gold-text)" : c.type === "guest" ? "#4B5563" : "#166534",
                             }}>
                               {c.type === "admin" ? t("typeAdmin") : c.type === "guest" ? t("typeGuest") : t("typeRegistered")}
                             </span>
@@ -1286,7 +1354,7 @@ export default function Admin() {
                     <table style={s.table}>
                       <thead>
                         <tr>
-                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colActive"),t("colActions")].map(h => (
+                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colBestSeller"),t("colActive"),t("colActions")].map(h => (
                             <th key={h} style={s.th}>{h}</th>
                           ))}
                         </tr>
@@ -1296,7 +1364,7 @@ export default function Admin() {
                           <tr key={p._id} style={s.tr}>
                             <td style={s.td}>
                               {p.images?.[0]
-                                ? <img src={p.images[0]} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                                ? <img src={p.images[0]} alt="" loading="lazy" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
                                 : <div style={{ width: 48, height: 48, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}><Gem size={20} /></div>
                               }
                             </td>
@@ -1317,6 +1385,7 @@ export default function Admin() {
                               )}
                             </td>
                             <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? <Star size={14} fill="var(--gold)" color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isBestSeller ? <TrendingUp size={14} color="var(--maroon)" style={{ display: "inline-block" }} /> : "—"}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
                                 {p.isActive ? t("yes") : t("no")}
@@ -1329,7 +1398,7 @@ export default function Admin() {
                           </tr>
                         ))}
                         {pageItems.length === 0 && (
-                          <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noProductsFound")}</td></tr>
+                          <tr><td colSpan={9} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noProductsFound")}</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -1364,7 +1433,7 @@ export default function Admin() {
                       <tr key={c._id} style={s.tr}>
                         <td style={s.td}>
                           {c.image
-                            ? <img src={c.image} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                            ? <img src={c.image} alt="" loading="lazy" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
                             : (() => { const Icon = getCategoryIcon(c.slug); return (
                               <div style={{ width: 40, height: 40, background: "var(--parchment)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}><Icon size={18} strokeWidth={1.5} /></div>
                             ); })()
@@ -1379,19 +1448,19 @@ export default function Admin() {
                           <button
                             onClick={() => handleMoveCategory(c, "up")}
                             disabled={i === 0 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
                             title={t("moveUp")}
                           ><ArrowUp size={13} /></button>
                           <button
                             onClick={() => handleMoveCategory(c, "down")}
                             disabled={i === arr.length - 1 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
                             title={t("moveDown")}
                           ><ArrowDown size={13} /></button>
                         </td>
                         <td style={{ ...s.td, textAlign: "center" }}>
                           {c.isFixed
-                            ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "#EDE9FE", color: "#5B21B6", fontWeight: 600 }}>{t("fixed")}</span>
+                            ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "var(--gold-pale)", color: "var(--gold-text)", fontWeight: 600 }}>{t("fixed")}</span>
                             : <span style={{ fontSize: 11, color: "var(--muted)" }}>{t("custom")}</span>
                           }
                         </td>
@@ -1452,7 +1521,7 @@ export default function Admin() {
                               <td style={s.td}><div style={{ fontWeight: 500, fontSize: 13 }}>{c.title}</div>{c.description && <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 220 }}>{c.description}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12.5 }}>{c.discountType === "percentage" ? t("percentOff", { value: c.discountValue }) : t("amountOff", { value: fmt(c.discountValue) })}{c.maximumDiscount != null && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("maxDiscountLabel", { amount: fmt(c.maximumDiscount) })}</div>}{c.minimumPurchase > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("minPurchaseLabel", { amount: fmt(c.minimumPurchase) })}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12 }}>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}{expired && <div style={{ color: "var(--red)", fontSize: 11, fontWeight: 600 }}>{t("expiredLabel")}</div>}{!expired && upcoming && <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>{t("upcomingLabel")}</div>}</td>
-                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--charcoal)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
+                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--maroon)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
                               <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => handleToggleCouponStatus(c)} style={{ ...s.editBtn, background: c.isActive ? "var(--green)" : "var(--muted)", marginRight: 0 }} title={t("clickToToggleTitle")}>{c.isActive ? t("colActive") : t("inactive")}</button></td>
                               <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCoupon(c)} style={s.editBtn}>{t("edit")}</button><button onClick={() => setCouponConfirmDelete(c)} style={s.delBtn}>{t("delete")}</button></td>
                             </tr>
@@ -1476,7 +1545,7 @@ export default function Admin() {
               <h2 style={s.pageTitle}>{t("messagesTitle")}</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {["all", "unread", "read", "replied"].map(f => (
-                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
+                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--maroon)" : "var(--border)", background: messageFilter === f ? "var(--maroon)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
                 ))}
               </div>
             </div>
@@ -1504,9 +1573,9 @@ export default function Admin() {
                             }}>{t(`msg${m.status.charAt(0).toUpperCase()}${m.status.slice(1)}`)}</span>
                           </td>
                           <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
+                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("markRead")}</button>}
                             {m.status !== "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--green)" }}>{t("reply")}</button>}
-                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("viewReply")}</button>}
+                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("viewReply")}</button>}
                             <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
                           </td>
                         </tr>
@@ -1561,7 +1630,7 @@ export default function Admin() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h2 style={s.pageTitle}>{t("notifications:title")}</h2>
               {alertsUnread > 0 && (
-                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--charcoal)" }}>
+                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--maroon)" }}>
                   {t("notifications:markAllRead")}
                 </button>
               )}
@@ -1618,6 +1687,21 @@ export default function Admin() {
                     style={{ maxWidth: 160 }}
                   />
                 </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("inventory")}</h3>
+                <label style={s.label}>
+                  {t("lowStockThreshold")}
+                  <input
+                    className="input"
+                    type="number" min="0"
+                    value={settings.lowStockThreshold}
+                    onChange={e => setLowStockThreshold(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("lowStockThresholdHint")}
+                </p>
 
                 <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("districtDeliveryCharges")}</h3>
                 <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
@@ -2007,6 +2091,10 @@ export default function Admin() {
                 {t("featuredOnHomepage")}
               </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
+                {t("bestSellerOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
                 {t("activeVisibleInStore")}
               </label>
@@ -2068,7 +2156,7 @@ export default function Admin() {
                       className="btn btn-outline"
                       style={{ fontSize: 12, padding: "5px 10px" }}
                       onClick={() => {
-                        if (catForm.image.startsWith("/uploads/")) {
+                        if (isCloudinaryUploadUrl(catForm.image)) {
                           setPendingDeleteCatImages(prev => [...prev, catForm.image]);
                         }
                         setCatForm(f => ({ ...f, image: "" }));
@@ -2145,9 +2233,34 @@ export default function Admin() {
               <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
               <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
               <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableCategoriesLabel")}
+                <p style={{ fontSize: 11, color: "var(--muted)", margin: "-2px 0 6px" }}>{t("applicableCategoriesHint")}</p>
+                <CheckboxMultiSelect
+                  options={categories.map(c => ({ value: c._id, label: c.name?.en || c.name }))}
+                  selected={couponForm.applicableCategories}
+                  onToggle={id => toggleCouponArrayField("applicableCategories", id)}
+                  placeholder={t("searchCategories")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableProductsLabel")}
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.applicableProducts}
+                  onToggle={id => toggleCouponArrayField("applicableProducts", id)}
+                  placeholder={t("searchProducts")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("excludedProductsLabel")}
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.excludedProducts}
+                  onToggle={id => toggleCouponArrayField("excludedProducts", id)}
+                  placeholder={t("searchProducts")}
+                />
+              </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>

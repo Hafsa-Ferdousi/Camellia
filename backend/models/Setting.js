@@ -10,7 +10,7 @@ const settingSchema = new mongoose.Schema(
       type: [{ district: String, charge: Number }],
       default: [{ district: "Cox's Bazar", charge: 70 }],
     },
-    lowStockThreshold: { type: Number, default: 10 },
+    lowStockThreshold: { type: Number, default: 5 },
     defaultLanguage: { type: String, enum: ["en", "bn"], default: "en" },
     // The number customers are told to "Send Money" to at checkout — shown
     // on the Checkout page and used by admins to cross-check submissions.

@@ -2,6 +2,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Gem } from "lucide-react";
 
+// Product.images stores Cloudinary URLs baked with a 400px thumb transform
+// (used by grid cards). Swapping that transform for a larger c_limit crop
+// gives a sharper main image on the detail page without any extra network
+// request or backend/schema change. URLs without that exact transform
+// (e.g. raw admin-panel uploads) pass through untouched.
+const toDetailUrl = (url) =>
+  typeof url === "string"
+    ? url.replace("/upload/ar_1:1,c_fill,g_auto,w_400/", "/upload/c_limit,w_1000/")
+    : url;
+
 export default function ImageGallery({ images = [] }) {
   const { t } = useTranslation("common");
   const [active, setActive] = useState(0);
@@ -11,7 +21,7 @@ export default function ImageGallery({ images = [] }) {
       {/* Main image */}
       <div style={{ ...styles.main, cursor: images.length ? "zoom-in" : "default" }}>
         {images.length > 0
-          ? <img src={images[active]} alt={t("productFallback")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ? <img src={toDetailUrl(images[active])} alt={t("productFallback")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           : <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
               <Gem size={36} style={{ opacity: 0.3 }} />
               <span style={{ fontSize: 13, color: "var(--faint)" }}>{t("largeProductImagePlaceholder")}</span>
@@ -24,7 +34,7 @@ export default function ImageGallery({ images = [] }) {
         {images.length > 0
           ? images.map((img, i) => (
               <button key={i} onClick={() => setActive(i)} style={{ ...styles.thumb, ...(i === active ? styles.thumbActive : {}) }}>
-                <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={img} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))
           : [0, 1, 2].map(i => (

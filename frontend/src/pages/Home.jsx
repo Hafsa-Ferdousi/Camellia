@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Gift, Truck, Gem } from "lucide-react";
-import { getProducts, getCategories } from "../api/products";
+import { getProducts, getCategories, getBestSellers } from "../api/products";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
 import CategorySection from "../components/CategorySection";
@@ -82,8 +82,11 @@ export default function Home() {
 
   useEffect(() => {
     setLoadingBS(true);
-    getProducts({ limit: 16 })
-      .then(r => setBestSellers(r.data.filter(p => !p.isFeatured).slice(0, 6)))
+    // Ranked by actual units sold (backend aggregates order history) — not
+    // just the newest products, so this reflects what customers are really
+    // buying.
+    getBestSellers(4)
+      .then(r => setBestSellers(r.data))
       .catch(() => setBestSellers([]))
       .finally(() => setLoadingBS(false));
   }, []);
@@ -180,7 +183,7 @@ export default function Home() {
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
             : featured.length === 0
               ? <p style={{ color: "var(--muted)", fontSize: 14, gridColumn: "1/-1" }}>
-                  {t("products:noProductsYet")} <code>node seed.js</code>.
+                  {t("products:noProductsYet")}
                 </p>
               : featured.map(p => <ProductCard key={p._id} product={p} />)
           }
@@ -188,26 +191,28 @@ export default function Home() {
       </section>
 
       {/* ── Best sellers ── */}
-      <section style={{ background: "var(--cream-dark)", borderTop: "1px solid var(--border)", padding: "52px 0 60px" }}>
-        <div className="container" style={{ padding: "0 24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <span className="eyebrow">{t("home:mostLoved")}</span>
-              <h2 className="section-heading" style={{ marginTop: 6 }}>{t("home:bestSelling")}</h2>
-              <div className="divider-gold">✦</div>
+      {/* Ranked by real sales, so a fresh store with no orders yet has none
+          to show — hide the whole section rather than render it empty. */}
+      {(loadingBS || bestSellers.length > 0) && (
+        <section style={{ background: "var(--cream-dark)", borderTop: "1px solid var(--border)", padding: "52px 0 60px" }}>
+          <div className="container" style={{ padding: "0 24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <span className="eyebrow">{t("home:mostLoved")}</span>
+                <h2 className="section-heading" style={{ marginTop: 6 }}>{t("home:bestSelling")}</h2>
+                <div className="divider-gold">✦</div>
+              </div>
+              <Link to="/products" style={s.viewAll}>{t("products:shopAll")}</Link>
             </div>
-            <Link to="/products" style={s.viewAll}>{t("products:shopAll")}</Link>
-          </div>
-          <div className="home-product-grid">
-            {loadingBS
-              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-              : bestSellers.length === 0
-                ? null
+            <div className="home-product-grid">
+              {loadingBS
+                ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
                 : bestSellers.map(p => <ProductCard key={p._id} product={p} />)
-            }
+              }
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Why choose us ── */}
       <section className="why-section">

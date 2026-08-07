@@ -32,7 +32,7 @@ export default function ProductCard({ product }) {
       <Link to={`/products/${product._id}`} style={{ textDecoration: "none", color: "inherit" }}>
         <div className="product-img-wrap">
           {image
-            ? <img src={image} alt={name} />
+            ? <img src={image} alt={name} loading="lazy" />
             : <div className="product-img-placeholder"><Gem size={26} /></div>
           }
           {isLowStock && (

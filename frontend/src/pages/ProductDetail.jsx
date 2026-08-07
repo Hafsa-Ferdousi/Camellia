@@ -36,6 +36,7 @@ export default function ProductDetail() {
   const [userComment, setUserComment] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewErr, setReviewErr] = useState("");
 
   // 👇 NEW STATES FOR GUEST REVIEW
   const [guestName, setGuestName] = useState("");
@@ -102,10 +103,11 @@ export default function ProductDetail() {
   // ===== SUBMIT REVIEW (NOW SUPPORTS GUESTS) =====
   const submitReview = async (e) => {
     e.preventDefault();
+    setReviewErr("");
 
     // Validate
     if (!userRating || !userComment.trim()) {
-      alert(t("selectRatingAlert"));
+      setReviewErr(t("selectRatingAlert"));
       return;
     }
 
@@ -118,7 +120,7 @@ export default function ProductDetail() {
     // If NOT logged in, send guest details
     if (!isLoggedIn) {
       if (!guestName.trim() || !guestEmail.trim()) {
-        alert(t("guestDetailsAlert"));
+        setReviewErr(t("guestDetailsAlert"));
         return;
       }
       payload.guestName = guestName.trim();
@@ -141,9 +143,8 @@ export default function ProductDetail() {
       setReviews(updated.data.reviews || []);
       setAverageRating(updated.data.averageRating || 0);
       setTotalReviews(updated.data.totalReviews || 0);
-      alert(t("reviewSubmittedAlert"));
     } catch (error) {
-      alert(error.response?.data?.message || t("reviewSubmitFailedAlert"));
+      setReviewErr(error.response?.data?.message || t("reviewSubmitFailedAlert"));
     } finally {
       setReviewLoading(false);
     }
@@ -324,7 +325,7 @@ export default function ProductDetail() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <StarRating rating={averageRating} totalReviews={totalReviews} />
-              <span style={{ fontSize: 14, color: "#555" }}>
+              <span style={{ fontSize: 14, color: "var(--muted)" }}>
                 {totalReviews > 0 ? t("averageRatingLabel", { rating: averageRating.toFixed(1) }) : t("noReviewsYetShort")}
               </span>
             </div>
@@ -334,10 +335,10 @@ export default function ProductDetail() {
               {reviewsError ? (
                 <p style={{ color: "var(--red)", fontSize: 14 }}>{t("reviewsLoadError")}</p>
               ) : reviews.length === 0 ? (
-                <p style={{ color: "#555", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
+                <p style={{ color: "var(--muted)", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
               ) : (
                 reviews.map((rev) => (
-                  <div key={rev._id} style={{ borderBottom: "1px solid #f0ebe5", padding: "14px 0" }}>
+                  <div key={rev._id} style={{ borderBottom: "1px solid var(--border)", padding: "14px 0" }}>
                     <div
                       style={{
                         display: "flex",
@@ -348,7 +349,7 @@ export default function ProductDetail() {
                       }}
                     >
                       <strong style={{ fontSize: 15 }}>{rev.userName}</strong>
-                      <span style={{ fontSize: 12, color: "#555" }}>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>
                         {new Date(rev.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
                           day: "numeric",
                           month: "short",
@@ -357,18 +358,18 @@ export default function ProductDetail() {
                       </span>
                     </div>
                     <StarRating rating={rev.rating} />
-                    <p style={{ margin: "6px 0 0", color: "#555", fontSize: 14, lineHeight: 1.6 }}>{rev.comment}</p>
+                    <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{rev.comment}</p>
                   </div>
                 ))
               )}
             </div>
 
             {/* ===== WRITE A REVIEW FORM - ALWAYS VISIBLE ===== */}
-            <div style={{ background: "#f8f5f0", padding: "20px", borderRadius: "8px" }}>
+            <div style={{ background: "var(--cream-dark)", padding: "20px", borderRadius: "8px", border: "1px solid var(--border)" }}>
               <h4 style={{ marginBottom: 12, fontSize: 16 }}>{t("writeReview")}</h4>
 
               {reviewSubmitted ? (
-                <p style={{ color: "#2e7d32", display: "flex", alignItems: "center", gap: 6 }}><Check size={16} strokeWidth={2.5} /> {t("thankYouReview")}</p>
+                <p style={{ color: "var(--green)", display: "flex", alignItems: "center", gap: 6 }}><Check size={16} strokeWidth={2.5} /> {t("thankYouReview")}</p>
               ) : (
                 <form onSubmit={submitReview}>
                   {/* Show Name & Email fields ONLY for guests */}
@@ -387,7 +388,7 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "8px 12px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: "14px",
                           }}
@@ -406,7 +407,7 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "8px 12px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: "14px",
                           }}
@@ -416,14 +417,14 @@ export default function ProductDetail() {
                   )}
 
                   {isLoggedIn && eligibility.checked && !eligibility.eligible && (
-                    <p style={{ color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>
+                    <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12 }}>
                       {eligibility.reason === "already_reviewed"
                         ? t("alreadyReviewed")
                         : t("notPurchased")}
                     </p>
                   )}
                   {!isLoggedIn && guestEmail.trim().includes("@") && eligibility.checked && !eligibility.eligible && (
-                    <p style={{ color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>
+                    <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12 }}>
                       {eligibility.reason === "already_reviewed"
                         ? t("alreadyReviewedEmail")
                         : t("notPurchasedEmail")}
@@ -452,23 +453,29 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "10px 14px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: 14,
                             fontFamily: "inherit",
                             resize: "vertical",
-                            background: "#fff",
+                            background: "var(--ivory)",
                           }}
                         />
                       </div>
+
+                      {reviewErr && (
+                        <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12, padding: "10px 14px", background: "#FEF2F2", borderRadius: "var(--radius-sm)", border: "1px solid #FECACA" }}>
+                          {reviewErr}
+                        </p>
+                      )}
 
                       <button
                         type="submit"
                         disabled={reviewLoading}
                         style={{
                           padding: "10px 28px",
-                          background: "#c9a84c",
-                          color: "#fff",
+                          background: "var(--gold)",
+                          color: "#2A1206",
                           border: "none",
                           borderRadius: "6px",
                           fontSize: 14,
