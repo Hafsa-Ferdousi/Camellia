@@ -177,7 +177,7 @@ export default function Security() {
             type="button"
             className="btn"
             onClick={() => setShowDeleteConfirm(true)}
-            style={{ padding: "10px 20px", fontSize: 13, borderColor: "var(--red)", color: "var(--red)" }}
+            style={{ padding: "10px 20px", fontSize: 13, background: "transparent", borderColor: "var(--red)", color: "var(--red)" }}
           >
             {t("deleteAccount")}
           </button>

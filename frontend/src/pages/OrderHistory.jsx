@@ -17,9 +17,9 @@ export default function OrderHistory() {
   const { language } = useLanguage();
   const STATUS_STYLE = {
     pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
-    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
-    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
-    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    confirmed:  { bg: "#FCEFC7", color: "#8B6914", label: t("statusConfirmed") },
+    processing: { bg: "#F5DCC0", color: "#9A4A0F", label: t("statusProcessing") },
+    shipped:    { bg: "#E8D9C0", color: "#6B4226", label: t("statusShipped") },
     delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
     cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
   };
@@ -128,8 +128,8 @@ export default function OrderHistory() {
                 padding: "6px 14px",
                 borderRadius: 20,
                 border: "1.5px solid",
-                borderColor: filterStatus === status ? "var(--charcoal)" : "var(--border)",
-                background: filterStatus === status ? "var(--charcoal)" : "transparent",
+                borderColor: filterStatus === status ? "var(--maroon)" : "var(--border)",
+                background: filterStatus === status ? "var(--maroon)" : "transparent",
                 color: filterStatus === status ? "#fff" : "var(--muted)",
                 fontSize: 12,
                 fontWeight: 500,
@@ -215,7 +215,7 @@ export default function OrderHistory() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                       {item.product?.images?.[0]
-                        ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ? <img src={item.product.images[0]} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <Gem size={18} style={{ opacity: 0.3 }} />}
                     </div>
                   ))}
@@ -234,7 +234,7 @@ export default function OrderHistory() {
                         <div key={step} style={{ textAlign: "center", flex: 1 }}>
                           <div style={{
                             width: 20, height: 20, borderRadius: "50%",
-                            background: i <= stepIndex ? "var(--charcoal)" : "var(--border)",
+                            background: i <= stepIndex ? "var(--maroon)" : "var(--border)",
                             margin: "0 auto 4px",
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
@@ -250,7 +250,7 @@ export default function OrderHistory() {
                     <div style={{ height: 2, background: "var(--border)", borderRadius: 1, marginTop: 4 }}>
                       <div style={{
                         height: "100%", borderRadius: 1,
-                        background: "var(--charcoal)",
+                        background: "var(--maroon)",
                         width: `${Math.max(0, (stepIndex / (STATUS_STEPS.length - 1)) * 100)}%`,
                         transition: "width 0.3s ease",
                       }} />
@@ -282,7 +282,7 @@ export default function OrderHistory() {
                               flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
                               {item.product?.images?.[0]
-                                ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                ? <img src={item.product.images[0]} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 : <Gem size={14} style={{ opacity: 0.3 }} />}
                             </div>
                             <div>

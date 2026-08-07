@@ -31,10 +31,10 @@ export default function OrderConfirmation() {
   if (!order) {
     return (
       <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>
-        <p style={{ color: "#555", marginBottom: 28 }}>
+        <p style={{ color: "var(--muted)", marginBottom: 28 }}>
           {t('checkHistory')}
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
@@ -72,10 +72,10 @@ export default function OrderConfirmation() {
           <div className="order-badge">
             <span>{t('orderHash')}</span>
             {/* ✅ Show friendly Order ID */}
-            <strong style={{ fontSize: '20px', color: '#c9a84c' }}>{displayOrderId}</strong>
+            <strong style={{ fontSize: '20px', color: 'var(--gold-text)' }}>{displayOrderId}</strong>
             <br />
-            <span style={{ fontSize: '12px', color: '#888' }}>{t('invoiceHash')}</span>
-            <span style={{ fontSize: '12px', color: '#888' }}>{displayInvoiceNumber}</span>
+            <span style={{ fontSize: '12px', color: 'var(--faint)' }}>{t('invoiceHash')}</span>
+            <span style={{ fontSize: '12px', color: 'var(--faint)' }}>{displayInvoiceNumber}</span>
           </div>
           <p className="order-date">
             {t('placedOn', { date: placedDate, time: placedTime })}
@@ -152,7 +152,7 @@ export default function OrderConfirmation() {
 
           <div className="receipt-section">
             <h4>{t('orderNotes')}</h4>
-            <p className="detail-value" style={{ fontSize: '12px', color: '#888' }}>
+            <p className="detail-value" style={{ fontSize: '12px', color: 'var(--faint)' }}>
               {t('noteKeepReceipt')}<br />
               {t('noteQueries')}<br />
               {t('noteCod')}

@@ -86,7 +86,7 @@ export default function Cart() {
                   <Link to={`/products/${item.productId}`} style={{ flexShrink: 0 }}>
                     <div className="cart-thumb">
                       {item.product?.images?.[0]
-                        ? <img src={item.product.images[0]} alt="" />
+                        ? <img src={item.product.images[0]} alt="" loading="lazy" />
                         : <Gem size={22} style={{ opacity: 0.3 }} />}
                     </div>
                   </Link>

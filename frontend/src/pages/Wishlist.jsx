@@ -140,7 +140,7 @@ export default function WishlistPage() {
                     overflow: "hidden",
                   }}>
                     {product.images?.[0]
-                      ? <img src={product.images[0]} alt={localized(product.name, language)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ? <img src={product.images[0]} alt={localized(product.name, language)} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       : <Gem size={36} strokeWidth={1.5} style={{ opacity: 0.2 }} />}
                   </div>
                 </Link>
@@ -163,7 +163,7 @@ export default function WishlistPage() {
                     disabled={!product.totalStock || addingToCart === product._id}
                     style={{
                       width: "100%", padding: "9px",
-                      background: product.totalStock ? "var(--charcoal)" : "var(--border)",
+                      background: product.totalStock ? "var(--maroon)" : "var(--border)",
                       color: product.totalStock ? "#fff" : "var(--muted)",
                       border: "none", borderRadius: "var(--radius-sm)",
                       fontSize: 12, fontWeight: 600,

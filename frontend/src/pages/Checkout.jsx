@@ -115,10 +115,10 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
         style={{
           width: '100%',
           padding: '10px 14px',
-          border: '1px solid #ddd',
+          border: '1px solid var(--border)',
           borderRadius: '6px',
           fontSize: '14px',
-          background: selectedDistrict ? '#fff' : '#f5f5f5',
+          background: selectedDistrict ? 'var(--ivory)' : 'var(--cream-dark)',
           boxSizing: 'border-box',
           outline: 'none',
         }}
@@ -130,8 +130,8 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
             top: 'calc(100% + 2px)',
             left: 0,
             right: 0,
-            background: '#fff',
-            border: '1px solid #ddd',
+            background: 'var(--ivory)',
+            border: '1px solid var(--border)',
             borderRadius: '6px',
             maxHeight: '200px',
             overflowY: 'auto',
@@ -147,25 +147,25 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
                 style={{
                   padding: '8px 14px',
                   cursor: 'pointer',
-                  borderBottom: '1px solid #f0ebe5',
+                  borderBottom: '1px solid var(--border-light)',
                   transition: 'background 0.15s',
                   fontSize: '14px',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#f8f5f0'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--cream-dark)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--ivory)'}
               >
                 {city}
               </div>
             ))
           ) : searchTerm.trim() ? (
-            <div style={{ padding: '10px 14px', color: '#333', fontSize: '14px', borderBottom: '1px solid #f0ebe5' }}>
+            <div style={{ padding: '10px 14px', color: 'var(--ink)', fontSize: '14px', borderBottom: '1px solid var(--border-light)' }}>
               No matches found for "<strong>{searchTerm}</strong>".<br />
-              <span style={{ color: '#c9a84c', fontSize: '13px' }}>
+              <span style={{ color: 'var(--gold-text)', fontSize: '13px' }}>
                 ✅ You can type any city name – it will be saved.
               </span>
             </div>
           ) : (
-            <div style={{ padding: '10px 14px', color: '#555', fontSize: '14px' }}>
+            <div style={{ padding: '10px 14px', color: 'var(--muted)', fontSize: '14px' }}>
               No cities listed for this district. Type your city name above.
             </div>
           )}
@@ -409,7 +409,7 @@ const Checkout = () => {
           <div className="empty-cart-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, opacity: 0.5 }}><ShoppingCart size={32} /></div>
             <h2>{t('emptyCart')}</h2>
-            <p style={{ color: '#555', marginBottom: 20 }}>{t('emptyCartSub')}</p>
+            <p style={{ color: 'var(--muted)', marginBottom: 20 }}>{t('emptyCartSub')}</p>
             <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
           </div>
         </div>
@@ -471,7 +471,7 @@ const Checkout = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('firstName')} <span style={{ color: '#c62828' }}>*</span></label>
+                  <label>{t('firstName')} <span style={{ color: 'var(--red)' }}>*</span></label>
                   <input
                     type="text"
                     name="firstName"
@@ -481,7 +481,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('lastName')} <span style={{ color: '#555', fontSize: '12px' }}>(optional)</span></label>
+                  <label>{t('lastName')} <span style={{ color: 'var(--muted)', fontSize: '12px' }}>(optional)</span></label>
                   <input
                     type="text"
                     name="lastName"
@@ -493,10 +493,10 @@ const Checkout = () => {
               </div>
 
               {useSavedAddress && savedAddress ? (
-                <div className="form-group saved-address-summary" style={{ border: '1px solid #f0ebe5', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+                <div className="form-group saved-address-summary" style={{ border: '1px solid var(--border-light)', borderRadius: 8, padding: 14, marginBottom: 16 }}>
                   <p style={{ fontWeight: 600, marginBottom: 6 }}>{savedAddress.addressLine}</p>
-                  <p style={{ color: '#333', margin: 0 }}>{savedAddress.city}, {savedAddress.district}</p>
-                  <p style={{ color: '#333', margin: '4px 0 10px' }}>{savedAddress.phone}</p>
+                  <p style={{ color: 'var(--ink)', margin: 0 }}>{savedAddress.city}, {savedAddress.district}</p>
+                  <p style={{ color: 'var(--ink)', margin: '4px 0 10px' }}>{savedAddress.phone}</p>
                   <button
                     type="button"
                     className="coupon-remove-btn"
@@ -661,25 +661,26 @@ const Checkout = () => {
                           <img
                             src={productImage}
                             alt={productName}
+                            loading="lazy"
                             style={{
                               width: '50px',
                               height: '50px',
                               objectFit: 'cover',
                               borderRadius: '4px',
-                              border: '1px solid #f0ebe5'
+                              border: '1px solid var(--border-light)'
                             }}
                           />
                         ) : (
                           <div style={{
                             width: '50px',
                             height: '50px',
-                            background: '#f8f5f0',
+                            background: 'var(--parchment)',
                             borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: '20px',
-                            color: '#888'
+                            color: 'var(--faint)'
                           }}>
                             💍
                           </div>
