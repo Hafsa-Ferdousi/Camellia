@@ -8,25 +8,31 @@ import connectDB from "./config/db.js";
 import User from "./models/User.js";
 import Category from "./models/Category.js";
 import Product from "./models/Product.js";
+import cloudinaryData from "./cloudinaryProducts.json" with { type: "json" };
+import curatedProducts from "./curatedProducts.json" with { type: "json" };
 
 dotenv.config();
 
-// Helper to build image arrays from /products/ folder
-const img  = (...nums) => nums.map(n => `/products/c${n}.jpg`);
-const bgl  = (...nums) => nums.map(n => `/products/bangles_${n}.jpg`);
-const wed  = (...nums) => nums.map(n => `/products/wedding_${n}.jpg`);
-const nec  = (...nums) => nums.map(n => `/products/necklace_${n}.jpg`);
-const dia  = (...nums) => nums.map(n => `/products/diamond_${n}.jpg`);
-const chu  = (...nums) => nums.map(n => `/products/chura_${n}.jpg`);
-const kal  = (...nums) => nums.map(n => `/products/kalira_${n}.jpg`);
+const CATEGORY_DEFS = [
+  { name: { en: "Kalira",              bn: "কলিরা"              }, slug: "kalira",              description: { en: "Traditional bridal kalira"       }, isFixed: true, sortOrder: 1 },
+  { name: { en: "Chura",               bn: "চুড়া"               }, slug: "chura",               description: { en: "Bridal chura & bangles"           }, isFixed: true, sortOrder: 2 },
+  { name: { en: "Bangles",             bn: "বালা"               }, slug: "bangles",             description: { en: "Classic bangles collection"        }, isFixed: true, sortOrder: 3 },
+  { name: { en: "Necklace Set",        bn: "নেকলেস সেট"        }, slug: "necklace",            description: { en: "Bridal necklace collections"       }, isFixed: true, sortOrder: 4 },
+  { name: { en: "Diamond Cut",         bn: "ডায়মন্ড কাট"       }, slug: "diamond-cut",         description: { en: "Diamond cut jewelry"               }, isFixed: true, sortOrder: 5 },
+  { name: { en: "Wedding Accessories", bn: "ওয়েডিং এক্সেসরিজ" }, slug: "wedding-accessories", description: { en: "Complete wedding accessories"  }, isFixed: true, sortOrder: 6 },
+  { name: { en: "Bridal Nath",         bn: "নথ"                 }, slug: "nath",                description: { en: "Traditional bridal nose rings"     }, isFixed: true, sortOrder: 7 },
+  { name: { en: "Earrings & Tikli",    bn: "কানের দুল ও টিকলি" }, slug: "earrings-tikli",      description: { en: "Earrings and forehead tikli"        }, isFixed: true, sortOrder: 8 },
+];
 
 async function seed() {
   await connectDB();
-  console.log("🌱 Clearing existing product/category data...");
-  // Deliberately NOT wiping Users here — this script is meant to be re-run
-  // any time you need fresh demo products, and it must never delete real
-  // registered customer accounts as a side effect.
-  await Promise.all([Category.deleteMany({}), Product.deleteMany({})]);
+  console.log("🌱 Upserting categories/products (existing _ids are preserved)...");
+  // Deliberately NOT wiping Users, Category, or Product here. This script is
+  // meant to be safe to re-run at any time — including after real orders
+  // exist — so categories/products below are upserted by a stable natural
+  // key rather than deleted and recreated. delete+recreate would hand every
+  // row a brand-new _id on each run, silently orphaning every Order that
+  // references the old one (Order.items.product would point at nothing).
 
   // ── Demo users ──
   // Only created the first time (if missing) — never overwrites or deletes
@@ -51,229 +57,68 @@ async function seed() {
   ]);
 
   // ── Categories ──
-  console.log("🏷️  Creating categories...");
-  const cats = await Category.insertMany([
-    { name: { en: "Kalira",              bn: "কলিরা"         }, slug: "kalira",              description: { en: "Traditional bridal kalira"       }, isFixed: true, sortOrder: 1 },
-    { name: { en: "Chura",               bn: "চুড়া"          }, slug: "chura",               description: { en: "Bridal chura & bangles"           }, isFixed: true, sortOrder: 2 },
-    { name: { en: "Bangles",             bn: "বালা"           }, slug: "bangles",             description: { en: "Classic bangles collection"        }, isFixed: true, sortOrder: 3 },
-    { name: { en: "Necklace Set",        bn: "নেকলেস সেট"    }, slug: "necklace",            description: { en: "Bridal necklace collections"       }, isFixed: true, sortOrder: 4 },
-    { name: { en: "Diamond Cut",         bn: "ডায়মন্ড কাট"  }, slug: "diamond-cut",         description: { en: "Diamond cut jewelry"               }, isFixed: true, sortOrder: 5 },
-    { name: { en: "Wedding Accessories", bn: "ওয়েডিং এক্সেসরিজ" }, slug: "wedding-accessories", description: { en: "Complete wedding accessories"  }, isFixed: true, sortOrder: 6 },
-  ]);
-  const [kalira, chura, bangles, necklace, diamond, wedding] = cats;
+  // Upserted by slug (Category.slug is unique) instead of deleted + recreated,
+  // so an existing category keeps its _id across re-runs.
+  console.log("🏷️  Upserting categories...");
+  const categoryBySlug = {};
+  for (const def of CATEGORY_DEFS) {
+    categoryBySlug[def.slug] = await Category.findOneAndUpdate(
+      { slug: def.slug },
+      { $set: def },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  }
 
   // ── Products ──
-  console.log("💍 Creating products...");
-  await Product.insertMany([
+  // cloudinaryProducts.json has each category's uploaded products, 3 images
+  // per product. curatedProducts.json has hand-written name/description/price
+  // for the first N products of a category (in upload order), matched by index.
+  // Each product is upserted by seedKey ("<categorySlug>-<productNo>", stable
+  // across runs) instead of deleted + recreated, so it keeps its _id — any
+  // Order placed against it stays valid after a re-seed.
+  console.log("💍 Upserting products...");
 
-    // ── KALIRA (new real images) ──
-    {
-      name: { en: "Royal Kalira Set", bn: "রয়্যাল কলিরা সেট" },
-      description: { en: "Exquisite traditional kalira with intricate gold filigree work. Perfect for your special day." },
-      basePrice: 4500, totalStock: 15, category: kalira._id,
-      images: kal(1, 2, 3),
-      isActive: true, isFeatured: true,
-    },
-    {
-      name: { en: "Lotus Kalira", bn: "লোটাস কলিরা" },
-      description: { en: "Delicate lotus-shaped kalira with pearl drops. A timeless bridal accessory." },
-      basePrice: 3200, totalStock: 10, category: kalira._id,
-      images: kal(4, 5, 6),
-      isActive: true,
-    },
-    {
-      name: { en: "Peacock Kalira", bn: "ময়ূর কলিরা" },
-      description: { en: "Stunning peacock motif kalira with emerald green enamel work." },
-      basePrice: 5500, totalStock: 8, category: kalira._id,
-      images: kal(7, 8, 9),
-      isActive: true,
-    },
-    {
-      name: { en: "Floral Kalira", bn: "ফ্লোরাল কলিরা" },
-      description: { en: "Elegant floral kalira with delicate petal detailing in gold." },
-      basePrice: 3800, totalStock: 8, category: kalira._id,
-      images: kal(10, 11, 12),
-      isActive: true,
-    },
-    {
-      name: { en: "Bridal Kalira Premium", bn: "প্রিমিয়াম কলিরা" },
-      description: { en: "Premium bridal kalira with layered gold chains and floral drops." },
-      basePrice: 6200, totalStock: 5, category: kalira._id,
-      images: kal(13, 14, 15),
-      isActive: true,
-    },
-    {
-      name: { en: "Chandelier Kalira", bn: "ঝুমঝুম কলিরা" },
-      description: { en: "Chandelier-style kalira with cascading pearl and gold drops." },
-      basePrice: 4800, totalStock: 12, category: kalira._id,
-      images: kal(16, 17, 18),
-      isActive: true,
-    },
+  const productsBySlug = {};
+  for (const p of cloudinaryData.products) {
+    (productsBySlug[p.categorySlug] ??= []).push(p);
+  }
 
-    // ── CHURA (new real images) ──
-    {
-      name: { en: "Bridal Chura Set (21 pcs)", bn: "ব্রাইডাল চুড়া সেট" },
-      description: { en: "Complete 21-piece bridal chura set in rich red with gold detailing. A must-have for weddings." },
-      basePrice: 2800, totalStock: 20, category: chura._id,
-      images: chu(1, 2, 3),
-      isActive: true, isFeatured: true,
-    },
-    {
-      name: { en: "Diamond Chura (12 pcs)", bn: "ডায়মন্ড চুড়া" },
-      description: { en: "Elegant diamond-finish chura with crystal embellishments. Modern yet traditional." },
-      basePrice: 3800, totalStock: 14, category: chura._id,
-      images: chu(4, 5, 6),
-      isActive: true,
-    },
-    {
-      name: { en: "Kundan Chura Set", bn: "কুন্দন চুড়া" },
-      description: { en: "Beautiful kundan-set chura bangles with meenakari back. Heirloom quality." },
-      basePrice: 4200, totalStock: 6, category: chura._id,
-      images: chu(7, 8, 9),
-      isActive: true,
-    },
-    {
-      name: { en: "Silk Thread Chura", bn: "সিল্ক থ্রেড চুড়া" },
-      description: { en: "Handmade silk thread chura with gold detailing. Lightweight and comfortable." },
-      basePrice: 1800, totalStock: 25, category: chura._id,
-      images: chu(10, 11, 12),
-      isActive: true,
-    },
-    {
-      name: { en: "Pearl Chura Bangles", bn: "পার্ল চুড়া" },
-      description: { en: "Delicate pearl-studded chura set for an elegant bridal look." },
-      basePrice: 3200, totalStock: 10, category: chura._id,
-      images: chu(13, 14, 15),
-      isActive: true,
-    },
+  let productCount = 0;
+  let activeCount = 0;
+  for (const [slug, uploaded] of Object.entries(productsBySlug)) {
+    const category = categoryBySlug[slug];
+    const curated = curatedProducts[slug] || [];
 
-    // ── BANGLES (new real images) ──
-    {
-      name: { en: "Classic Gold Bangles (Set of 6)", bn: "ক্লাসিক গোল্ড বালা" },
-      description: { en: "Timeless classic gold bangles. Perfect for daily wear or special occasions." },
-      basePrice: 3500, totalStock: 20, category: bangles._id,
-      images: bgl(1, 2, 3),
-      isActive: true, isFeatured: true,
-    },
-    {
-      name: { en: "Twisted Gold Bangles", bn: "টুইস্টেড গোল্ড বালা" },
-      description: { en: "Elegantly twisted gold bangles with a modern design. Sold as a set of 4." },
-      basePrice: 2800, totalStock: 15, category: bangles._id,
-      images: bgl(4, 5, 6),
-      isActive: true,
-    },
-
-    // ── NECKLACE SET (new real images) ──
-    {
-      name: { en: "Bridal Necklace Set", bn: "ব্রাইডাল নেকলেস সেট" },
-      description: { en: "Magnificent multi-layered bridal necklace set with matching earrings and tikka." },
-      basePrice: 8500, totalStock: 8, category: necklace._id,
-      images: nec(1, 2, 3),
-      isActive: true, isFeatured: true,
-    },
-    {
-      name: { en: "Choker Necklace Set", bn: "চোকার নেকলেস" },
-      description: { en: "Stunning velvet choker with antique gold pendant. Versatile for festive and wedding wear." },
-      basePrice: 2400, totalStock: 18, category: necklace._id,
-      images: nec(4, 5, 6),
-      isActive: true,
-    },
-    {
-      name: { en: "Layered Gold Necklace", bn: "লেয়ারড গোল্ড নেকলেস" },
-      description: { en: "Three-layered gold necklace with delicate coin charms. Modern bridal favourite." },
-      basePrice: 5600, totalStock: 5, category: necklace._id,
-      images: nec(7, 8, 9),
-      isActive: true,
-    },
-    {
-      name: { en: "Pearl Necklace Set", bn: "পার্ল নেকলেস সেট" },
-      description: { en: "Elegant pearl necklace with matching earrings and bracelet. A complete bridal jewellery set." },
-      basePrice: 6800, totalStock: 7, category: necklace._id,
-      images: nec(10, 1, 2),
-      isActive: true,
-    },
-
-    // ── DIAMOND CUT (new real images) ──
-    {
-      name: { en: "Diamond Cut Bangles (6 pcs)", bn: "ডায়মন্ড কাট বালা" },
-      description: { en: "Precision diamond-cut gold bangles that catch light beautifully." },
-      basePrice: 6200, totalStock: 5, category: diamond._id,
-      images: dia(1, 2, 3),
-      isActive: true,
-    },
-    {
-      name: { en: "Diamond Cut Ring", bn: "ডায়মন্ড কাট আংটি" },
-      description: { en: "Beautiful solitaire-style diamond cut ring for engagement or everyday elegance." },
-      basePrice: 3800, totalStock: 12, category: diamond._id,
-      images: dia(4, 5, 6),
-      isActive: true,
-    },
-    {
-      name: { en: "Diamond Cut Earrings", bn: "ডায়মন্ড কাট কানের দুল" },
-      description: { en: "Sparkling diamond-cut drop earrings. Lightweight and perfect for daily wear." },
-      basePrice: 2200, totalStock: 20, category: diamond._id,
-      images: dia(7, 8, 9),
-      isActive: true,
-    },
-    {
-      name: { en: "Diamond Cut Necklace", bn: "ডায়মন্ড কাট নেকলেস" },
-      description: { en: "Dazzling diamond-cut necklace set for weddings and special events." },
-      basePrice: 9500, totalStock: 4, category: diamond._id,
-      images: dia(10, 1, 2),
-      isActive: true, isFeatured: true,
-    },
-
-    // ── WEDDING ACCESSORIES (new real images) ──
-    {
-      name: { en: "Complete Bridal Set", bn: "সম্পূর্ণ ব্রাইডাল সেট" },
-      description: { en: "The ultimate bridal jewellery set — necklace, earrings, bangles, tikka, nose ring and more." },
-      basePrice: 18500, totalStock: 3, category: wedding._id,
-      images: wed(1, 2, 3),
-      isActive: true, isFeatured: true,
-    },
-    {
-      name: { en: "Reception Jewellery Set", bn: "রিসেপশন সেট" },
-      description: { en: "Light yet stunning reception jewellery — perfect for the wedding reception ceremony." },
-      basePrice: 12000, totalStock: 6, category: wedding._id,
-      images: wed(4, 5, 6),
-      isActive: true,
-    },
-    {
-      name: { en: "Mehendi Ceremony Set", bn: "মেহেদি সেট" },
-      description: { en: "Vibrant mehendi ceremony jewellery set with colourful stones and gold tones." },
-      basePrice: 7500, totalStock: 9, category: wedding._id,
-      images: wed(7, 8, 9),
-      isActive: true,
-    },
-    {
-      name: { en: "Holud Jewellery Set", bn: "হলুদ সেট" },
-      description: { en: "Bright yellow-gold holud ceremony jewellery. Floral motifs with pearl drops." },
-      basePrice: 6800, totalStock: 7, category: wedding._id,
-      images: wed(10, 11, 12),
-      isActive: true,
-    },
-    {
-      name: { en: "Bridal Hair Accessories Set", bn: "ব্রাইডাল হেয়ার সেট" },
-      description: { en: "Stunning bridal hair accessories including maang tikka, jhoomar, and pins." },
-      basePrice: 4500, totalStock: 10, category: wedding._id,
-      images: wed(13, 14, 15),
-      isActive: true,
-    },
-    {
-      name: { en: "Bridal Maang Tikka", bn: "মাং টিকা" },
-      description: { en: "Gorgeous bridal maang tikka with pearl and kundan work. Adjustable chain." },
-      basePrice: 2800, totalStock: 15, category: wedding._id,
-      images: wed(16, 17, 18),
-      isActive: true,
-    },
-  ]);
+    for (let i = 0; i < uploaded.length; i++) {
+      const product = uploaded[i];
+      const curatedInfo = curated[i];
+      const doc = {
+        seedKey: `${slug}-${product.productNo}`,
+        name: curatedInfo ? curatedInfo.name : product.name,
+        description: curatedInfo ? curatedInfo.description : product.description,
+        basePrice: curatedInfo ? curatedInfo.basePrice : product.basePrice,
+        totalStock: curatedInfo ? curatedInfo.totalStock : product.totalStock,
+        category: category._id,
+        images: product.images,
+        isActive: true,
+        isFeatured: curatedInfo ? Boolean(curatedInfo.isFeatured) : false,
+      };
+      await Product.findOneAndUpdate(
+        { seedKey: doc.seedKey },
+        { $set: doc },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+      productCount += 1;
+      if (doc.isActive) activeCount += 1;
+    }
+  }
 
   console.log("✅ Seed complete!\n");
   console.log("👤 Login credentials:");
   console.log("   Admin    → admin@camellia.com   / Admin123!");
   console.log("   Customer → hafsa@example.com    / Customer123!");
   console.log("   (forgot-password security answer for both demo accounts: \"demo\")");
-  console.log("💍 27 products across 6 categories.");
+  console.log(`💍 ${productCount} products (${activeCount} active) across ${Object.keys(categoryBySlug).length} categories.`);
   await mongoose.disconnect();
   process.exit(0);
 }

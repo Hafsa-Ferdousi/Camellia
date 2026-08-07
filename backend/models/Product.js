@@ -26,6 +26,16 @@ totalReviews: {
     isActive: { type: Boolean, default: true },
     // BUG FIX #16: Added isFeatured field (was missing, breaking featured filter)
     isFeatured: { type: Boolean, default: false },
+    // Admin-curated "Best Selling" flag for the homepage section — a manual
+    // pick rather than a live units-sold aggregate, so it can't be silently
+    // emptied by re-seeding/reordering products (see seedKey below) and lets
+    // admins promote a new product before it has real sales history.
+    isBestSeller: { type: Boolean, default: false },
+    // Stable natural key ("<categorySlug>-<productNo>") used only by seed.js to
+    // upsert instead of delete+recreate, so re-seeding never changes a seeded
+    // product's _id and never orphans orders that reference it. Admin-created
+    // products don't set this, hence sparse.
+    seedKey: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );

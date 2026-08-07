@@ -1,0 +1,2905 @@
+{
+  "categories": [
+    {
+      "slug": "bangles",
+      "name": {
+        "en": "Bangles",
+        "bn": "বালা"
+      },
+      "isNew": false
+    },
+    {
+      "slug": "chura",
+      "name": {
+        "en": "Chura",
+        "bn": "চুড়া"
+      },
+      "isNew": false
+    },
+    {
+      "slug": "nath",
+      "name": {
+        "en": "Bridal Nath",
+        "bn": "নথ"
+      },
+      "isNew": true
+    },
+    {
+      "slug": "diamond-cut",
+      "name": {
+        "en": "Diamond Cut",
+        "bn": "ডায়মন্ড কাট"
+      },
+      "isNew": false
+    },
+    {
+      "slug": "earrings-tikli",
+      "name": {
+        "en": "Earrings & Tikli",
+        "bn": "কানের দুল ও টিকলি"
+      },
+      "isNew": true
+    },
+    {
+      "slug": "kalira",
+      "name": {
+        "en": "Kalira",
+        "bn": "কলিরা"
+      },
+      "isNew": false
+    },
+    {
+      "slug": "necklace",
+      "name": {
+        "en": "Necklace Set",
+        "bn": "নেকলেস সেট"
+      },
+      "isNew": false
+    },
+    {
+      "slug": "wedding-accessories",
+      "name": {
+        "en": "Wedding Accessories",
+        "bn": "ওয়েডিং এক্সেসরিজ"
+      },
+      "isNew": false
+    }
+  ],
+  "products": [
+    {
+      "categorySlug": "bangles",
+      "productNo": "01",
+      "name": {
+        "en": "bangles 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/bangles/bangles-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/bangles/bangles-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/bangles/bangles-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "bangles",
+      "productNo": "02",
+      "name": {
+        "en": "bangles 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/bangles/bangles-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/bangles/bangles-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/bangles/bangles-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/bangles/bangles-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/bangles/bangles-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/bangles/bangles-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "01",
+      "name": {
+        "en": "chura 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "02",
+      "name": {
+        "en": "chura 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "03",
+      "name": {
+        "en": "chura 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "04",
+      "name": {
+        "en": "chura 04",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-10?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-11?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-12?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-10?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-11",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-11?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-11?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-11?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-12",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-12?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-12?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-12?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "05",
+      "name": {
+        "en": "chura 05",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-13?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-14?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-15?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-13",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-13?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-13?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-13?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-14",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-14?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-14?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-14?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-15",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-15?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-15?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-15?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "06",
+      "name": {
+        "en": "chura 06",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-16?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-17?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-18?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-16",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-16?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-16?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-16?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-17",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-17?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-17?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-17?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-18",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-18?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-18?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-18?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "07",
+      "name": {
+        "en": "chura 07",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-19?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-20?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-21?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-19",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-19?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-19?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-19?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-20",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-20?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-20?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-20?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-21",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-21?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-21?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-21?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "08",
+      "name": {
+        "en": "chura 08",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-22?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-23?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-24?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-22",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-22?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-22?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-22?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-23",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-23?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-23?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-23?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-24",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-24?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-24?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-24?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "09",
+      "name": {
+        "en": "chura 09",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-25?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-26?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-27?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-25",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-25?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-25?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-25?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-26",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-26?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-26?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-26?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-27",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-27?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-27?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-27?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "10",
+      "name": {
+        "en": "chura 10",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-28?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-29?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-30?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-28",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-28?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-28?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-28?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-29",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-29?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-29?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-29?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-30",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-30?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-30?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-30?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "11",
+      "name": {
+        "en": "chura 11",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-31?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-32?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-33?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-31",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-31?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-31?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-31?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-32",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-32?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-32?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-32?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-33",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-33?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-33?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-33?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "chura",
+      "productNo": "12",
+      "name": {
+        "en": "chura 12",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-34?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-35?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-36?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-37?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-38?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/chura/chura-34",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-34?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-34?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-34?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-35",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-35?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-35?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-35?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-36",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-36?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-36?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-36?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-37",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-37?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-37?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-37?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/chura/chura-38",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/chura/chura-38?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/chura/chura-38?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/chura/chura-38?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "diamond-cut",
+      "productNo": "01",
+      "name": {
+        "en": "diamond-cut 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "diamond-cut",
+      "productNo": "02",
+      "name": {
+        "en": "diamond-cut 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "diamond-cut",
+      "productNo": "03",
+      "name": {
+        "en": "diamond-cut 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-09?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-10?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-09?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/diamond-cut/diamond-cut-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/diamond-cut/diamond-cut-10?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "earrings-tikli",
+      "productNo": "01",
+      "name": {
+        "en": "earrings-tikli 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "earrings-tikli",
+      "productNo": "02",
+      "name": {
+        "en": "earrings-tikli 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "earrings-tikli",
+      "productNo": "03",
+      "name": {
+        "en": "earrings-tikli 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/earrings-tikli/earrings-tikli-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/earrings-tikli/earrings-tikli-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "01",
+      "name": {
+        "en": "kalira 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "02",
+      "name": {
+        "en": "kalira 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "03",
+      "name": {
+        "en": "kalira 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "04",
+      "name": {
+        "en": "kalira 04",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-10?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-11?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-12?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-10?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-11",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-11?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-11?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-11?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-12",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-12?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-12?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-12?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "05",
+      "name": {
+        "en": "kalira 05",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-13?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-14?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-15?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-13",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-13?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-13?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-13?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-14",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-14?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-14?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-14?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-15",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-15?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-15?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-15?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "06",
+      "name": {
+        "en": "kalira 06",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-16?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-17?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-18?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-16",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-16?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-16?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-16?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-17",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-17?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-17?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-17?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-18",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-18?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-18?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-18?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "07",
+      "name": {
+        "en": "kalira 07",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-19?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-20?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-21?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-19",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-19?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-19?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-19?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-20",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-20?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-20?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-20?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-21",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-21?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-21?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-21?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "08",
+      "name": {
+        "en": "kalira 08",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-22?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-23?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-24?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-22",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-22?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-22?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-22?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-23",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-23?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-23?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-23?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-24",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-24?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-24?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-24?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "09",
+      "name": {
+        "en": "kalira 09",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-25?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-26?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-27?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-25",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-25?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-25?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-25?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-26",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-26?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-26?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-26?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-27",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-27?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-27?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-27?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "10",
+      "name": {
+        "en": "kalira 10",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-28?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-29?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-30?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-28",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-28?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-28?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-28?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-29",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-29?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-29?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-29?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-30",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-30?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-30?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-30?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "11",
+      "name": {
+        "en": "kalira 11",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-31?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-32?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-33?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-31",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-31?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-31?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-31?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-32",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-32?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-32?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-32?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-33",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-33?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-33?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-33?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "12",
+      "name": {
+        "en": "kalira 12",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-34?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-35?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-36?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-34",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-34?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-34?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-34?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-35",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-35?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-35?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-35?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-36",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-36?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-36?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-36?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "13",
+      "name": {
+        "en": "kalira 13",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-37?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-38?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-39?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-37",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-37?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-37?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-37?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-38",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-38?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-38?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-38?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-39",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-39?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-39?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-39?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "14",
+      "name": {
+        "en": "kalira 14",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-40?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-41?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-42?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-40",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-40?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-40?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-40?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-41",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-41?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-41?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-41?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-42",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-42?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-42?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-42?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "15",
+      "name": {
+        "en": "kalira 15",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-43?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-44?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-45?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-43",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-43?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-43?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-43?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-44",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-44?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-44?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-44?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-45",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-45?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-45?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-45?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "16",
+      "name": {
+        "en": "kalira 16",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-46?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-47?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-48?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-46",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-46?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-46?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-46?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-47",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-47?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-47?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-47?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-48",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-48?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-48?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-48?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "kalira",
+      "productNo": "17",
+      "name": {
+        "en": "kalira 17",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-49?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-50?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-51?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-52?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/kalira/kalira-49",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-49?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-49?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-49?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-50",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-50?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-50?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-50?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-51",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-51?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-51?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-51?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/kalira/kalira-52",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/kalira/kalira-52?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/kalira/kalira-52?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/kalira/kalira-52?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "01",
+      "name": {
+        "en": "nath 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "02",
+      "name": {
+        "en": "nath 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "03",
+      "name": {
+        "en": "nath 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "04",
+      "name": {
+        "en": "nath 04",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-10?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-11?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-12?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-10?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-11",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-11?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-11?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-11?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-12",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-12?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-12?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-12?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "05",
+      "name": {
+        "en": "nath 05",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-13?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-14?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-15?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-13",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-13?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-13?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-13?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-14",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-14?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-14?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-14?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-15",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-15?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-15?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-15?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "06",
+      "name": {
+        "en": "nath 06",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-16?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-17?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-18?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-16",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-16?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-16?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-16?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-17",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-17?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-17?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-17?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-18",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-18?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-18?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-18?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "07",
+      "name": {
+        "en": "nath 07",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-19?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-20?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-21?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-19",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-19?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-19?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-19?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-20",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-20?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-20?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-20?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-21",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-21?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-21?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-21?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "08",
+      "name": {
+        "en": "nath 08",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-22?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-23?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-24?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-22",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-22?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-22?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-22?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-23",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-23?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-23?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-23?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-24",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-24?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-24?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-24?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "09",
+      "name": {
+        "en": "nath 09",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-25?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-26?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-27?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-25",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-25?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-25?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-25?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-26",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-26?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-26?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-26?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-27",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-27?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-27?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-27?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "10",
+      "name": {
+        "en": "nath 10",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-28?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-29?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-30?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-28",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-28?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-28?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-28?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-29",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-29?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-29?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-29?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-30",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-30?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-30?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-30?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "11",
+      "name": {
+        "en": "nath 11",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-31?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-32?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-33?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-31",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-31?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-31?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-31?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-32",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-32?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-32?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-32?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-33",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-33?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-33?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-33?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "nath",
+      "productNo": "12",
+      "name": {
+        "en": "nath 12",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-34?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-35?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-36?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-37?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/nath/nath-34",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-34?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-34?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-34?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-35",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-35?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-35?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-35?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-36",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-36?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-36?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-36?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/nath/nath-37",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/nath/nath-37?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/nath/nath-37?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/nath/nath-37?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "01",
+      "name": {
+        "en": "necklace 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "02",
+      "name": {
+        "en": "necklace 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "03",
+      "name": {
+        "en": "necklace 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "04",
+      "name": {
+        "en": "necklace 04",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-10?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-11?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-12?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-10?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-11",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-11?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-11?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-11?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-12",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-12?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-12?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-12?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "05",
+      "name": {
+        "en": "necklace 05",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-13?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-14?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-15?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-13",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-13?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-13?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-13?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-14",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-14?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-14?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-14?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-15",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-15?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-15?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-15?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "06",
+      "name": {
+        "en": "necklace 06",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-16?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-17?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-18?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-16",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-16?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-16?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-16?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-17",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-17?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-17?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-17?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-18",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-18?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-18?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-18?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "07",
+      "name": {
+        "en": "necklace 07",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-19?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-20?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-21?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-19",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-19?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-19?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-19?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-20",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-20?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-20?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-20?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-21",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-21?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-21?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-21?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "08",
+      "name": {
+        "en": "necklace 08",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-22?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-23?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-24?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-22",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-22?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-22?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-22?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-23",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-23?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-23?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-23?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-24",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-24?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-24?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-24?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "necklace",
+      "productNo": "09",
+      "name": {
+        "en": "necklace 09",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-25?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-26?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-27?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/necklace/necklace-25",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-25?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-25?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-25?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-26",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-26?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-26?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-26?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/necklace/necklace-27",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/necklace/necklace-27?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/necklace/necklace-27?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/necklace/necklace-27?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "01",
+      "name": {
+        "en": "wedding-accessories 01",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-01?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-02?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-03?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-01",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-01?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-01?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-01?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-02",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-02?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-02?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-02?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-03",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-03?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-03?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-03?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "02",
+      "name": {
+        "en": "wedding-accessories 02",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-04?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-05?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-06?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-04",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-04?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-04?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-04?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-05",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-05?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-05?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-05?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-06",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-06?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-06?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-06?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "03",
+      "name": {
+        "en": "wedding-accessories 03",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-07?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-08?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-09?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-07",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-07?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-07?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-07?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-08",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-08?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-08?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-08?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-09",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-09?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-09?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-09?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "04",
+      "name": {
+        "en": "wedding-accessories 04",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-10?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-11?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-12?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-10",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-10?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-10?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-10?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-11",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-11?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-11?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-11?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-12",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-12?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-12?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-12?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "05",
+      "name": {
+        "en": "wedding-accessories 05",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-13?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-14?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-15?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-13",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-13?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-13?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-13?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-14",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-14?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-14?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-14?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-15",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-15?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-15?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-15?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "06",
+      "name": {
+        "en": "wedding-accessories 06",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-16?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-17?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-18?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-16",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-16?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-16?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-16?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-17",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-17?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-17?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-17?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-18",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-18?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-18?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-18?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "07",
+      "name": {
+        "en": "wedding-accessories 07",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-19?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-20?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-21?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-19",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-19?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-19?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-19?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-20",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-20?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-20?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-20?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-21",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-21?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-21?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-21?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "08",
+      "name": {
+        "en": "wedding-accessories 08",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-22?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-23?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-24?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-22",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-22?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-22?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-22?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-23",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-23?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-23?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-23?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-24",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-24?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-24?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-24?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "09",
+      "name": {
+        "en": "wedding-accessories 09",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-25?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-26?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-27?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-25",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-25?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-25?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-25?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-26",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-26?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-26?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-26?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-27",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-27?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-27?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-27?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "10",
+      "name": {
+        "en": "wedding-accessories 10",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-28?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-29?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-30?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-28",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-28?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-28?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-28?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-29",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-29?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-29?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-29?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-30",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-30?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-30?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-30?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "11",
+      "name": {
+        "en": "wedding-accessories 11",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-31?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-32?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-33?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-31",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-31?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-31?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-31?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-32",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-32?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-32?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-32?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-33",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-33?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-33?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-33?_a=BAMAPqWO0"
+        }
+      ]
+    },
+    {
+      "categorySlug": "wedding-accessories",
+      "productNo": "12",
+      "name": {
+        "en": "wedding-accessories 12",
+        "bn": ""
+      },
+      "description": {
+        "en": "",
+        "bn": ""
+      },
+      "basePrice": 0,
+      "totalStock": 0,
+      "isFeatured": false,
+      "images": [
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-34?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-35?_a=BAMAPqWO0",
+        "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-36?_a=BAMAPqWO0"
+      ],
+      "gallery": [
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-34",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-34?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-34?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-34?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-35",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-35?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-35?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-35?_a=BAMAPqWO0"
+        },
+        {
+          "publicId": "camellia/products/wedding-accessories/wedding-accessories-36",
+          "thumb": "https://res.cloudinary.com/s1blw3rf/image/upload/ar_1:1,c_fill,g_auto,w_400/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-36?_a=BAMAPqWO0",
+          "detail": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_800/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-36?_a=BAMAPqWO0",
+          "zoom": "https://res.cloudinary.com/s1blw3rf/image/upload/c_limit,w_1600/f_auto,q_auto/v1/camellia/products/wedding-accessories/wedding-accessories-36?_a=BAMAPqWO0"
+        }
+      ]
+    }
+  ]
+}
