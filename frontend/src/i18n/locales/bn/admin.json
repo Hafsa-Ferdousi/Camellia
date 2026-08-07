@@ -20,7 +20,6 @@
   "logout": "লগআউট",
   "loading": "লোড হচ্ছে…",
   "couldNotLoadStats": "পরিসংখ্যান লোড করা যায়নি।",
-
   "overview": "ওভারভিউ",
   "totalRevenue": "মোট আয়",
   "totalOrders": "মোট অর্ডার",
@@ -36,7 +35,6 @@
   "colAmount": "পরিমাণ",
   "colStatus": "স্ট্যাটাস",
   "guestBadge": "গেস্ট",
-
   "allOrders": "সকল অর্ডার",
   "searchOrdersPlaceholder": "অর্ডার আইডি, নাম বা ইমেইল খুঁজুন…",
   "allStatuses": "সব স্ট্যাটাস",
@@ -51,7 +49,6 @@
   "colUpdate": "আপডেট",
   "noOrdersMatch": "কোনো অর্ডার মেলেনি।",
   "couldNotExport": "বিক্রয় তথ্য এক্সপোর্ট করা যায়নি।",
-
   "customersTitle": "গ্রাহক",
   "allCount": "সব ({{count}})",
   "registeredCount": "নিবন্ধিত ({{count}})",
@@ -69,7 +66,6 @@
   "noAccount": "কোনো অ্যাকাউন্ট নেই",
   "lastOrder": "শেষ অর্ডার {{date}}",
   "noCustomersYet": "এখনও কোনো গ্রাহক নেই।",
-
   "productsTitle": "পণ্য",
   "searchProductsPlaceholder": "পণ্য খুঁজুন…",
   "lowStockFilter": "কম স্টক ({{count}})",
@@ -90,7 +86,6 @@
   "edit": "সম্পাদনা",
   "delete": "মুছুন",
   "noProductsFound": "কোনো পণ্য পাওয়া যায়নি।",
-
   "categoriesTitle": "ক্যাটাগরি",
   "addCategory": "+ ক্যাটাগরি যোগ করুন",
   "loadingCategories": "ক্যাটাগরি লোড হচ্ছে…",
@@ -102,7 +97,6 @@
   "fixed": "স্থায়ী",
   "custom": "কাস্টম",
   "noCategoriesFound": "কোনো ক্যাটাগরি পাওয়া যায়নি।",
-
   "settingsTitle": "সেটিংস",
   "loadingSettings": "সেটিংস লোড হচ্ছে…",
   "pricing": "মূল্য নির্ধারণ",
@@ -127,7 +121,6 @@
   "districtRowError": "প্রতিটি জেলার সারিতে একটি নাম থাকতে হবে (অথবা সরিয়ে দিন)।",
   "saveFailed": "সংরক্ষণ ব্যর্থ হয়েছে।",
   "settingsSaved": "সেটিংস সংরক্ষণ করা হয়েছে।",
-
   "orderHash": "অর্ডার #",
   "customer": "গ্রাহক",
   "deliveryAddress": "ডেলিভারি ঠিকানা",
@@ -138,7 +131,6 @@
   "total": "মোট",
   "payment": "পেমেন্ট: {{method}} · {{status}}",
   "close": "বন্ধ করুন",
-
   "orderHistoryCount": "অর্ডার ইতিহাস ({{count}})",
   "noOrdersYet": "এখনও কোনো অর্ডার নেই।",
   "adminResetPassword": "অ্যাডমিন: পাসওয়ার্ড রিসেট",
@@ -148,7 +140,6 @@
   "confirm": "নিশ্চিত করুন",
   "passwordResetSuccess": "পাসওয়ার্ড সফলভাবে রিসেট হয়েছে।",
   "couldNotResetPassword": "পাসওয়ার্ড রিসেট করা যায়নি।",
-
   "addNewProduct": "নতুন পণ্য যোগ করুন",
   "editProduct": "পণ্য সম্পাদনা করুন",
   "nameEnglish": "নাম (ইংরেজি) *",
@@ -173,11 +164,9 @@
   "validBasePriceRequired": "একটি সঠিক মূল মূল্য দিন।",
   "validStockRequired": "একটি সঠিক স্টক পরিমাণ দিন।",
   "imageUploadFailed": "ছবি আপলোড ব্যর্থ হয়েছে।",
-
   "deleteProductTitle": "পণ্য মুছবেন?",
   "deleteProductBody": "\"{{name}}\" স্টোর থেকে লুকানো হবে। এটি সহজে পূর্বাবস্থায় ফেরানো যাবে না।",
   "yesDelete": "হ্যাঁ, মুছে ফেলুন",
-
   "addNewCategory": "নতুন ক্যাটাগরি যোগ করুন",
   "editCategory": "ক্যাটাগরি সম্পাদনা করুন",
   "createCategory": "ক্যাটাগরি তৈরি করুন",
@@ -187,10 +176,8 @@
   "fixedCategoryNote": "এটি একটি স্থায়ী ক্যাটাগরি এবং মুছে ফেলা যাবে না। এর নাম, স্লাগ এবং ছবি এখনও সম্পাদনা করা যাবে।",
   "categoryNameRequired": "ক্যাটাগরির নাম (ইংরেজি) আবশ্যক।",
   "slugRequired": "স্লাগ আবশ্যক।",
-
   "deleteCategoryTitle": "ক্যাটাগরি মুছবেন?",
   "deleteCategoryBody": "\"{{name}}\" সরিয়ে ফেলা হবে। এই ক্যাটাগরিতে থাকা পণ্যগুলো এর রেফারেন্স রেখে দেবে।",
-
   "couponsTitle": "কুপন",
   "searchCouponPlaceholder": "কোড বা শিরোনাম খুঁজুন…",
   "inactive": "নিষ্ক্রিয়",
@@ -210,7 +197,6 @@
   "viewUsageStatsTitle": "ব্যবহারের পরিসংখ্যান দেখুন",
   "clickToToggleTitle": "টগল করতে ক্লিক করুন",
   "noCouponsFound": "কোনো কুপন পাওয়া যায়নি।",
-
   "createCouponModalTitle": "কুপন তৈরি করুন",
   "editCouponModalTitle": "কুপন সম্পাদনা করুন",
   "couponCodeLabel": "কুপন কোড *",
@@ -242,14 +228,11 @@
   "noMatches": "কোনো ফলাফল নেই।",
   "selectedCount": "{{count}}টি নির্বাচিত",
   "activeCheckboxLabel": "সক্রিয়",
-
   "deleteCouponTitle": "কুপন মুছবেন?",
   "deleteCouponBody": "\"{{code}}\" স্থায়ীভাবে মুছে ফেলা হবে।",
-
   "couponUsageTitle": "ব্যবহার — {{code}}",
   "totalUses": "মোট ব্যবহার",
   "uniqueCustomers": "স্বতন্ত্র গ্রাহক",
-
   "messagesTitle": "যোগাযোগ বার্তা",
   "msgAll": "সব",
   "msgUnread": "অপঠিত",
@@ -269,8 +252,25 @@
   "replyPlaceholder": "এখানে আপনার উত্তর লিখুন…",
   "sending": "পাঠানো হচ্ছে…",
   "sendReply": "উত্তর পাঠান",
-
   "prev": "পূর্ববর্তী",
   "next": "পরবর্তী",
-  "pageOf": "পৃষ্ঠা {{page}} এর {{totalPages}}"
+  "pageOf": "পৃষ্ঠা {{page}} এর {{totalPages}}",
+  "navRefunds": "ফেরত",
+  "refundsTitle": "ফেরত ও বিনিময়ের অনুরোধ",
+  "refundFilter_pending": "অপেক্ষমাণ",
+  "refundFilter_approved": "অনুমোদিত",
+  "refundFilter_processed": "প্রক্রিয়াকৃত",
+  "refundFilter_rejected": "প্রত্যাখ্যাত",
+  "refundFilter_all": "সব",
+  "refundColItem": "পণ্য",
+  "refundColType": "ধরন",
+  "refundColReason": "কারণ",
+  "refundApprove": "অনুমোদন",
+  "refundReject": "প্রত্যাখ্যান",
+  "refundProcess": "প্রক্রিয়া করুন",
+  "refundStockRestored": "স্টক পুনরুদ্ধার হয়েছে",
+  "refundsNone": "কোনো ফেরতের অনুরোধ পাওয়া যায়নি।",
+  "refundRejectPrompt": "এই অনুরোধ প্রত্যাখ্যানের কারণ (গ্রাহককে দেখানো হবে):",
+  "refundRejectConfirmNoReason": "কোনো কারণ ছাড়াই প্রত্যাখ্যান করবেন?",
+  "qtyLabel": "পরিমাণ: {{count}}"
 }
