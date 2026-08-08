@@ -337,6 +337,7 @@ export default function Admin() {
   const [bkashSubmissions, setBkashSubmissions] = useState([]);
   const [bkashLoading, setBkashL] = useState(false);
   const [bkashStatusFilter, setBkashStatusFilter] = useState("pending_verification");
+  const [bkashSearch, setBkashSearch] = useState("");
   const [bkashDetail, setBkashDetail] = useState(null);
   const [bkashRejectReason, setBkashRejectReason] = useState("");
   const [bkashActing, setBkashActing] = useState(false);
@@ -1086,6 +1087,21 @@ export default function Admin() {
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.method === "bkash" && (
+                                <div style={{ marginTop: 5 }}>
+                                  {o.payment?.bkash?.trxId && (
+                                    <div style={{ ...s.mono, fontSize: 11 }}>{o.payment.bkash.trxId}</div>
+                                  )}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                                    <BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+                                    {o.payment?.bkash?.verificationStatus && o.payment.bkash.verificationStatus !== "awaiting_submission" && (
+                                      <button onClick={() => openBkashDetail(o)} style={{ ...s.editBtn, marginRight: 0, padding: "3px 9px" }}>
+                                        {o.payment.bkash.verificationStatus === "pending_verification" ? t("verifyAction") : t("viewDetails")}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td style={s.td}><StatusBadge status={o.status} /></td>
                             <td style={s.td}>
@@ -1113,17 +1129,36 @@ export default function Admin() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
               <h2 style={s.pageTitle}>{t("bkashTitle")}</h2>
-              <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
-                <option value="pending_verification">{t("bkashFilterPending")}</option>
-                <option value="verified">{t("bkashFilterVerified")}</option>
-                <option value="rejected">{t("bkashFilterRejected")}</option>
-                <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
-                <option value="all">{t("bkashFilterAll")}</option>
-              </select>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("bkashSearchPlaceholder")}
+                  value={bkashSearch}
+                  onChange={e => setBkashSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
+                  <option value="pending_verification">{t("bkashFilterPending")}</option>
+                  <option value="verified">{t("bkashFilterVerified")}</option>
+                  <option value="rejected">{t("bkashFilterRejected")}</option>
+                  <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
+                  <option value="all">{t("bkashFilterAll")}</option>
+                </select>
+              </div>
             </div>
 
             {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
-            {!bkashLoading && (
+            {!bkashLoading && (() => {
+              const q = bkashSearch.trim().toLowerCase();
+              const filteredBkash = !q ? bkashSubmissions : bkashSubmissions.filter(o => {
+                const idMatch = (o._id || "").toString().toLowerCase().includes(q);
+                const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
+                const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
+                const trxId = (o.payment?.bkash?.trxId || "").toLowerCase();
+                const senderNumber = (o.payment?.bkash?.senderNumber || "").toLowerCase();
+                return idMatch || name.includes(q) || email.includes(q) || trxId.includes(q) || senderNumber.includes(q);
+              });
+              return (
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead>
@@ -1134,7 +1169,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bkashSubmissions.map(o => (
+                    {filteredBkash.map(o => (
                       <tr key={o._id} style={s.tr}>
                         <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
                           <span style={s.mono}>#{(o._id || "").toString().slice(-6).toUpperCase()}</span>
@@ -1154,13 +1189,14 @@ export default function Admin() {
                         </td>
                       </tr>
                     ))}
-                    {bkashSubmissions.length === 0 && (
+                    {filteredBkash.length === 0 && (
                       <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noBkashFound")}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
