@@ -372,6 +372,7 @@ export default function Admin() {
   const [bkashSubmissions, setBkashSubmissions] = useState([]);
   const [bkashLoading, setBkashL] = useState(false);
   const [bkashStatusFilter, setBkashStatusFilter] = useState("pending_verification");
+  const [bkashSearch, setBkashSearch] = useState("");
   const [bkashDetail, setBkashDetail] = useState(null);
   const [bkashRejectReason, setBkashRejectReason] = useState("");
   const [bkashActing, setBkashActing] = useState(false);
@@ -1136,6 +1137,21 @@ export default function Admin() {
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.method === "bkash" && (
+                                <div style={{ marginTop: 5 }}>
+                                  {o.payment?.bkash?.trxId && (
+                                    <div style={{ ...s.mono, fontSize: 11 }}>{o.payment.bkash.trxId}</div>
+                                  )}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                                    <BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+                                    {o.payment?.bkash?.verificationStatus && o.payment.bkash.verificationStatus !== "awaiting_submission" && (
+                                      <button onClick={() => openBkashDetail(o)} style={{ ...s.editBtn, marginRight: 0, padding: "3px 9px" }}>
+                                        {o.payment.bkash.verificationStatus === "pending_verification" ? t("verifyAction") : t("viewDetails")}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td style={s.td}><StatusBadge status={o.status} /></td>
                             <td style={s.td}>
@@ -1188,17 +1204,36 @@ export default function Admin() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
               <h2 style={s.pageTitle}>{t("bkashTitle")}</h2>
-              <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
-                <option value="pending_verification">{t("bkashFilterPending")}</option>
-                <option value="verified">{t("bkashFilterVerified")}</option>
-                <option value="rejected">{t("bkashFilterRejected")}</option>
-                <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
-                <option value="all">{t("bkashFilterAll")}</option>
-              </select>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("bkashSearchPlaceholder")}
+                  value={bkashSearch}
+                  onChange={e => setBkashSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
+                  <option value="pending_verification">{t("bkashFilterPending")}</option>
+                  <option value="verified">{t("bkashFilterVerified")}</option>
+                  <option value="rejected">{t("bkashFilterRejected")}</option>
+                  <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
+                  <option value="all">{t("bkashFilterAll")}</option>
+                </select>
+              </div>
             </div>
 
             {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
-            {!bkashLoading && (
+            {!bkashLoading && (() => {
+              const q = bkashSearch.trim().toLowerCase();
+              const filteredBkash = !q ? bkashSubmissions : bkashSubmissions.filter(o => {
+                const idMatch = (o._id || "").toString().toLowerCase().includes(q);
+                const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
+                const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
+                const trxId = (o.payment?.bkash?.trxId || "").toLowerCase();
+                const senderNumber = (o.payment?.bkash?.senderNumber || "").toLowerCase();
+                return idMatch || name.includes(q) || email.includes(q) || trxId.includes(q) || senderNumber.includes(q);
+              });
+              return (
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead>
@@ -1210,70 +1245,7 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {refunds.map(rf => (
-                      <tr key={rf._id} style={s.tr}>
-                        <td style={s.td}>
-                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
-                        </td>
-                        <td style={s.td}>
-                          <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
-                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email}</div>
-                        </td>
-                        <td style={{ ...s.td, maxWidth: 200 }}>
-                          <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
-                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
-                        </td>
-                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.requestType}</td>
-                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
-                        <td style={s.td}>{fmt(rf.refundAmount)}</td>
-                        <td style={s.td}>
-                          <span style={{
-                            fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
-                            background: rf.status === "pending" ? "#FEF9C3" : rf.status === "approved" ? "#DBEAFE" : rf.status === "processed" ? "#DCFCE7" : "#FEE2E2",
-                            color: rf.status === "pending" ? "#854D0E" : rf.status === "approved" ? "#1E40AF" : rf.status === "processed" ? "#166534" : "#991B1B",
-                          }}>
-                            {rf.status}
-                          </span>
-                        </td>
-                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                          {rf.status === "pending" && (
-                            <>
-                              <button
-                                disabled={refundActionId === rf._id}
-                                onClick={() => handleRefundStatusChange(rf, "approved")}
-                                style={{ ...s.editBtn, background: "var(--green)" }}
-                              >
-                                {t("refundApprove")}
-                              </button>
-                              <button
-                                disabled={refundActionId === rf._id}
-                                onClick={() => handleRefundStatusChange(rf, "rejected")}
-                                style={s.delBtn}
-                              >
-                                {t("refundReject")}
-                              </button>
-                            </>
-                          )}
-                          {rf.status === "approved" && (
-                            <button
-                              disabled={refundActionId === rf._id}
-                              onClick={() => handleRefundStatusChange(rf, "processed")}
-                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
-                            >
-                              <PackageCheck size={12} /> {t("refundProcess")}
-                            </button>
-                          )}
-                          {(rf.status === "processed" || rf.status === "rejected") && (
-                            <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                              {rf.status === "processed" ? t("refundStockRestored") : (rf.adminNote || "—")}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {refunds.length === 0 && (
-                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
-                    {bkashSubmissions.map(o => (
+                    {filteredBkash.map(o => (
                       <tr key={o._id} style={s.tr}>
                         <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
                           <span style={s.mono}>#{(o._id || "").toString().slice(-6).toUpperCase()}</span>
@@ -1293,13 +1265,14 @@ export default function Admin() {
                         </td>
                       </tr>
                     ))}
-                    {bkashSubmissions.length === 0 && (
+                    {filteredBkash.length === 0 && (
                       <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noBkashFound")}</td></tr>
                     )}
                   </tbody>
                 </table>
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
