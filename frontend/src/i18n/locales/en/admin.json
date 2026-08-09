@@ -262,8 +262,7 @@
   "refundsNone": "No return requests found.",
   "refundRejectPrompt": "Reason for rejecting this request (shown to the customer):",
   "refundRejectConfirmNoReason": "Reject without giving a reason?",
-  "qtyLabel": "Qty: {{count}}"
-}
+  "qtyLabel": "Qty: {{count}}",
   "colFiledOn": "Filed On",
   "viewDetails": "View Details",
   "verifyAction": "Verify",

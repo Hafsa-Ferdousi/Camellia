@@ -119,8 +119,7 @@
   "refundStatus_pending": "Return Requested",
   "refundStatus_approved": "Return Approved",
   "refundStatus_rejected": "Return Rejected",
-  "refundStatus_processed": "Return Processed"
-}
+  "refundStatus_processed": "Return Processed",
   "adminNoteLabel": "Note from our team",
   "close": "Close",
   "bkashPanelTitle": "bKash Payment",
