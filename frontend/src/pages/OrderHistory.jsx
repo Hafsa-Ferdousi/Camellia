@@ -2,15 +2,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Package, Gem, Check, Phone, Clock, Loader2 } from "lucide-react";
+import { Package, Gem, Check, Phone, Clock, Loader2, RotateCcw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
+import { getMyRefunds } from "../api/refunds";
+import RefundRequestModal from "../components/RefundRequestModal";
+
+const REFUND_STATUS_STYLE = {
+  pending:   { bg: "#FEF3C7", color: "#92400E" },
+  approved:  { bg: "#DBEAFE", color: "#1E40AF" },
+  rejected:  { bg: "#FEE2E2", color: "#991B1B" },
+  processed: { bg: "#D1FAE5", color: "#065F46" },
+};
 import BkashPaymentPanel from "../components/BkashPaymentPanel";
 
-// Progress steps for order tracking
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
 export default function OrderHistory() {
@@ -30,14 +38,22 @@ export default function OrderHistory() {
   const [error, setError] = useState("");
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [refunds, setRefunds] = useState([]);
+  const [returnTarget, setReturnTarget] = useState(null);
 
   useEffect(() => {
     if (authLoading) return;
-    getOrders()
-      .then(r => setOrders(r.data))
+    Promise.all([getOrders(), getMyRefunds().catch(() => ({ data: [] }))])
+      .then(([ordersRes, refundsRes]) => {
+        setOrders(ordersRes.data);
+        setRefunds(refundsRes.data);
+      })
       .catch(() => setError(t("loadOrdersError")))
       .finally(() => setLoading(false));
   }, [authLoading]);
+
+  const refundFor = (orderId, productId) =>
+    refunds.find(r => (r.order?._id || r.order) === orderId && r.item?.product === productId);
 
   const filteredOrders = filterStatus === "all"
     ? orders
@@ -271,10 +287,13 @@ export default function OrderHistory() {
                       {t("items")}
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                      {order.items.map((item, i) => (
+                      {order.items.map((item, i) => {
+                        const productId = item.product?._id || item.product;
+                        const existingRefund = order.status === "delivered" ? refundFor(order._id, productId) : null;
+                        return (
                         <div key={i} style={{
                           display: "flex", justifyContent: "space-between",
-                          alignItems: "center", fontSize: 13,
+                          alignItems: "center", fontSize: 13, flexWrap: "wrap", gap: 8,
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
@@ -289,13 +308,38 @@ export default function OrderHistory() {
                             <div>
                               <div style={{ fontWeight: 500 }}>{item.nameSnapshot || localized(item.product?.name, language)}</div>
                               <div style={{ color: "var(--muted)", fontSize: 11 }}>{t("qtyLabel", { count: item.quantity })}</div>
+                              {order.status === "delivered" && (
+                                existingRefund ? (
+                                  <span style={{
+                                    display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                    padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                    background: REFUND_STATUS_STYLE[existingRefund.status]?.bg,
+                                    color: REFUND_STATUS_STYLE[existingRefund.status]?.color,
+                                  }}>
+                                    {t(`refundStatus_${existingRefund.status}`)}
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setReturnTarget({ order, item }); }}
+                                    style={{
+                                      marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4,
+                                      background: "none", border: "none", padding: 0, cursor: "pointer",
+                                      fontSize: 11, fontWeight: 600, color: "var(--maroon)",
+                                    }}
+                                  >
+                                    <RotateCcw size={11} /> {t("returnProduct")}
+                                  </button>
+                                )
+                              )}
                             </div>
                           </div>
                           <div style={{ fontWeight: 600, color: "var(--gold-text)" }}>
                             ৳ {formatPrice(item.price * item.quantity, language)}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Delivery Address */}
@@ -386,6 +430,18 @@ export default function OrderHistory() {
             );
           })}
         </div>
+      )}
+
+      {returnTarget && (
+        <RefundRequestModal
+          order={returnTarget.order}
+          item={returnTarget.item}
+          onClose={() => setReturnTarget(null)}
+          onSubmitted={(newRefund) => {
+            setRefunds(prev => [newRefund, ...prev]);
+            setReturnTarget(null);
+          }}
+        />
       )}
     </div>
   );

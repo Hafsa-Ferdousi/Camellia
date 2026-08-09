@@ -5,11 +5,13 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2, Bell, Wallet,
+  Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
+  RotateCcw, PackageCheck,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
 import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
@@ -48,7 +50,6 @@ import {
 import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
 import client from "../api/client";
 
-// ── helpers ──────────────────────────────────────────────────
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
   confirmed:  { bg: "#DBEAFE", color: "#1E40AF" },
@@ -170,7 +171,43 @@ const Pagination = ({ page, totalPages, onChange }) => {
 };
 const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
-// ── blank product form ────────────────────────────────────────
+const CheckboxMultiSelect = ({ options, selected, onToggle, placeholder }) => {
+  const { t } = useTranslation("admin");
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options;
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", overflow: "hidden" }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", padding: "7px 10px", border: "none", borderBottom: "1px solid var(--border)", fontSize: 12, boxSizing: "border-box", fontFamily: "var(--font-body)" }}
+      />
+      <div style={{ maxHeight: 150, overflowY: "auto", padding: 4 }}>
+        {filtered.length === 0 && <p style={{ fontSize: 12, color: "var(--muted)", padding: "6px 8px" }}>{t("noMatches")}</p>}
+        {filtered.map(o => (
+          <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", fontSize: 13, cursor: "pointer", borderRadius: 4 }}>
+            <input
+              type="checkbox"
+              checked={selected.includes(o.value)}
+              onChange={() => onToggle(o.value)}
+              style={{ width: 14, height: 14, accentColor: "var(--maroon)", flexShrink: 0 }}
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+      {selected.length > 0 && (
+        <div style={{ padding: "5px 8px", fontSize: 11, color: "var(--muted)", borderTop: "1px solid var(--border)" }}>
+          {t("selectedCount", { count: selected.length })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
@@ -178,7 +215,6 @@ const BLANK_PRODUCT = {
   images: [], isFeatured: false, isActive: true,
 };
 
-// ── blank category form ─────────────────────────────────────────
 const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
 const BLANK_COUPON = { code: "", title: "", description: "", discountType: "percentage", discountValue: "", minimumPurchase: "", maximumDiscount: "", usageLimit: "", perUserLimit: "", startDate: "", endDate: "", applicableProducts: [], applicableCategories: [], excludedProducts: [], isActive: true };
 
@@ -186,8 +222,8 @@ const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const isCouponExpired = (c) => new Date(c.endDate) < new Date();
 const isCouponUpcoming = (c) => new Date(c.startDate) > new Date();
 const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const isCloudinaryUploadUrl = (url) => typeof url === "string" && url.includes("/camellia/products/");
 
-// Which admin tab a notification's "view" click should jump to.
 const NOTIFICATION_TAB = {
   new_order: "orders",
   low_stock: "products",
@@ -196,7 +232,6 @@ const NOTIFICATION_TAB = {
   payment: "orders",
 };
 
-// ═══════════════════════════════════════════════════════════════
 export default function Admin() {
   const { t } = useTranslation(["admin", "notifications"]);
   const { language, setLanguage } = useLanguage();
@@ -204,7 +239,6 @@ export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
 
-  // ── admin alert bell ────────────────────────────────────────
   const [alerts, setAlerts]           = useState([]);
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
@@ -255,13 +289,12 @@ export default function Admin() {
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
-  const [orderDetail, setOrderDetail] = useState(null); // selected order for detail modal
+  const [orderDetail, setOrderDetail] = useState(null);
   const [exportFrom, setExportFrom]   = useState("");
   const [exportTo, setExportTo]       = useState("");
   const [exporting, setExporting]     = useState(false);
   const [exportErr, setExportErr]     = useState("");
 
-  // customers
   const [customers, setCustomers]         = useState([]);
   const [customersLoading, setCustL]      = useState(false);
   const [customerFilter, setCustomerFilter] = useState("all");
@@ -289,7 +322,6 @@ export default function Admin() {
   const [lowStockIds, setLowStockIds]     = useState(new Set());
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
-  // settings
   const [settings, setSettings]           = useState(null);
   const [settingsLoading, setSTL]         = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -319,7 +351,6 @@ export default function Admin() {
   const [couponStatsTarget, setCouponStatsTarget] = useState(null);
   const [couponPage, setCouponPage]         = useState(1);
 
-  // ── MESSAGES state ──────────────────────────────────────────
   const [messages, setMessages]         = useState([]);
   const [messagesLoading, setML]        = useState(false);
   const [messageFilter, setMessageFilter] = useState("all");
@@ -327,11 +358,15 @@ export default function Admin() {
   const [replyText, setReplyText]       = useState("");
   const [replySending, setReplySending] = useState(false);
 
-  // ── CHATS (AI conversations) state ──────────────────────────
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConvL]  = useState(false);
   const [conversationDetail, setConversationDetail] = useState(null);
   const [conversationDetailLoading, setConvDL] = useState(false);
+
+  const [refunds, setRefunds]                 = useState([]);
+  const [refundsLoading, setRL]                = useState(false);
+  const [refundStatusFilter, setRefundStatusFilter] = useState("pending");
+  const [refundActionId, setRefundActionId]    = useState(null);
 
   // ── bKash payment verification state ────────────────────────
   const [bkashSubmissions, setBkashSubmissions] = useState([]);
@@ -392,7 +427,6 @@ export default function Admin() {
     finally { setCoL(false); }
   }, []);
 
-  // ── MESSAGES loader ─────────────────────────────────────────
   const loadMessages = useCallback(async () => {
     setML(true);
     try { const r = await client.get("/contact"); setMessages(r.data); }
@@ -428,7 +462,6 @@ export default function Admin() {
     finally { setReplySending(false); }
   };
 
-  // ── CHATS loader ────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
     setConvL(true);
     try { const r = await getAllConversations(); setConversations(r.data); }
@@ -451,6 +484,29 @@ export default function Admin() {
     } catch { /* ignore */ }
   };
 
+  const loadRefunds = useCallback(async (status = refundStatusFilter) => {
+    setRL(true);
+    try { const r = await getAllRefunds(status); setRefunds(r.data); }
+    catch { setRefunds([]); }
+    finally { setRL(false); }
+  }, [refundStatusFilter]);
+
+  const handleRefundStatusChange = async (refund, status) => {
+    let adminNote = "";
+    if (status === "rejected") {
+      adminNote = window.prompt(t("refundRejectPrompt")) || "";
+      if (adminNote === "" && !window.confirm(t("refundRejectConfirmNoReason"))) return;
+    }
+    setRefundActionId(refund._id);
+    try {
+      const r = await updateRefundStatusApi(refund._id, status, adminNote);
+      setRefunds(prev =>
+        refundStatusFilter === "all"
+          ? prev.map(x => x._id === refund._id ? r.data : x)
+          : prev.filter(x => x._id !== refund._id)
+      );
+    } catch { /* ignore */ }
+    finally { setRefundActionId(null); }
   // ── bKash loader / handlers ─────────────────────────────────
   const loadBkash = useCallback(async () => {
     setBkashL(true);
@@ -484,11 +540,14 @@ export default function Admin() {
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
     if (tab === "settings")   loadSettings();
-    if (tab === "coupons")    loadCoupons();
+    if (tab === "coupons")    { loadCoupons(); loadProducts(); loadCategories(); }
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
+    if (tab === "refunds")    loadRefunds();
     if (tab === "bkash")      loadBkash();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadBkash]);
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
+
+  useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -552,7 +611,6 @@ export default function Admin() {
     } catch { /* keep old */ } finally { setSU(null); }
   };
 
-  // ── sales CSV export ─────────────────────────────────────────
   const handleExportSales = async () => {
     setExportErr(""); setExporting(true);
     try {
@@ -576,7 +634,6 @@ export default function Admin() {
     }
   };
 
-  // ── product form helpers ─────────────────────────────────────
   const openAdd = () => {
     setForm({ ...BLANK_PRODUCT, category: categories[0]?._id || "" });
     setEditTarget(null);
@@ -613,7 +670,7 @@ export default function Admin() {
 
   const handleProductImageSelect = async (e) => {
     const files = Array.from(e.target.files || []);
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!files.length) return;
     setFormErr(""); setImageUploading(true);
     try {
@@ -664,8 +721,6 @@ export default function Admin() {
         const r = await updateProduct(editTarget._id, buildPayload());
         setProducts(prev => prev.map(p => p._id === editTarget._id ? r.data : p));
       }
-      // Best-effort cleanup of images the admin removed in this session — a
-      // failed delete here shouldn't block the save that already succeeded.
       pendingDeleteImages.forEach(url => { deleteUploadedImage(url).catch(() => {}); });
       closeModal();
     } catch (err) {
@@ -681,7 +736,6 @@ export default function Admin() {
     setConfirmDelete(null);
   };
 
-  // ── category form helpers ───────────────────────────────────────
   const openAddCategory = () => {
     setCatForm(BLANK_CATEGORY);
     setCatEditTarget(null);
@@ -710,8 +764,6 @@ export default function Admin() {
     const { name, value, type, checked } = e.target;
     setCatForm(f => {
       const next = { ...f, [name]: type === "checkbox" ? checked : value };
-      // Auto-fill the slug from the English name while adding, unless the
-      // admin has already typed a slug of their own.
       if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) {
         next.slug = slugify(value);
       }
@@ -791,7 +843,6 @@ export default function Admin() {
     } finally { setCatReordering(null); }
   };
 
-  // ── guards ───────────────────────────────────────────────────
   const openAddCoupon = () => { setCouponForm(BLANK_COUPON); setCouponEditTarget(null); setCouponFormErr(""); setCouponModal("add"); };
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
@@ -820,10 +871,8 @@ export default function Admin() {
   if (authLoading) return <div style={s.center}>{t("loading")}</div>;
   if (!user || user.role !== "admin") return null;
 
-  // ════════════════════════════════════════════════════════════
   return (
     <div className="admin-layout">
-      {/* SIDEBAR */}
       <aside className="admin-sidebar">
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
@@ -831,7 +880,6 @@ export default function Admin() {
             <div className="admin-sidebar-role">{t("adminPanel")}</div>
           </div>
 
-          {/* ADMIN ALERT BELL */}
           <div ref={bellRef} style={{ position: "relative", marginRight: 16 }}>
             <button
               type="button"
@@ -900,6 +948,7 @@ export default function Admin() {
         {[
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
+          { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
           { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
           { id: "products",   label: t("navProducts"),   icon: Gem },
@@ -919,6 +968,11 @@ export default function Admin() {
             {navItem.id === "messages" && messages.filter(m => m.status === "unread").length > 0 && (
               <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                 {messages.filter(m => m.status === "unread").length}
+              </span>
+            )}
+            {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {refunds.length}
               </span>
             )}
           </button>
@@ -948,10 +1002,8 @@ export default function Admin() {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="admin-main">
 
-        {/* ── OVERVIEW ── */}
         {tab === "overview" && (
           <div>
             <h2 style={s.pageTitle}>{t("overview")}</h2>
@@ -985,7 +1037,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Recent orders */}
                 <h3 style={{ ...s.sectionTitle, marginTop: 32 }}>{t("recentOrders")}</h3>
                 <div style={s.tableWrap}>
                   <table style={s.table}>
@@ -1014,7 +1065,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── ORDERS ── */}
         {tab === "orders" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1108,6 +1158,31 @@ export default function Admin() {
           </div>
         )}
 
+        {tab === "refunds" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("refundsTitle")}</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["pending", "approved", "processed", "rejected", "all"].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setRefundStatusFilter(f)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer",
+                      fontSize: 12, fontWeight: 500, textTransform: "capitalize",
+                      borderColor: refundStatusFilter === f ? "var(--maroon)" : "var(--border)",
+                      background: refundStatusFilter === f ? "var(--maroon)" : "transparent",
+                      color: refundStatusFilter === f ? "#fff" : "var(--muted)",
+                    }}
+                  >
+                    {t(`refundFilter_${f}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {refundsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
+            {!refundsLoading && (
         {/* ── bKASH MANUAL VERIFICATION ── */}
         {tab === "bkash" && (
           <div>
@@ -1128,12 +1203,76 @@ export default function Admin() {
                 <table style={s.table}>
                   <thead>
                     <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
                       {[t("colOrderId"), t("colCustomer"), t("bkashColSenderNumber"), t("bkashColTrxId"), t("colFiledOn"), t("colStatus"), t("colActions")].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
+                    {refunds.map(rf => (
+                      <tr key={rf._id} style={s.tr}>
+                        <td style={s.td}>
+                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 200 }}>
+                          <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.requestType}</td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
+                        <td style={s.td}>{fmt(rf.refundAmount)}</td>
+                        <td style={s.td}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
+                            background: rf.status === "pending" ? "#FEF9C3" : rf.status === "approved" ? "#DBEAFE" : rf.status === "processed" ? "#DCFCE7" : "#FEE2E2",
+                            color: rf.status === "pending" ? "#854D0E" : rf.status === "approved" ? "#1E40AF" : rf.status === "processed" ? "#166534" : "#991B1B",
+                          }}>
+                            {rf.status}
+                          </span>
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          {rf.status === "pending" && (
+                            <>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "approved")}
+                                style={{ ...s.editBtn, background: "var(--green)" }}
+                              >
+                                {t("refundApprove")}
+                              </button>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                style={s.delBtn}
+                              >
+                                {t("refundReject")}
+                              </button>
+                            </>
+                          )}
+                          {rf.status === "approved" && (
+                            <button
+                              disabled={refundActionId === rf._id}
+                              onClick={() => handleRefundStatusChange(rf, "processed")}
+                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                              <PackageCheck size={12} /> {t("refundProcess")}
+                            </button>
+                          )}
+                          {(rf.status === "processed" || rf.status === "rejected") && (
+                            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                              {rf.status === "processed" ? t("refundStockRestored") : (rf.adminNote || "—")}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {refunds.length === 0 && (
+                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
                     {bkashSubmissions.map(o => (
                       <tr key={o._id} style={s.tr}>
                         <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
@@ -1164,7 +1303,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CUSTOMERS ── */}
         {tab === "customers" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1238,7 +1376,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── PRODUCTS ── */}
         {tab === "products" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1340,7 +1477,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CATEGORIES ── */}
         {tab === "categories" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
@@ -1412,7 +1548,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── COUPONS ── */}
         {tab === "coupons" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1468,7 +1603,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── MESSAGES ── */}
         {tab === "messages" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1520,7 +1654,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CHATS ── */}
         {tab === "chats" && (
           <div>
             <h2 style={s.pageTitle}>{t("chatsTitle")}</h2>
@@ -1554,7 +1687,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── NOTIFICATIONS ── */}
         {tab === "notifications" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -1586,7 +1718,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── SETTINGS ── */}
         {tab === "settings" && (
           <div>
             <h2 style={s.pageTitle}>{t("settingsTitle")}</h2>
@@ -1706,7 +1837,6 @@ export default function Admin() {
         )}
       </main>
 
-      {/* ── ORDER DETAIL MODAL ── */}
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1766,7 +1896,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CUSTOMER DETAIL MODAL ── */}
       {customerDetail && (
         <div style={s.overlay} onClick={closeCustomerDetail}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1838,7 +1967,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONVERSATION DETAIL MODAL ── */}
       {conversationDetail && (
         <div style={s.overlay} onClick={() => setConversationDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1877,7 +2005,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── PRODUCT MODAL ── */}
       {modal && (
         <div style={s.overlay} onClick={closeModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1902,7 +2029,6 @@ export default function Admin() {
                 <textarea className="input" name="descBn" value={form.descBn} onChange={setF} rows={2} placeholder="বাংলা বিবরণ…" style={{ resize: "vertical" }} />
               </label>
 
-              {/* ── AI Description Generator Button ── */}
               <div style={{ gridColumn: "1 / -1", marginTop: -8, marginBottom: 8 }}>
                 <button
                   type="button"
@@ -2014,7 +2140,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE MODAL ── */}
       {confirmDelete && (
         <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -2032,7 +2157,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CATEGORY MODAL ── */}
       {catModal && (
         <div style={s.overlay} onClick={closeCatModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -2102,7 +2226,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE CATEGORY MODAL ── */}
       {catConfirmDelete && (
         <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -2120,7 +2243,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON MODAL ── */}
       {couponModal && (
         <div style={s.overlay} onClick={closeCouponModal}>
           <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
@@ -2151,7 +2273,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE COUPON MODAL ── */}
       {couponConfirmDelete && (
         <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -2165,7 +2286,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON USAGE STATS MODAL ── */}
       {couponStatsTarget && (
         <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
           <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
@@ -2180,7 +2300,6 @@ export default function Admin() {
           </div>
         </div>
       )}
-      {/* ── MESSAGE REPLY MODAL ── */}
       {replyTarget && (
         <div style={s.overlay} onClick={closeReplyModal}>
           <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
@@ -2297,7 +2416,6 @@ export default function Admin() {
   );
 }
 
-// ── inline styles ─────────────────────────────────────────────
 const s = {
   center:       { display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--muted)" },
   pageTitle:    { fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--charcoal)", marginBottom: 24 },
