@@ -119,8 +119,7 @@
   "refundStatus_pending": "ফেরতের অনুরোধ করা হয়েছে",
   "refundStatus_approved": "ফেরত অনুমোদিত হয়েছে",
   "refundStatus_rejected": "ফেরত প্রত্যাখ্যান করা হয়েছে",
-  "refundStatus_processed": "ফেরত প্রক্রিয়া সম্পন্ন হয়েছে"
-}
+  "refundStatus_processed": "ফেরত প্রক্রিয়া সম্পন্ন হয়েছে",
   "adminNoteLabel": "আমাদের টিমের নোট",
   "close": "বন্ধ করুন",
   "bkashPanelTitle": "bKash পেমেন্ট",

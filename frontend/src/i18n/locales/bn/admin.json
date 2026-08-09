@@ -262,8 +262,7 @@
   "refundsNone": "কোনো ফেরতের অনুরোধ পাওয়া যায়নি।",
   "refundRejectPrompt": "এই অনুরোধ প্রত্যাখ্যানের কারণ (গ্রাহককে দেখানো হবে):",
   "refundRejectConfirmNoReason": "কোনো কারণ ছাড়াই প্রত্যাখ্যান করবেন?",
-  "qtyLabel": "পরিমাণ: {{count}}"
-}
+  "qtyLabel": "পরিমাণ: {{count}}",
   "colFiledOn": "জমার তারিখ",
   "viewDetails": "বিস্তারিত দেখুন",
   "verifyAction": "যাচাই করুন",
