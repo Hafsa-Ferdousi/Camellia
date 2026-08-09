@@ -115,10 +115,10 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
         style={{
           width: '100%',
           padding: '10px 14px',
-          border: '1px solid var(--border)',
+          border: '1px solid #ddd',
           borderRadius: '6px',
           fontSize: '14px',
-          background: selectedDistrict ? 'var(--ivory)' : 'var(--cream-dark)',
+          background: selectedDistrict ? '#fff' : '#f5f5f5',
           boxSizing: 'border-box',
           outline: 'none',
         }}
@@ -130,8 +130,8 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
             top: 'calc(100% + 2px)',
             left: 0,
             right: 0,
-            background: 'var(--ivory)',
-            border: '1px solid var(--border)',
+            background: '#fff',
+            border: '1px solid #ddd',
             borderRadius: '6px',
             maxHeight: '200px',
             overflowY: 'auto',
@@ -147,25 +147,25 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
                 style={{
                   padding: '8px 14px',
                   cursor: 'pointer',
-                  borderBottom: '1px solid var(--border-light)',
+                  borderBottom: '1px solid #f0ebe5',
                   transition: 'background 0.15s',
                   fontSize: '14px',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--cream-dark)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--ivory)'}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#f8f5f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#fff'}
               >
                 {city}
               </div>
             ))
           ) : searchTerm.trim() ? (
-            <div style={{ padding: '10px 14px', color: 'var(--ink)', fontSize: '14px', borderBottom: '1px solid var(--border-light)' }}>
+            <div style={{ padding: '10px 14px', color: '#333', fontSize: '14px', borderBottom: '1px solid #f0ebe5' }}>
               No matches found for "<strong>{searchTerm}</strong>".<br />
-              <span style={{ color: 'var(--gold-text)', fontSize: '13px' }}>
+              <span style={{ color: '#c9a84c', fontSize: '13px' }}>
                 ✅ You can type any city name – it will be saved.
               </span>
             </div>
           ) : (
-            <div style={{ padding: '10px 14px', color: 'var(--muted)', fontSize: '14px' }}>
+            <div style={{ padding: '10px 14px', color: '#555', fontSize: '14px' }}>
               No cities listed for this district. Type your city name above.
             </div>
           )}
@@ -409,7 +409,7 @@ const Checkout = () => {
           <div className="empty-cart-message" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, opacity: 0.5 }}><ShoppingCart size={32} /></div>
             <h2>{t('emptyCart')}</h2>
-            <p style={{ color: 'var(--muted)', marginBottom: 20 }}>{t('emptyCartSub')}</p>
+            <p style={{ color: '#555', marginBottom: 20 }}>{t('emptyCartSub')}</p>
             <button className="auth-submit-btn" onClick={() => navigate('/products')} style={{ padding: '12px 30px' }}>{t('browseProducts')}</button>
           </div>
         </div>
@@ -471,7 +471,7 @@ const Checkout = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('firstName')} <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <label>{t('firstName')} <span style={{ color: '#c62828' }}>*</span></label>
                   <input
                     type="text"
                     name="firstName"
@@ -481,7 +481,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('lastName')} <span style={{ color: 'var(--muted)', fontSize: '12px' }}>(optional)</span></label>
+                  <label>{t('lastName')} <span style={{ color: '#555', fontSize: '12px' }}>(optional)</span></label>
                   <input
                     type="text"
                     name="lastName"
@@ -493,10 +493,10 @@ const Checkout = () => {
               </div>
 
               {useSavedAddress && savedAddress ? (
-                <div className="form-group saved-address-summary" style={{ border: '1px solid var(--border-light)', borderRadius: 8, padding: 14, marginBottom: 16 }}>
+                <div className="form-group saved-address-summary" style={{ border: '1px solid #f0ebe5', borderRadius: 8, padding: 14, marginBottom: 16 }}>
                   <p style={{ fontWeight: 600, marginBottom: 6 }}>{savedAddress.addressLine}</p>
-                  <p style={{ color: 'var(--ink)', margin: 0 }}>{savedAddress.city}, {savedAddress.district}</p>
-                  <p style={{ color: 'var(--ink)', margin: '4px 0 10px' }}>{savedAddress.phone}</p>
+                  <p style={{ color: '#333', margin: 0 }}>{savedAddress.city}, {savedAddress.district}</p>
+                  <p style={{ color: '#333', margin: '4px 0 10px' }}>{savedAddress.phone}</p>
                   <button
                     type="button"
                     className="coupon-remove-btn"
@@ -619,26 +619,32 @@ const Checkout = () => {
                     />
                     <span>bKash</span>
                   </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Bank Transfer' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Bank Transfer"
-                      checked={formData.paymentMethod === 'Bank Transfer'}
-                      onChange={handleChange}
-                    />
-                    <span>{t('bankTransfer')}</span>
-                  </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Nagad' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Nagad"
-                      checked={formData.paymentMethod === 'Nagad'}
-                      onChange={handleChange}
-                    />
-                    <span>Nagad</span>
-                  </label>
+                  {formData.paymentMethod === 'bKash' && (
+                    <div style={{
+                      gridColumn: '1 / -1', background: '#FFF7ED', border: '1px solid #FED7AA',
+                      borderRadius: 8, padding: '12px 16px', fontSize: 13, lineHeight: 1.6, color: '#7C2D12',
+                      display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap',
+                    }}>
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <strong>{t('bkashInstructionsTitle')}</strong>
+                        <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                          <li>
+                            {t('bkashStep1')}{' '}
+                            {pricing.bkashMerchantNumber ? (
+                              <strong style={{ fontSize: 14 }}>{pricing.bkashMerchantNumber}</strong>
+                            ) : (
+                              <em>{t('bkashNumberUnavailable')}</em>
+                            )}
+                            {pricing.bkashNumberType && (
+                              <> ({pricing.bkashNumberType === 'merchant' ? t('bkashTypeMerchant') : t('bkashTypePersonal')})</>
+                            )}
+                          </li>
+                          <li>{t('bkashStep2')}</li>
+                          <li>{t('bkashStep3')}</li>
+                        </ol>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -661,26 +667,25 @@ const Checkout = () => {
                           <img
                             src={productImage}
                             alt={productName}
-                            loading="lazy"
                             style={{
                               width: '50px',
                               height: '50px',
                               objectFit: 'cover',
                               borderRadius: '4px',
-                              border: '1px solid var(--border-light)'
+                              border: '1px solid #f0ebe5'
                             }}
                           />
                         ) : (
                           <div style={{
                             width: '50px',
                             height: '50px',
-                            background: 'var(--parchment)',
+                            background: '#f8f5f0',
                             borderRadius: '4px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: '20px',
-                            color: 'var(--faint)'
+                            color: '#888'
                           }}>
                             💍
                           </div>

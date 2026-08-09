@@ -1,17 +1,18 @@
 // frontend/src/pages/OrderConfirmation.jsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, Printer, Package } from 'lucide-react';
 import './OrderConfirmation.css';
 import Invoice from '../components/Invoice';
+import BkashPaymentPanel from '../components/BkashPaymentPanel';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
   const { language } = useLanguage();
   const { state } = useLocation();
-  const order = state?.order;
+  const [order, setOrder] = useState(state?.order || null);
   const receiptRef = useRef(null);
 
   // Backend stores payment.method as a short code (cod | bkash | nagad | bank)
@@ -31,10 +32,10 @@ export default function OrderConfirmation() {
   if (!order) {
     return (
       <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: 30, margin: "12px 0 16px" }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>
-        <p style={{ color: "var(--muted)", marginBottom: 28 }}>
+        <p style={{ color: "#555", marginBottom: 28 }}>
           {t('checkHistory')}
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
@@ -72,15 +73,25 @@ export default function OrderConfirmation() {
           <div className="order-badge">
             <span>{t('orderHash')}</span>
             {/* ✅ Show friendly Order ID */}
-            <strong style={{ fontSize: '20px', color: 'var(--gold-text)' }}>{displayOrderId}</strong>
+            <strong style={{ fontSize: '20px', color: '#c9a84c' }}>{displayOrderId}</strong>
             <br />
-            <span style={{ fontSize: '12px', color: 'var(--faint)' }}>{t('invoiceHash')}</span>
-            <span style={{ fontSize: '12px', color: 'var(--faint)' }}>{displayInvoiceNumber}</span>
+            <span style={{ fontSize: '12px', color: '#888' }}>{t('invoiceHash')}</span>
+            <span style={{ fontSize: '12px', color: '#888' }}>{displayInvoiceNumber}</span>
           </div>
           <p className="order-date">
             {t('placedOn', { date: placedDate, time: placedTime })}
           </p>
         </div>
+
+        {order.payment?.method === 'bkash' && (
+          <div className="bkash-payment-section" style={{ padding: '0 4px' }}>
+            <BkashPaymentPanel
+              order={order}
+              guestEmail={!order.user ? (order.guestInfo?.email || order.email) : undefined}
+              onUpdated={(payment) => setOrder((prev) => ({ ...prev, payment }))}
+            />
+          </div>
+        )}
 
         <div className="receipt-body">
           <div className="receipt-section">
@@ -152,7 +163,7 @@ export default function OrderConfirmation() {
 
           <div className="receipt-section">
             <h4>{t('orderNotes')}</h4>
-            <p className="detail-value" style={{ fontSize: '12px', color: 'var(--faint)' }}>
+            <p className="detail-value" style={{ fontSize: '12px', color: '#888' }}>
               {t('noteKeepReceipt')}<br />
               {t('noteQueries')}<br />
               {t('noteCod')}

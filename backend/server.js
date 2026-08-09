@@ -22,6 +22,7 @@ import refundRoutes    from "./routes/refundRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import { sanitizeInputs } from "./middleware/sanitize.js";
 
@@ -60,6 +61,7 @@ app.use("/api/wishlist",      wishlistRoutes);
 app.use("/api/refunds",       refundRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews",       reviewRoutes);
+app.use("/api/payments",      paymentRoutes);
 app.use("/api/chat",          chatRoutes);
 
 app.use((err, req, res, next) => {

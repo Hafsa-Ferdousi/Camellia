@@ -17,6 +17,7 @@ const REFUND_STATUS_STYLE = {
   rejected:  { bg: "#FEE2E2", color: "#991B1B" },
   processed: { bg: "#D1FAE5", color: "#065F46" },
 };
+import BkashPaymentPanel from "../components/BkashPaymentPanel";
 
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
@@ -416,6 +417,15 @@ export default function OrderHistory() {
                     ৳ {formatPrice(order.totalAmount, language)}
                   </span>
                 </div>
+
+                {order.payment?.method === "bkash" && order.payment?.status !== "paid" && (
+                  <BkashPaymentPanel
+                    order={order}
+                    onUpdated={(payment) => {
+                      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, payment } : o));
+                    }}
+                  />
+                )}
               </div>
             );
           })}
