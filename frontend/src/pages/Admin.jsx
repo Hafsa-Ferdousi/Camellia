@@ -508,6 +508,8 @@ export default function Admin() {
       );
     } catch { /* ignore */ }
     finally { setRefundActionId(null); }
+  };
+
   // ── bKash loader / handlers ─────────────────────────────────
   const loadBkash = useCallback(async () => {
     setBkashL(true);
@@ -1199,6 +1201,87 @@ export default function Admin() {
 
             {refundsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
             {!refundsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refunds.map(rf => (
+                      <tr key={rf._id} style={s.tr}>
+                        <td style={s.td}>
+                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 200 }}>
+                          <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.requestType}</td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
+                        <td style={s.td}>{fmt(rf.refundAmount)}</td>
+                        <td style={s.td}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
+                            background: rf.status === "pending" ? "#FEF9C3" : rf.status === "approved" ? "#DBEAFE" : rf.status === "processed" ? "#DCFCE7" : "#FEE2E2",
+                            color: rf.status === "pending" ? "#854D0E" : rf.status === "approved" ? "#1E40AF" : rf.status === "processed" ? "#166534" : "#991B1B",
+                          }}>
+                            {rf.status}
+                          </span>
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          {rf.status === "pending" && (
+                            <>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "approved")}
+                                style={{ ...s.editBtn, background: "var(--green)" }}
+                              >
+                                {t("refundApprove")}
+                              </button>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                style={s.delBtn}
+                              >
+                                {t("refundReject")}
+                              </button>
+                            </>
+                          )}
+                          {rf.status === "approved" && (
+                            <button
+                              disabled={refundActionId === rf._id}
+                              onClick={() => handleRefundStatusChange(rf, "processed")}
+                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                              <PackageCheck size={12} /> {t("refundProcess")}
+                            </button>
+                          )}
+                          {(rf.status === "processed" || rf.status === "rejected") && (
+                            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                              {rf.status === "processed" ? t("refundStockRestored") : (rf.adminNote || "—")}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {refunds.length === 0 && (
+                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── bKASH MANUAL VERIFICATION ── */}
         {tab === "bkash" && (
           <div>
@@ -1238,7 +1321,6 @@ export default function Admin() {
                 <table style={s.table}>
                   <thead>
                     <tr>
-                      {[t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
                       {[t("colOrderId"), t("colCustomer"), t("bkashColSenderNumber"), t("bkashColTrxId"), t("colFiledOn"), t("colStatus"), t("colActions")].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
