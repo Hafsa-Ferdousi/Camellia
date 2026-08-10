@@ -14,8 +14,20 @@ const paymentSchema = new mongoose.Schema({
   transactionId: { type: String, default: null },
   amount: { type: Number, required: true },
 
+  // When the order's payment actually got marked "paid". For bKash this
+  // duplicates bkash.verifiedAt (kept separate so all payment methods —
+  // including future ones — have one common place to check "when was this
+  // paid"). For COD, set automatically when an admin marks the order
+  // delivered (see updateOrderStatus in orderController.js).
+  paidAt: { type: Date, default: null },
+
+  // Free-text note for admin/staff eyes only — never shown to the
+  // customer. E.g. "confirmed by phone call" or "customer paid extra for
+  // express delivery, refund 50tk". Optional, no format requirements.
+  adminNote: { type: String, default: null, trim: true },
+
   // Manual bKash "send money" verification — the customer pays a merchant/
-  // personal bKash number outside the app, then submits the transaction ID
+  // personal bKash number outside the app, then submits the transaction id
   // here for an admin to cross-check against their bKash statement.
   bkash: {
     senderNumber: { type: String, default: null },

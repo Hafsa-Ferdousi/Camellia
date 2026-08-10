@@ -158,6 +158,7 @@ export const verifyBkashPayment = async (req, res) => {
 
     if (approve) {
       order.payment.status = "paid";
+      order.payment.paidAt = new Date();
       order.payment.transactionId = order.payment.bkash.trxId;
       order.payment.bkash.verificationStatus = "verified";
       order.payment.bkash.rejectionReason = null;
