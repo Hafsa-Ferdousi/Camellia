@@ -122,7 +122,6 @@
   "refundStatus_rejected": "ফেরত প্রত্যাখ্যান করা হয়েছে",
   "refundStatus_processed": "ফেরত প্রক্রিয়া সম্পন্ন হয়েছে",
   "adminNoteLabel": "আমাদের টিমের নোট",
-  "close": "বন্ধ করুন",
   "bkashPanelTitle": "bKash পেমেন্ট",
   "bkashAwaitingTitle": "আপনার পেমেন্ট সম্পন্ন করুন",
   "bkashAwaitingDesc": "bKash \"Send Money\" এর মাধ্যমে অর্ডারের সর্বমোট পরিমাণ পাঠান, তারপর নিচে বিবরণ দিন যাতে আমরা তা যাচাই করতে পারি।",
@@ -147,5 +146,15 @@
   "bkashSendMoneyTo": "সেন্ড মানি করুন",
   "bkashQrCameraNote": "Camera অ্যাপ দিয়ে স্ক্যান করুন, bKash অ্যাপ দিয়ে নয়",
   "bkashTypePersonal": "পার্সোনাল",
-  "bkashTypeMerchant": "মার্চেন্ট"
+  "bkashTypeMerchant": "মার্চেন্ট",
+  "requestTypeLabel": "আপনি কী চান?",
+  "type_refund_title": "রিফান্ড",
+  "type_refund_desc": "এই পণ্যের টাকা ফেরত পান।",
+  "type_replacement_title": "একই পণ্য নতুন করে পাঠানো",
+  "type_replacement_desc": "একদম একই পণ্যের নতুন একটা পাঠানো হবে (যেমন — ভাঙা অবস্থায় এসেছে)।",
+  "type_exchange_title": "ভিন্ন পণ্যের সাথে বিনিময়",
+  "type_exchange_desc": "আপনার পছন্দের একটি ভিন্ন পণ্যের সাথে বদলে নিন।",
+  "exchangeForLabel": "কোন পণ্যটা চান?",
+  "exchangeSearchPlaceholder": "পণ্য খুঁজুন…",
+  "exchangeProductRequired": "অনুগ্রহ করে বিনিময়ের জন্য একটি পণ্য বেছে নিন।"
 }

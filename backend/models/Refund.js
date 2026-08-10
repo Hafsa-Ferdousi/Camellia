@@ -14,8 +14,12 @@ const refundSchema = new mongoose.Schema(
 
     requestType: {
       type: String,
-      enum: ["refund", "exchange"],
+      enum: ["refund", "replacement", "exchange"],
       default: "refund",
+    },
+    exchangeProduct: {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      nameSnapshot: { type: String, default: "" },
     },
     reason: {
       type: String,
