@@ -137,24 +137,28 @@ export default function Products() {
             {/* Category */}
             <div style={s.filterGroup}>
               <p style={s.filterLabel}>{t("category")}</p>
-              <button
-                style={{ ...s.catBtn, ...(selectedCat === "" ? s.catBtnActive : {}) }}
-                onClick={() => selectCategory("")}
-              >
-                <Gem size={13} strokeWidth={2} /> {t("allCollections")}
-              </button>
-              {categories.map(c => {
-                const Icon = getCategoryIcon(c.slug);
-                return (
-                  <button
-                    key={c._id}
-                    style={{ ...s.catBtn, ...(selectedCat === c._id ? s.catBtnActive : {}) }}
-                    onClick={() => selectCategory(c._id)}
-                  >
-                    <Icon size={13} strokeWidth={2} /> {localized(c.name, language)}
-                  </button>
-                );
-              })}
+              <div className="products-cat-list">
+                <button
+                  className={`products-cat-btn${selectedCat === "" ? " active" : ""}`}
+                  style={{ ...s.catBtn, ...(selectedCat === "" ? s.catBtnActive : {}) }}
+                  onClick={() => selectCategory("")}
+                >
+                  <Gem size={13} strokeWidth={2} /> {t("allCollections")}
+                </button>
+                {categories.map(c => {
+                  const Icon = getCategoryIcon(c.slug);
+                  return (
+                    <button
+                      key={c._id}
+                      className={`products-cat-btn${selectedCat === c._id ? " active" : ""}`}
+                      style={{ ...s.catBtn, ...(selectedCat === c._id ? s.catBtnActive : {}) }}
+                      onClick={() => selectCategory(c._id)}
+                    >
+                      <Icon size={13} strokeWidth={2} /> {localized(c.name, language)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Price range */}

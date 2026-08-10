@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getRecommendations } from '../api/products';
 import { useLanguage } from '../context/LanguageContext';
 import { localized } from '../utils/localized';
+import { cldUrl, cldSrcSet } from '../utils/cloudinaryImage';
 
 const Recommendations = ({ productId }) => {
   const { t } = useTranslation('products');
@@ -67,7 +68,14 @@ const Recommendations = ({ productId }) => {
               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
               >
                 {image ? (
-                  <img src={image} alt={name} loading="lazy" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }} />
+                  <img
+                    src={cldUrl(image, 400)}
+                    srcSet={cldSrcSet(image, [200, 400])}
+                    sizes="(max-width: 480px) 50vw, 180px"
+                    alt={name}
+                    loading="lazy"
+                    style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
+                  />
                 ) : (
                   <div style={{ width: '100%', height: '160px', background: 'var(--parchment)', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('noImage')}</div>
                 )}

@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
+import { cldUrl } from "../utils/cloudinaryImage";
 
 export default function Cart() {
   const { t } = useTranslation("cart");
@@ -86,7 +87,7 @@ export default function Cart() {
                   <Link to={`/products/${item.productId}`} style={{ flexShrink: 0 }}>
                     <div className="cart-thumb">
                       {item.product?.images?.[0]
-                        ? <img src={item.product.images[0]} alt="" loading="lazy" />
+                        ? <img src={cldUrl(item.product.images[0], 200)} alt="" loading="lazy" />
                         : <Gem size={22} style={{ opacity: 0.3 }} />}
                     </div>
                   </Link>
