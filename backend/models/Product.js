@@ -40,5 +40,13 @@ totalReviews: {
   { timestamps: true }
 );
 
+// Mirrors the actual filters used in productController.js's list/search/
+// recommendation queries — every public product listing filters on
+// isActive plus one of these.
+productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, isFeatured: 1 });
+productSchema.index({ isActive: 1, isBestSeller: 1 });
+productSchema.index({ isActive: 1, totalStock: 1 });
+
 const Product = mongoose.model("Product", productSchema);
 export default Product;

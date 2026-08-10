@@ -91,5 +91,10 @@ const orderSchema = new mongoose.Schema(
 // don't collide with each other.
 orderSchema.index({ "payment.bkash.trxId": 1 }, { unique: true, sparse: true });
 
+// Every customer "My Orders" request filters by { user: req.user._id } and
+// sorts newest-first (orderController.js) — without this every such request
+// was a full collection scan.
+orderSchema.index({ user: 1, createdAt: -1 });
+
 const Order = mongoose.model("Order", orderSchema);
 export default Order;

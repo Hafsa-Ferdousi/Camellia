@@ -117,8 +117,10 @@ export const getProducts = async (req, res) => {
       // ✅ SMART SEARCH RANKING: rank the FULL match set before paginating,
       // so a better match on a later page can't be hidden by DB sort order.
       const allMatches = await Product.find(query)
+        .select("name description category basePrice images totalStock isFeatured isBestSeller createdAt")
         .populate("category", "name slug")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
       const ranked = rankBySearchRelevance(allMatches, searchTerm);
       products = ranked.slice((currentPage - 1) * size, currentPage * size);
     } else {
@@ -171,7 +173,8 @@ export const getAllProductsAdmin = async (req, res) => {
   try {
     const products = await Product.find()
       .populate("category", "name slug")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
