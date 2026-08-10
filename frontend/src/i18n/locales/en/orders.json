@@ -33,6 +33,7 @@
   "continueShopping": "Continue Shopping",
   "trackYourOrder": "Track Your Order",
   "trackSub": "No account needed — enter your order ID and the email you checked out with.",
+  "trackHint": "Provide your Order ID or the phone number used at checkout, along with your email.",
   "orderId": "Order ID",
   "orderIdHint": "Found on your confirmation page or receipt",
   "emailAddress": "Email Address",
