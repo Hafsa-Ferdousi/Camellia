@@ -7,6 +7,7 @@ import { getProducts, getCategories, getBestSellers } from "../api/products";
 import Hero from "../components/Hero";
 import ProductCard from "../components/ProductCard";
 import CategorySection from "../components/CategorySection";
+import Seo from "../components/Seo";
 
 const TESTIMONIALS = [
   { name: "Nusrat A.", role: "Bride, Chattogram", quote: "The kalira set was even more beautiful in person. Delivery was fast and the packaging felt like a gift in itself.", stars: 5 },
@@ -97,6 +98,7 @@ export default function Home() {
 
   return (
     <div>
+      <Seo />
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }

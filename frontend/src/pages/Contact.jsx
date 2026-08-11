@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail, MapPin, AlertCircle } from "lucide-react";
 import client from "../api/client";
+import Seo from "../components/Seo";
 
 export default function Contact() {
   const { t } = useTranslation("pages");
@@ -30,6 +31,7 @@ export default function Contact() {
 
   return (
     <div className="container" style={{ padding: "48px 24px 64px", maxWidth: 860 }}>
+      <Seo title={t("contactUs")} description="Get in touch with Camellia for questions about orders, custom bridal jewelry, or wedding accessories." />
       <span className="eyebrow">{t("getInTouch")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 36, fontStyle: "italic", marginTop: 6 }}>
         {t("contactUs")}

@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { cldUrl } from "../utils/cloudinaryImage";
+import Seo from "../components/Seo";
 
 export default function Cart() {
   const { t } = useTranslation("cart");
@@ -39,6 +40,7 @@ export default function Cart() {
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title={t("yourCart")} noindex />
       <span className="eyebrow">{t("shopping")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
         {t("yourCart")}
@@ -82,19 +84,20 @@ export default function Cart() {
             {items.map(item => {
               const price = getPrice(item);
               const stock = getStock(item);
+              const productName = localized(item.product?.name, language);
               return (
                 <div className="cart-item" key={`${item.productId}_${item.variantSku || ""}`}>
                   <Link to={`/products/${item.productId}`} style={{ flexShrink: 0 }}>
                     <div className="cart-thumb">
                       {item.product?.images?.[0]
-                        ? <img src={cldUrl(item.product.images[0], 200)} alt="" loading="lazy" />
+                        ? <img src={cldUrl(item.product.images[0], 200)} alt={productName} loading="lazy" />
                         : <Gem size={22} style={{ opacity: 0.3 }} />}
                     </div>
                   </Link>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {localized(item.product?.name, language)}
+                      {productName}
                     </p>
                     {item.variantSku && (
                       <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>{t("variant", { sku: item.variantSku })}</p>
@@ -103,9 +106,9 @@ export default function Cart() {
                       ৳ {formatPrice(price, language)}
                     </p>
                     <div className="qty-stepper">
-                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} disabled={item.quantity <= 1}>−</button>
+                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} disabled={item.quantity <= 1} aria-label={t("decreaseQuantity", { defaultValue: "Decrease quantity" })}>−</button>
                       <span style={{ fontSize: 14, minWidth: 32, textAlign: "center", fontWeight: 500 }}>{item.quantity}</span>
-                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity + 1, stock)} disabled={item.quantity >= stock}>+</button>
+                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity + 1, stock)} disabled={item.quantity >= stock} aria-label={t("increaseQuantity", { defaultValue: "Increase quantity" })}>+</button>
                     </div>
                   </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import Seo from "../components/Seo";
 
 export default function Notifications() {
   const { t } = useTranslation("notifications");
@@ -31,6 +32,7 @@ export default function Notifications() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title={t("title")} noindex />
       <span className="eyebrow">{t("title")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
         {t("title")}
