@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { updateProfile, updateAddress } from "../api/auth";
 import { districts } from "../data/districts";
+import Seo from "../components/Seo";
 
 export default function Settings() {
   const { t } = useTranslation("settings");
@@ -81,6 +82,7 @@ export default function Settings() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title={t("title")} noindex />
       <span className="eyebrow">{t("title")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
         {t("title")}

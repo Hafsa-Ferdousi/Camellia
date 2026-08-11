@@ -1,4 +1,5 @@
 import Category from "../models/Category.js";
+import { sendError } from "../utils/errorResponse.js";
 
 const ALLOWED_CATEGORY_FIELDS = ["name", "slug", "isFixed", "sortOrder", "image"];
 
@@ -22,7 +23,7 @@ export const createCategory = async (req, res) => {
     const category = await Category.create(pickCategoryFields(req.body));
     res.status(201).json(category);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 
@@ -37,7 +38,7 @@ export const updateCategory = async (req, res) => {
     if (!category) return res.status(404).json({ message: "Category not found" });
     res.json(category);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 

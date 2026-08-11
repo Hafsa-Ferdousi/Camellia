@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import CartItem from "../models/CartItem.js";
 import Wishlist from "../models/Wishlist.js";
 import Review from "../models/Review.js";
+import { sendError } from "../utils/errorResponse.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { validatePasswordStrength } from "../utils/validators.js";
 import { SECURITY_QUESTIONS, normalizeAnswer } from "../utils/securityQuestions.js";
@@ -102,7 +103,7 @@ export const registerUser = async (req, res) => {
       email,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -157,7 +158,7 @@ export const loginUser = async (req, res) => {
     const accessToken = await issueSession(user, req, res);
     res.json({ ...publicUser(user), token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -195,7 +196,7 @@ export const verifyTwoFactorLogin = async (req, res) => {
     const accessToken = await issueSession(user, req, res);
     res.json({ ...publicUser(user), token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -229,7 +230,7 @@ export const refreshAccessToken = async (req, res) => {
 
     res.json({ token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -244,7 +245,7 @@ export const logoutUser = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Logged out." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -282,7 +283,7 @@ export const getSecurityQuestion = async (req, res) => {
     const question = user ? user.securityQuestion : fakeQuestionFor(identifier);
     res.json({ question });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -319,7 +320,7 @@ export const resetPasswordWithAnswer = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Password reset successfully. Please log in with your new password." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -347,7 +348,7 @@ export const updateProfile = async (req, res) => {
     await user.save({ validateBeforeSave: false });
     res.json(publicUser(user));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -373,7 +374,7 @@ export const updateDefaultAddress = async (req, res) => {
     await user.save({ validateBeforeSave: false });
     res.json(publicUser(user));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -401,7 +402,7 @@ export const deleteAccount = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Your account has been deleted." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -422,7 +423,7 @@ export const setupTwoFactor = async (req, res) => {
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
     res.json({ qrCodeDataUrl, secret: secret.base32 });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -449,7 +450,7 @@ export const verifyTwoFactorSetup = async (req, res) => {
 
     res.json({ message: "Two-factor authentication is now enabled." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -467,7 +468,7 @@ export const disableTwoFactor = async (req, res) => {
 
     res.json({ message: "Two-factor authentication disabled." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -506,7 +507,7 @@ export const verifyEmailOtp = async (req, res) => {
 
     res.json({ message: "Email verified. You can now log in." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -530,6 +531,6 @@ export const resendEmailOtp = async (req, res) => {
     await sendVerificationOtpEmail(email, otp);
     return genericOk();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };

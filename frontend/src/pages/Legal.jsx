@@ -1,5 +1,6 @@
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Seo from "../components/Seo";
 
 const PAGE_KEYS = {
   terms: { titleKey: "termsTitle", updatedKey: "termsUpdated", prefix: "terms" },
@@ -23,6 +24,7 @@ export default function Legal() {
 
   return (
     <div className="container" style={{ padding: "48px 24px 80px", maxWidth: 800 }}>
+      <Seo title={title} />
 
       {/* Header */}
       <span className="eyebrow">{t("eyebrow")}</span>

@@ -7,6 +7,7 @@ import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
 import { isPasswordStrong } from "../utils/passwordRules";
 import { SECURITY_QUESTIONS } from "../utils/securityQuestions";
 import { districts } from "../data/districts";
+import Seo from "../components/Seo";
 
 export default function Register() {
   const { t } = useTranslation("auth");
@@ -64,6 +65,7 @@ export default function Register() {
 
   return (
     <div style={styles.page}>
+      <Seo title={t("joinCamellia")} noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("joinCamellia")}</p>

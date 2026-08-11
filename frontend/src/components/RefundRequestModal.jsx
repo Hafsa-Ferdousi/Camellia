@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X, RotateCcw, Gem } from "lucide-react";
 import { requestRefund } from "../api/refunds";
@@ -22,6 +22,16 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
   const [exchangeResults, setExchangeResults] = useState([]);
   const [exchangeSearching, setExchangeSearching] = useState(false);
   const [selectedExchangeProduct, setSelectedExchangeProduct] = useState(null);
+
+  const closeBtnRef = useRef(null);
+  const titleId = "refund-modal-title";
+
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+    const onKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     if (requestType !== "exchange") return;
@@ -73,6 +83,9 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
   return (
     <div
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
       style={{
         position: "fixed", inset: 0, background: "rgba(28,10,15,0.55)",
         zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
@@ -85,6 +98,7 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
       >
         <button
           type="button"
+          ref={closeBtnRef}
           onClick={onClose}
           aria-label={t("close")}
           style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
@@ -94,7 +108,7 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <RotateCcw size={18} style={{ color: "var(--maroon)" }} />
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontStyle: "italic", color: "var(--charcoal)" }}>
+          <h2 id={titleId} style={{ fontFamily: "var(--font-display)", fontSize: 20, fontStyle: "italic", color: "var(--charcoal)" }}>
             {t("requestReturnTitle")}
           </h2>
         </div>
@@ -107,9 +121,10 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
         )}
 
         <form onSubmit={handleSubmit}>
-          <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+          <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+          <legend style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6, padding: 0 }}>
             {t("requestTypeLabel")}
-          </label>
+          </legend>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
             {REQUEST_TYPES.map((rt) => (
               <button
@@ -131,10 +146,11 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
               </button>
             ))}
           </div>
+          </fieldset>
 
           {requestType === "exchange" && (
             <div style={{ marginBottom: 16, position: "relative" }}>
-              <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+              <label htmlFor="refund-exchange-search" style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
                 {t("exchangeForLabel")}
               </label>
 
@@ -154,6 +170,7 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
                   <button
                     type="button"
                     onClick={() => setSelectedExchangeProduct(null)}
+                    aria-label={t("removeSelection", { defaultValue: "Remove selected product" })}
                     style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}
                   >
                     <X size={16} />
@@ -162,6 +179,7 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
               ) : (
                 <>
                   <input
+                    id="refund-exchange-search"
                     className="input"
                     type="text"
                     value={exchangeQuery}
@@ -199,10 +217,10 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
             </div>
           )}
 
-          <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+          <label htmlFor="refund-reason" style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
             {t("reasonLabel")}
           </label>
-          <select className="input" value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: "100%", marginBottom: 16 }}>
+          <select id="refund-reason" className="input" value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: "100%", marginBottom: 16 }}>
             {REASONS.map((r) => (
               <option key={r} value={r}>{t(`reason_${r}`)}</option>
             ))}
@@ -210,10 +228,11 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
 
           {item.quantity > 1 && (
             <>
-              <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+              <label htmlFor="refund-quantity" style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
                 {t("quantityLabel")}
               </label>
               <input
+                id="refund-quantity"
                 className="input"
                 type="number"
                 min={1}
@@ -225,10 +244,11 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
             </>
           )}
 
-          <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+          <label htmlFor="refund-details" style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
             {t("detailsLabel")}
           </label>
           <textarea
+            id="refund-details"
             className="input"
             rows={3}
             value={details}

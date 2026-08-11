@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { sendBkashStatusEmail } from "../utils/mailer.js";
+import { sendError } from "../utils/errorResponse.js";
 
 // A bKash "Send Money" transaction ID: 10 characters, letters + digits.
 // Real IDs look like "9G7A1B2C3D" — validated loosely since bKash doesn't
@@ -45,7 +46,7 @@ export const getBkashPaymentStatus = async (req, res) => {
     }
     res.json({ payment: order.payment });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -121,7 +122,7 @@ export const submitBkashPayment = async (req, res) => {
     if (err.code === 11000) {
       return res.status(400).json({ message: "This transaction ID has already been submitted for another order." });
     }
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -138,7 +139,7 @@ export const getBkashSubmissions = async (req, res) => {
       .sort({ "payment.bkash.submittedAt": -1, createdAt: -1 });
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -193,6 +194,6 @@ export const verifyBkashPayment = async (req, res) => {
 
     res.json({ message: approve ? "Payment verified." : "Payment rejected.", payment: order.payment });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };

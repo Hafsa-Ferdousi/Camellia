@@ -1,0 +1,19 @@
+# Replace https://camellia.example.com with the real production domain once deployed.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /wishlist
+Disallow: /settings
+Disallow: /security
+Disallow: /notifications
+Disallow: /track-order
+Disallow: /order-confirmation
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /verify-email
+
+Sitemap: https://camellia.example.com/sitemap.xml
