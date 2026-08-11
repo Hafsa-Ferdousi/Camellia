@@ -31,7 +31,11 @@ export default function Cart() {
   };
 
   const handleQty = (item, qty, maxStock) => {
-    if (qty < 1 || qty > maxStock) return;
+    if (qty < 1) {
+      removeItem(item.productId, item.variantSku);
+      return;
+    }
+    if (qty > maxStock) return;
     updateQty(item.productId, qty);
   };
 
@@ -106,7 +110,7 @@ export default function Cart() {
                       ৳ {formatPrice(price, language)}
                     </p>
                     <div className="qty-stepper">
-                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} disabled={item.quantity <= 1} aria-label={t("decreaseQuantity", { defaultValue: "Decrease quantity" })}>−</button>
+                      <button className="qty-btn" onClick={() => handleQty(item, item.quantity - 1, stock)} aria-label={t(item.quantity <= 1 ? "removeItem" : "decreaseQuantity", { defaultValue: item.quantity <= 1 ? "Remove item" : "Decrease quantity" })}>−</button>
                       <span style={{ fontSize: 14, minWidth: 32, textAlign: "center", fontWeight: 500 }}>{item.quantity}</span>
                       <button className="qty-btn" onClick={() => handleQty(item, item.quantity + 1, stock)} disabled={item.quantity >= stock} aria-label={t("increaseQuantity", { defaultValue: "Increase quantity" })}>+</button>
                     </div>
