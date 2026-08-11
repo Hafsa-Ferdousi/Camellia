@@ -153,7 +153,7 @@ export default function ChatWidget() {
                   <Plus size={16} />
                 </button>
               )}
-              <button type="button" onClick={() => setOpen(false)} style={s.closeBtn} aria-label="Close chat">
+              <button type="button" onClick={() => setOpen(false)} style={s.closeBtn} aria-label={t("closeChat", { defaultValue: "Close chat" })}>
                 ×
               </button>
             </div>
