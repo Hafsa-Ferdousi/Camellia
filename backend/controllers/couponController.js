@@ -1,5 +1,6 @@
 import Coupon from "../models/Coupon.js";
 import { findAndValidateCoupon } from "../utils/couponEngine.js";
+import { sendError } from "../utils/errorResponse.js";
 
 const asArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -72,7 +73,7 @@ export const createCoupon = async (req, res) => {
     res.status(201).json(coupon);
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: "A coupon with this code already exists." });
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -98,7 +99,7 @@ export const getCoupons = async (req, res) => {
 
     res.json(coupons);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -113,7 +114,7 @@ export const getCouponById = async (req, res) => {
     if (!coupon) return res.status(404).json({ message: "Coupon not found." });
     res.json(coupon);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -154,7 +155,7 @@ export const updateCoupon = async (req, res) => {
     res.json(coupon);
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: "A coupon with this code already exists." });
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -165,7 +166,7 @@ export const deleteCoupon = async (req, res) => {
     if (!coupon) return res.status(404).json({ message: "Coupon not found." });
     res.json({ message: "Coupon deleted." });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -179,7 +180,7 @@ export const setCouponStatus = async (req, res) => {
     await coupon.save();
     res.json(coupon);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 

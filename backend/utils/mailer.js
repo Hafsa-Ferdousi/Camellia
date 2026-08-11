@@ -95,6 +95,18 @@ export async function sendBkashStatusEmail(to, { invoiceNumber, approved, reject
   return sendMail({ to, subject, text });
 }
 
+export async function sendOrderAutoCancelledEmail(to, { invoiceNumber, orderId, amount }) {
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const subject = `Camellia Order Cancelled — Invoice ${invoiceNumber || orderId}`;
+  const text =
+    `Hi,\n\n` +
+    `Your Camellia order (Invoice: ${invoiceNumber || orderId}) for ৳${amount} has been automatically cancelled because we didn't receive your bKash payment within 48 hours of placing the order.\n\n` +
+    `No charge was made — nothing to worry about. If you'd still like these items, please place a new order and complete the bKash payment (send money + submit the Transaction ID) soon after checkout so it doesn't expire again.\n\n` +
+    `If you did send the money and believe this is a mistake, please contact us with your Transaction ID and we'll sort it out right away.\n\n` +
+    `Thank you for shopping with Camellia.`;
+  return sendMail({ to, subject, text });
+}
+
 // ── Email verification (OTP at registration) ───────────────────────────
 export async function sendVerificationOtpEmail(to, otp) {
   if (!to) return { sent: false, reason: "no_recipient" };
@@ -120,4 +132,4 @@ export async function sendContactReplyEmail(to, { name, originalMessage, reply }
   return sendMail({ to, subject, text });
 }
 
-export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendVerificationOtpEmail, sendContactReplyEmail };
+export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendOrderAutoCancelledEmail, sendVerificationOtpEmail, sendContactReplyEmail };

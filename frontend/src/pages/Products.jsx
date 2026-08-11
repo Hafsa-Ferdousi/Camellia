@@ -7,6 +7,7 @@ import ProductGrid from "../components/ProductGrid";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
+import Seo from "../components/Seo";
 
 const PAGE_SIZE = 12;
 
@@ -112,6 +113,7 @@ export default function Products() {
 
   return (
     <div>
+      <Seo title={t("collection")} description="Browse Camellia's full collection of handcrafted bridal jewelry and wedding accessories." />
       {/* ── Page header ── */}
       <div style={s.pageHeader}>
         <div className="container">

@@ -26,9 +26,11 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import { sanitizeInputs } from "./middleware/sanitize.js";
+import { startAutoCancelScheduler } from "./utils/autoCancelUnpaidBkash.js";
 
 await connectDB();
 await ensureAdminUser();
+startAutoCancelScheduler();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();

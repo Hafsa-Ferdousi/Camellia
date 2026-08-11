@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { MapPin, Mail } from "lucide-react";
+import Seo from "../components/Seo";
 
 export default function About() {
   const { t } = useTranslation("pages");
   return (
     <div className="container" style={{ padding: "48px 24px 64px", maxWidth: 860 }}>
+      <Seo title={t("aboutTitle")} description="Learn about Camellia — bringing handcrafted bridal jewelry and wedding accessories to Bangladesh." />
       <span className="eyebrow">{t("ourStory")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 36, fontStyle: "italic", marginTop: 6 }}>
         {t("aboutTitle")}

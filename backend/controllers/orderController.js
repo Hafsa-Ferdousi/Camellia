@@ -6,6 +6,7 @@ import Setting from "../models/Setting.js";
 import Notification from "../models/Notification.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
+import { sendError } from "../utils/errorResponse.js";
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
 
@@ -198,7 +199,7 @@ export const checkout = async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     await rollbackStock();
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 
@@ -316,7 +317,7 @@ export const guestCheckout = async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     await rollbackStock();
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 
@@ -425,7 +426,16 @@ export const updateOrderStatus = async (req, res) => {
     const justMarkedPaid = req.body.status === "delivered" && order.payment.method === "cod" && order.payment.status !== "paid";
     if (justMarkedPaid) {
       order.payment.status = "paid";
+      order.payment.paidAt = new Date();
     }
+
+    // Optional — admin can attach/update a private note in the same
+    // request. Empty string clears it; omit the field entirely to leave
+    // the existing note untouched.
+    if (typeof req.body.adminNote === "string") {
+      order.payment.adminNote = req.body.adminNote.trim() || null;
+    }
+
     await order.save();
 
     // Best-effort notification — never blocks the response if email fails

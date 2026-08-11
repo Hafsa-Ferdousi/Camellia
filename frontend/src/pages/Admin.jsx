@@ -104,6 +104,46 @@ const BkashStatusBadge = ({ status }) => {
   );
 };
 
+// Private note for staff eyes only. Keeps its own draft state (initialized
+// once from the order's saved note) so typing isn't interrupted by the
+// orders list re-rendering; only saved back to the order on blur/Save.
+const AdminNoteInput = ({ order, saving, onSave }) => {
+  const { t } = useTranslation("admin");
+  const [draft, setDraft] = useState(order.payment?.adminNote || "");
+  const [dirty, setDirty] = useState(false);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <textarea
+        value={draft}
+        onChange={e => { setDraft(e.target.value); setDirty(true); }}
+        placeholder={t("adminNotePlaceholder")}
+        rows={2}
+        style={{
+          width: "100%", minWidth: 160, resize: "vertical",
+          padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4,
+          fontSize: 11.5, fontFamily: "var(--font-body)", background: "var(--cream)",
+          color: "var(--ink)", boxSizing: "border-box",
+        }}
+      />
+      {dirty && (
+        <button
+          onClick={() => { onSave(order, draft.trim()); setDirty(false); }}
+          disabled={saving}
+          style={{ ...styles_editBtnSmall, marginTop: 4 }}
+        >
+          {saving ? t("saving") : t("saveNote")}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const styles_editBtnSmall = {
+  padding: "3px 10px", background: "var(--maroon)", color: "#fff", border: "none",
+  borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "var(--font-body)",
+};
+
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
 const fmtDayLabel = (isoDate) => new Date(isoDate).toLocaleDateString("en-BD", { weekday: "short" });
@@ -294,6 +334,7 @@ export default function Admin() {
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
+  const [noteSaving, setNoteSaving]   = useState(null);
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
@@ -621,6 +662,14 @@ export default function Admin() {
       const r = await updateOrderStatus(orderId, newStatus);
       setOrders(prev => prev.map(o => o._id === orderId ? r.data : o));
     } catch { /* keep old */ } finally { setSU(null); }
+  };
+
+  const handleSaveAdminNote = async (order, noteText) => {
+    setNoteSaving(order._id);
+    try {
+      const r = await updateOrderStatus(order._id, order.status, noteText);
+      setOrders(prev => prev.map(o => o._id === order._id ? r.data : o));
+    } catch { /* keep old */ } finally { setNoteSaving(null); }
   };
 
   const handleExportSales = async () => {
@@ -1188,6 +1237,9 @@ export default function Admin() {
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.status === "paid" && o.payment?.paidAt && (
+                                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1 }}>{t("paidOn", { date: fmtDate(o.payment.paidAt) })}</div>
+                              )}
                               {o.payment?.method === "bkash" && (
                                 <div style={{ marginTop: 5 }}>
                                   {o.payment?.bkash?.trxId && (
@@ -1209,6 +1261,7 @@ export default function Admin() {
                               <select value={o.status} disabled={statusUpdating === o._id} onChange={e => handleStatusChange(o._id, e.target.value)} style={s.select}>
                                 {ORDER_STATUSES.map(st => <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>)}
                               </select>
+                              <AdminNoteInput order={o} saving={noteSaving === o._id} onSave={handleSaveAdminNote} />
                             </td>
                           </tr>
                         ))}

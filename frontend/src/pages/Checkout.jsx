@@ -392,7 +392,11 @@ const Checkout = () => {
       const order = user ? await submitLoggedInOrder() : await submitGuestOrder();
 
       clearCart();
-      navigate('/order-confirmation', { state: { order } });
+      const guestEmail = !user ? (order.guestInfo?.email || order.email) : null;
+      const confirmUrl = guestEmail
+        ? `/order-confirmation/${order._id}?email=${encodeURIComponent(guestEmail)}`
+        : `/order-confirmation/${order._id}`;
+      navigate(confirmUrl, { state: { order } });
     } catch (err) {
       setError(err.response?.data?.message || err.message || t('orderFailed'));
     } finally {

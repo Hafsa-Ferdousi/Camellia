@@ -1,6 +1,8 @@
 {
   "noOrderFound": "No Order Found",
   "checkHistory": "Check your order history to view past orders.",
+  "confirmEmailTitle": "Confirm Your Email",
+  "confirmEmailSub": "Enter the email you used at checkout to view this order.",
   "viewMyOrders": "View My Orders",
   "trackGuestOrder": "Track a Guest Order",
   "backToHome": "Back to Home",
@@ -142,6 +144,8 @@
   "bkashResubmitPrompt": "Please double-check your Transaction ID and try again.",
   "bkashGenericError": "Could not submit your payment details. Please try again.",
   "bkashSubmittedDetails": "Submitted: {{number}} · TrxID {{trxId}}",
+  "bkashCancelledTitle": "Order Cancelled — Payment Not Received",
+  "bkashCancelledDesc": "This order was automatically cancelled because payment wasn't received within 48 hours of checkout.",
   "submittedOn": "Submitted on {{date}}",
   "bkashSendMoneyTo": "Send Money to",
   "bkashQrCameraNote": "Scan with your Camera app, not the bKash app",

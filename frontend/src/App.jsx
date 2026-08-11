@@ -73,6 +73,7 @@ export default function App() {
                 <Route path="/cart"                element={<ProtectedRoute blockAdmin><Cart /></ProtectedRoute>} />
                 <Route path="/checkout"            element={<ProtectedRoute blockAdmin><Checkout /></ProtectedRoute>} />
                 <Route path="/order-confirmation"  element={<OrderConfirmation />} />
+                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/orders"              element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
                 <Route path="/track-order"         element={<TrackOrder />} />
                 <Route path="/about"               element={<About />} />

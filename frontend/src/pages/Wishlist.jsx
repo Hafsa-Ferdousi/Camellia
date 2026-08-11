@@ -8,6 +8,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { getWishlist, removeFromWishlist, clearWishlist } from "../api/wishlist";
+import Seo from "../components/Seo";
 
 export default function WishlistPage() {
   const { t } = useTranslation(["wishlist", "orders"]);
@@ -81,6 +82,7 @@ export default function WishlistPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title={t("wishlist:title", { defaultValue: "Wishlist" })} noindex />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div>
           <span className="eyebrow">{t("orders:yourAccount")}</span>

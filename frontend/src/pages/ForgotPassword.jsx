@@ -5,6 +5,7 @@ import { getSecurityQuestion, resetPasswordWithAnswer } from "../api/auth";
 import PasswordField from "../components/PasswordField";
 import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
 import { isPasswordStrong } from "../utils/passwordRules";
+import Seo from "../components/Seo";
 
 export default function ForgotPassword() {
   const { t } = useTranslation("auth");
@@ -52,6 +53,7 @@ export default function ForgotPassword() {
 
   return (
     <div style={styles.page}>
+      <Seo title={t("resetYourPassword")} noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("resetYourPassword")}</p>

@@ -244,7 +244,7 @@ export default function TrackOrder() {
 
                   <div style={{ marginTop: 12 }}>
                     <Link 
-                      to="/order-confirmation" 
+                      to={`/order-confirmation/${order._id}?email=${encodeURIComponent(email.trim())}`}
                       state={{ order }} 
                       style={{ color: "var(--gold-text)", fontWeight: 600, fontSize: 14 }}
                     >
