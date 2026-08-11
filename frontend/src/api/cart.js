@@ -21,6 +21,7 @@ export const checkout = (items, address, paymentMethod, couponCode) =>
   client.post("/orders/checkout", { items, address, paymentMethod, couponCode: couponCode || undefined });
 
 export const getOrders = () => client.get("/orders");
+export const getOrderById = (orderId) => client.get(`/orders/${orderId}`);
 // Guest checkout — no account required. items: [{ productId, quantity }]
 export const guestCheckout = (items, address, paymentMethod, guestInfo, couponCode) =>
   client.post("/orders/guest-checkout", { items, address, paymentMethod, guestInfo, couponCode: couponCode || undefined });
