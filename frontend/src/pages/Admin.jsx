@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
-import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
 import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
@@ -280,6 +280,13 @@ export default function Admin() {
     setAlerts((list) => list.map((n) => ({ ...n, read: true })));
     setAlertsUnread(0);
     try { await markAllAsRead(); } catch { /* best-effort */ }
+  };
+
+  const handleAlertDelete = async (e, n) => {
+    e.stopPropagation();
+    setAlerts((list) => list.filter((x) => x._id !== n._id));
+    if (!n.read) setAlertsUnread((c) => Math.max(0, c - 1));
+    try { await deleteNotification(n._id); } catch { /* best-effort */ }
   };
 
   const [stats, setStats]       = useState(null);
@@ -930,10 +937,29 @@ export default function Admin() {
                       <div
                         key={n._id}
                         onClick={() => handleAlertClick(n)}
-                        style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)" }}
+                        style={{
+                          padding: "10px 16px", fontSize: 13, cursor: "pointer",
+                          opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)",
+                          display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0,
+                        }}
                       >
-                        <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)" }}>{n.title}</div>
-                        <div style={{ color: "var(--muted)", fontSize: 12 }}>{n.message}</div>
+                        <div style={{ flex: 1, minWidth: 0, whiteSpace: "normal" }}>
+                          <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)", wordBreak: "break-word", whiteSpace: "normal" }}>{n.title}</div>
+                          <div style={{ color: "var(--muted)", fontSize: 12, wordBreak: "break-word", whiteSpace: "normal" }}>{n.message}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAlertDelete(e, n)}
+                          aria-label={t("notifications:delete")}
+                          title={t("notifications:delete")}
+                          style={{
+                            flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                            color: "var(--muted)", padding: 4, display: "flex",
+                            alignItems: "center", justifyContent: "center", borderRadius: 4,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     ))
                   )}
@@ -1247,7 +1273,14 @@ export default function Admin() {
                           <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
                         </td>
-                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.requestType}</td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>
+                          {rf.requestType}
+                          {rf.requestType === "exchange" && rf.exchangeProduct?.nameSnapshot && (
+                            <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "none", marginTop: 2 }}>
+                              → {rf.exchangeProduct.nameSnapshot}
+                            </div>
+                          )}
+                        </td>
                         <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
                         <td style={s.td}>{fmt(rf.refundAmount)}</td>
                         <td style={s.td}>
@@ -1783,11 +1816,26 @@ export default function Admin() {
                     key={n._id}
                     onClick={() => handleAlertClick(n)}
                     className="panel"
-                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1, display: "flex", alignItems: "flex-start", gap: 10 }}
                   >
-                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
-                    <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAlertDelete(e, n)}
+                      aria-label={t("notifications:delete")}
+                      title={t("notifications:delete")}
+                      style={{
+                        flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                        color: "var(--muted)", padding: 4, display: "flex",
+                        alignItems: "center", justifyContent: "center", borderRadius: 4,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
               </div>

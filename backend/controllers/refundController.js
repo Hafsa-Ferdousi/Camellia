@@ -8,7 +8,7 @@ const REASONS = ["damaged", "wrong_item", "not_as_described", "changed_mind", "s
 
 export const createRefundRequest = async (req, res) => {
   try {
-    const { orderId, productId, quantity, requestType = "refund", reason, details = "" } = req.body;
+    const { orderId, productId, quantity, requestType = "refund", reason, details = "", exchangeProductId } = req.body;
 
     if (!orderId || !productId || !reason) {
       return res.status(400).json({ message: "orderId, productId, and reason are required." });
@@ -16,8 +16,11 @@ export const createRefundRequest = async (req, res) => {
     if (!REASONS.includes(reason)) {
       return res.status(400).json({ message: "Invalid reason." });
     }
-    if (!["refund", "exchange"].includes(requestType)) {
+    if (!["refund", "replacement", "exchange"].includes(requestType)) {
       return res.status(400).json({ message: "Invalid request type." });
+    }
+    if (requestType === "exchange" && !exchangeProductId) {
+      return res.status(400).json({ message: "Please choose which product you'd like to exchange for." });
     }
 
     const order = await Order.findById(orderId);
@@ -39,6 +42,18 @@ export const createRefundRequest = async (req, res) => {
       return res.status(400).json({ message: `Quantity must be between 1 and ${item.quantity}.` });
     }
 
+    let exchangeProduct;
+    if (requestType === "exchange") {
+      const targetProduct = await Product.findById(exchangeProductId);
+      if (!targetProduct || !targetProduct.isActive) {
+        return res.status(404).json({ message: "The product you selected for exchange is not available." });
+      }
+      exchangeProduct = {
+        product: targetProduct._id,
+        nameSnapshot: targetProduct.name?.en || targetProduct.name || "",
+      };
+    }
+
     const refund = await Refund.create({
       order: order._id,
       user: req.user._id,
@@ -52,6 +67,7 @@ export const createRefundRequest = async (req, res) => {
       reason,
       details,
       refundAmount: Math.round(item.price * qty * 100) / 100,
+      ...(exchangeProduct ? { exchangeProduct } : {}),
     });
 
     notifyAdmins({
