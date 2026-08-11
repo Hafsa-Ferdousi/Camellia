@@ -82,6 +82,11 @@ const orderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     payment: paymentSchema,
 
+    // Customer-facing reason when an order is cancelled automatically
+    // (e.g. unpaid bKash order past the 48h window). Null for manual
+    // cancellations (customer/admin already know why those happened).
+    cancelReason: { type: String, default: null },
+
     // Invoice number (e.g., INV-20260730-1234)
     invoiceNumber: {
       type: String,
