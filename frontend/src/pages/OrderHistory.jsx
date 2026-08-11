@@ -10,6 +10,7 @@ import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
 import { getMyRefunds } from "../api/refunds";
 import RefundRequestModal from "../components/RefundRequestModal";
+import Seo from "../components/Seo";
 
 const REFUND_STATUS_STYLE = {
   pending:   { bg: "#FEF3C7", color: "#92400E" },
@@ -74,6 +75,7 @@ export default function OrderHistory() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title="Order History" noindex />
 
       {/* Header */}
       <span className="eyebrow">{t("yourAccount")}</span>

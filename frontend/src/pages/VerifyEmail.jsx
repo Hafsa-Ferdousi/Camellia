@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { verifyEmailOtp, resendEmailOtp } from "../api/auth";
+import Seo from "../components/Seo";
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -69,6 +70,7 @@ export default function VerifyEmail() {
 
   return (
     <div style={styles.page}>
+      <Seo title="Verify Email" noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>

@@ -6,6 +6,7 @@ import { Phone } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
+import Seo from "../components/Seo";
 
 export default function TrackOrder() {
   const { t } = useTranslation("orders");
@@ -78,6 +79,7 @@ export default function TrackOrder() {
 
   return (
     <div style={styles.page}>
+      <Seo title="Track Order" noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>

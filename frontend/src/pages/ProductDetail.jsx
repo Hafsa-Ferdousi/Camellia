@@ -10,9 +10,11 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import ImageGallery from "../components/ImageGallery";
+import Seo from "../components/Seo";
 import { addToWishlist, removeFromWishlist } from "../api/wishlist";
 import StarRating from "../components/StarRating";
 import Recommendations from '../components/Recommendations';
+import { cldUrl } from "../utils/cloudinaryImage";
 
 export default function ProductDetail() {
   const { t } = useTranslation("products");
@@ -193,8 +195,13 @@ export default function ProductDetail() {
   const price = product.basePrice;
   const outOfStock = (stock ?? 0) <= 0;
 
+  const productName = localized(product.name, language);
+  const productDescription = localized(product.description, language)?.slice(0, 160) || undefined;
+  const productImage = product.images?.[0] ? cldUrl(product.images[0], 800) : undefined;
+
   return (
     <div className="container" style={{ paddingTop: 28, paddingBottom: 64 }}>
+      <Seo title={productName} description={productDescription} image={productImage} />
       {/* Breadcrumb */}
       <nav className="breadcrumb">
         <Link to="/">{t("home")}</Link>
@@ -260,13 +267,13 @@ export default function ProductDetail() {
           <div style={{ marginBottom: 24 }}>
             <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>{t("quantity")}</p>
             <div className="qty-stepper">
-              <button className="qty-btn" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
+              <button className="qty-btn" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label={t("decreaseQuantity", { defaultValue: "Decrease quantity" })}>
                 −
               </button>
               <span style={{ fontSize: 15, minWidth: 36, textAlign: "center", padding: "0 6px", fontWeight: 500 }}>
                 {quantity}
               </span>
-              <button className="qty-btn" onClick={() => setQuantity((q) => Math.min(stock, q + 1))} disabled={quantity >= stock}>
+              <button className="qty-btn" onClick={() => setQuantity((q) => Math.min(stock, q + 1))} disabled={quantity >= stock} aria-label={t("increaseQuantity", { defaultValue: "Increase quantity" })}>
                 +
               </button>
             </div>

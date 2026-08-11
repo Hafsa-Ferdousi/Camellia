@@ -14,6 +14,7 @@ import { getPricing } from '../api/settings';
 import { validateCoupon } from '../api/coupons';
 import { districts } from '../data/districts';
 import { cityMap } from '../data/cities';
+import Seo from '../components/Seo';
 
 const PAYMENT_METHOD_MAP = {
   'Cash on Delivery': 'cod',
@@ -48,7 +49,7 @@ const getNumber = (value) => {
 };
 
 // ===== SEARCHABLE CITY DROPDOWN =====
-const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, required }) => {
+const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, required, inputId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCities, setFilteredCities] = useState([]);
@@ -105,6 +106,7 @@ const SearchableCityDropdown = ({ selectedDistrict, selectedCity, onChange, requ
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
       <input
+        id={inputId}
         type="text"
         placeholder={selectedDistrict ? 'Type city name or select from list...' : 'Select a district first'}
         value={searchTerm || selectedCity || ''}
@@ -403,6 +405,7 @@ const Checkout = () => {
   if (cartItems.length === 0) {
     return (
       <div className="checkout-page">
+        <Seo title={t('title')} noindex />
         <div className="checkout-container">
           <h1 className="checkout-title">{t('title')}</h1>
           <p className="checkout-subtitle">{t('subtitle')}</p>
@@ -419,6 +422,7 @@ const Checkout = () => {
 
   return (
     <div className="checkout-page">
+      <Seo title={t('title')} noindex />
       {toast && (
         <div className={`checkout-toast checkout-toast-${toast.type}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {toast.type === 'success' ? <CheckCircle2 size={16} strokeWidth={2} /> : <AlertTriangle size={16} strokeWidth={2} />}
@@ -455,8 +459,9 @@ const Checkout = () => {
               <h2>{t('shippingAddress')}</h2>
 
               <div className="form-group">
-                <label>{t('emailAddress')}</label>
+                <label htmlFor="checkout-email">{t('emailAddress')}</label>
                 <input
+                  id="checkout-email"
                   type="email"
                   name="email"
                   value={formData.email}
@@ -471,8 +476,9 @@ const Checkout = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>{t('firstName')} <span style={{ color: '#c62828' }}>*</span></label>
+                  <label htmlFor="checkout-firstName">{t('firstName')} <span style={{ color: '#c62828' }}>*</span></label>
                   <input
+                    id="checkout-firstName"
                     type="text"
                     name="firstName"
                     value={formData.firstName}
@@ -481,8 +487,9 @@ const Checkout = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>{t('lastName')} <span style={{ color: '#555', fontSize: '12px' }}>(optional)</span></label>
+                  <label htmlFor="checkout-lastName">{t('lastName')} <span style={{ color: '#555', fontSize: '12px' }}>(optional)</span></label>
                   <input
+                    id="checkout-lastName"
                     type="text"
                     name="lastName"
                     value={formData.lastName}
@@ -519,8 +526,9 @@ const Checkout = () => {
                   )}
 
                   <div className="form-group">
-                    <label>{t('mobileNumber')}</label>
+                    <label htmlFor="checkout-mobileNumber">{t('mobileNumber')}</label>
                     <input
+                      id="checkout-mobileNumber"
                       type="tel"
                       name="mobileNumber"
                       value={formData.mobileNumber}
@@ -531,8 +539,9 @@ const Checkout = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>{t('streetAddress')}</label>
+                    <label htmlFor="checkout-streetAddress">{t('streetAddress')}</label>
                     <input
+                      id="checkout-streetAddress"
                       type="text"
                       name="streetAddress"
                       value={formData.streetAddress}
@@ -543,8 +552,9 @@ const Checkout = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>{t('country')}</label>
+                    <label htmlFor="checkout-country">{t('country')}</label>
                     <select
+                      id="checkout-country"
                       name="country"
                       value={formData.country}
                       onChange={handleChange}
@@ -556,8 +566,9 @@ const Checkout = () => {
 
                   {/* ✅ DISTRICT – ALL 64 DISTRICTS (SORTED A-Z) */}
                   <div className="form-group">
-                    <label>{t('district')}</label>
+                    <label htmlFor="checkout-district">{t('district')}</label>
                     <select
+                      id="checkout-district"
                       name="district"
                       value={formData.district}
                       onChange={handleDistrictChange}
@@ -573,8 +584,9 @@ const Checkout = () => {
 
                   {/* ✅ CITY – SEARCHABLE DROPDOWN */}
                   <div className="form-group">
-                    <label>{t('city')}</label>
+                    <label htmlFor="checkout-city">{t('city')}</label>
                     <SearchableCityDropdown
+                      inputId="checkout-city"
                       selectedDistrict={formData.district}
                       selectedCity={formData.city}
                       onChange={handleChange}
@@ -584,8 +596,9 @@ const Checkout = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>{t('zipCode')}</label>
+                    <label htmlFor="checkout-zipCode">{t('zipCode')}</label>
                     <input
+                      id="checkout-zipCode"
                       type="text"
                       name="zipCode"
                       value={formData.zipCode}

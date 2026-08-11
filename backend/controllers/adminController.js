@@ -3,6 +3,7 @@ import Product from "../models/Product.js";
 import User from "../models/User.js";
 import Setting from "../models/Setting.js";
 import { validatePasswordStrength } from "../utils/validators.js";
+import { sendError } from "../utils/errorResponse.js";
 
 const ORDER_STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
@@ -69,7 +70,7 @@ export const getStats = async (req, res) => {
       lowStockCount,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -88,7 +89,7 @@ export const getLowStockProducts = async (req, res) => {
 
     res.json({ threshold, products });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -154,7 +155,7 @@ export const exportSalesCSV = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.send(csv);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -235,7 +236,7 @@ export const getCustomers = async (req, res) => {
 
     res.json(all);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -254,7 +255,7 @@ export const getCustomerDetail = async (req, res) => {
 
     res.json({ user, orders });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -279,7 +280,7 @@ export const resetCustomerPassword = async (req, res) => {
 
     res.json({ message: "Password reset. Share the new password with the customer securely." });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -289,7 +290,7 @@ export const getSettings = async (req, res) => {
     const settings = await Setting.getSingleton();
     res.json(settings);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -341,6 +342,6 @@ export const updateSettings = async (req, res) => {
 
     res.json(settings);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };

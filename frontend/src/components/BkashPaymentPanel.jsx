@@ -237,7 +237,7 @@ export default function BkashPaymentPanel({ order, guestEmail, onUpdated }) {
               {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
               <input type="file" accept="image/*" hidden onChange={handleFile} disabled={uploading} />
             </label>
-            {screenshot && <img src={screenshot} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }} />}
+            {screenshot && <img src={screenshot} alt={t("bkashScreenshotPreview", { defaultValue: "Uploaded payment screenshot preview" })} style={{ width: 46, height: 46, objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }} />}
           </div>
         </label>
 
