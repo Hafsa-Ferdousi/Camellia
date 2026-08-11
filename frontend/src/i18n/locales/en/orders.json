@@ -33,6 +33,7 @@
   "continueShopping": "Continue Shopping",
   "trackYourOrder": "Track Your Order",
   "trackSub": "No account needed — enter your order ID and the email you checked out with.",
+  "trackHint": "Provide your Order ID or the phone number used at checkout, along with your email.",
   "orderId": "Order ID",
   "orderIdHint": "Found on your confirmation page or receipt",
   "emailAddress": "Email Address",
@@ -121,7 +122,6 @@
   "refundStatus_rejected": "Return Rejected",
   "refundStatus_processed": "Return Processed",
   "adminNoteLabel": "Note from our team",
-  "close": "Close",
   "bkashPanelTitle": "bKash Payment",
   "bkashAwaitingTitle": "Complete Your Payment",
   "bkashAwaitingDesc": "Send the order total via bKash \"Send Money\", then enter your details below so we can verify it.",
@@ -146,5 +146,15 @@
   "bkashSendMoneyTo": "Send Money to",
   "bkashQrCameraNote": "Scan with your Camera app, not the bKash app",
   "bkashTypePersonal": "Personal",
-  "bkashTypeMerchant": "Merchant"
+  "bkashTypeMerchant": "Merchant",
+  "requestTypeLabel": "What would you like?",
+  "type_refund_title": "Refund",
+  "type_refund_desc": "Get your money back for this item.",
+  "type_replacement_title": "Replace with same item",
+  "type_replacement_desc": "Send a new one of the exact same product (e.g. it arrived broken).",
+  "type_exchange_title": "Exchange for a different item",
+  "type_exchange_desc": "Swap this for a different product of your choice.",
+  "exchangeForLabel": "Which product would you like instead?",
+  "exchangeSearchPlaceholder": "Search for a product…",
+  "exchangeProductRequired": "Please choose a product to exchange for."
 }

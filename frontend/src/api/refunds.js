@@ -1,7 +1,7 @@
 import client from "./client";
 
-export const requestRefund = ({ orderId, productId, quantity, requestType, reason, details }) =>
-  client.post("/refunds", { orderId, productId, quantity, requestType, reason, details });
+export const requestRefund = ({ orderId, productId, quantity, requestType, reason, details, exchangeProductId }) =>
+  client.post("/refunds", { orderId, productId, quantity, requestType, reason, details, exchangeProductId });
 
 export const getMyRefunds = () => client.get("/refunds/my");
 

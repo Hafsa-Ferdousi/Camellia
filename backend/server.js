@@ -2,6 +2,7 @@ import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -33,6 +34,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(helmet());
+app.use(compression());
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));

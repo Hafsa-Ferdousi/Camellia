@@ -174,8 +174,8 @@ export default function ProductDetail() {
   
   if (loading) {
     return (
-      <div className="container" style={{ padding: "48px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
+      <div className="container" style={{ paddingTop: 48, paddingBottom: 48 }}>
+        <div className="detail-grid">
           <div style={{ aspectRatio: "1/1", background: "var(--parchment)", borderRadius: "var(--radius-lg)" }} />
           <div>
             {[120, 80, 200, 160].map((w, i) => (
@@ -194,7 +194,7 @@ export default function ProductDetail() {
   const outOfStock = (stock ?? 0) <= 0;
 
   return (
-    <div className="container" style={{ padding: "28px 0 64px" }}>
+    <div className="container" style={{ paddingTop: 28, paddingBottom: 64 }}>
       {/* Breadcrumb */}
       <nav className="breadcrumb">
         <Link to="/">{t("home")}</Link>
@@ -374,7 +374,7 @@ export default function ProductDetail() {
                 <form onSubmit={submitReview}>
                   {/* Show Name & Email fields ONLY for guests */}
                   {!isLoggedIn && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                    <div className="review-guest-fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
                       <div>
                         <label style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
                           {t("yourName")}

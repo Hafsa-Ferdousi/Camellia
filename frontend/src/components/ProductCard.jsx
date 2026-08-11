@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
+import { cldUrl, cldSrcSet } from "../utils/cloudinaryImage";
 
 export default function ProductCard({ product }) {
   const { t } = useTranslation(["products", "common"]);
@@ -32,7 +33,13 @@ export default function ProductCard({ product }) {
       <Link to={`/products/${product._id}`} style={{ textDecoration: "none", color: "inherit" }}>
         <div className="product-img-wrap">
           {image
-            ? <img src={image} alt={name} loading="lazy" />
+            ? <img
+                src={cldUrl(image, 400)}
+                srcSet={cldSrcSet(image, [200, 400])}
+                sizes="(max-width: 480px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                alt={name}
+                loading="lazy"
+              />
             : <div className="product-img-placeholder"><Gem size={26} /></div>
           }
           {isLowStock && (

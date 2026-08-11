@@ -31,7 +31,7 @@ export default function OrderConfirmation() {
 
   if (!order) {
     return (
-      <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
+      <div className="container" style={{ paddingTop: 60, paddingBottom: 60, textAlign: "center" }}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>

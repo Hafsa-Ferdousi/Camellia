@@ -6,11 +6,11 @@ import {
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
   Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
-  RotateCcw, PackageCheck,
+  RotateCcw, PackageCheck, Wallet, Menu, X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
-import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
 import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
@@ -212,7 +212,7 @@ const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
   category: "", basePrice: "", totalStock: "",
-  images: [], isFeatured: false, isActive: true,
+  images: [], isFeatured: false, isBestSeller: false, isActive: true,
 };
 
 const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
@@ -242,6 +242,7 @@ export default function Admin() {
   const [alerts, setAlerts]           = useState([]);
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const bellRef = useRef(null);
 
   const loadAlerts = useCallback(() => {
@@ -279,6 +280,13 @@ export default function Admin() {
     setAlerts((list) => list.map((n) => ({ ...n, read: true })));
     setAlertsUnread(0);
     try { await markAllAsRead(); } catch { /* best-effort */ }
+  };
+
+  const handleAlertDelete = async (e, n) => {
+    e.stopPropagation();
+    setAlerts((list) => list.filter((x) => x._id !== n._id));
+    if (!n.read) setAlertsUnread((c) => Math.max(0, c - 1));
+    try { await deleteNotification(n._id); } catch { /* best-effort */ }
   };
 
   const [stats, setStats]       = useState(null);
@@ -543,7 +551,7 @@ export default function Admin() {
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
     if (tab === "settings")   loadSettings();
-    if (tab === "coupons")    { loadCoupons(); loadProducts(); loadCategories(); }
+    if (tab === "coupons")    { loadCoupons(); }
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
     if (tab === "refunds")    loadRefunds();
@@ -551,6 +559,7 @@ export default function Admin() {
   }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
 
   useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
+  useEffect(() => { setMobileNavOpen(false); }, [tab]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -654,9 +663,10 @@ export default function Admin() {
       category:   p.category?._id || p.category || "",
       basePrice:  p.basePrice,
       totalStock: p.totalStock ?? 0,
-      images:     p.images || [],
-      isFeatured: p.isFeatured || false,
-      isActive:   p.isActive !== false,
+      images:      p.images || [],
+      isFeatured:  p.isFeatured || false,
+      isBestSeller: p.isBestSeller || false,
+      isActive:    p.isActive !== false,
     });
     setEditTarget(p);
     setFormErr("");
@@ -704,9 +714,10 @@ export default function Admin() {
     category:    form.category,
     basePrice:   Number(form.basePrice),
     totalStock:  Number(form.totalStock) || 0,
-    images:      form.images,
-    isFeatured:  form.isFeatured,
-    isActive:    form.isActive,
+    images:       form.images,
+    isFeatured:   form.isFeatured,
+    isBestSeller: form.isBestSeller,
+    isActive:     form.isActive,
   });
 
   const handleSaveProduct = async () => {
@@ -876,25 +887,29 @@ export default function Admin() {
 
   return (
     <div className="admin-layout">
-      <aside className="admin-sidebar">
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <div>
-            <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
-            <div className="admin-sidebar-role">{t("adminPanel")}</div>
-          </div>
+      <header className="admin-topbar">
+        <button
+          type="button"
+          className="admin-hamburger-btn"
+          onClick={() => setMobileNavOpen(o => !o)}
+          aria-label={t("adminPanel")}
+          aria-expanded={mobileNavOpen}
+        >
+          <Menu size={20} />
+        </button>
 
-          <div ref={bellRef} style={{ position: "relative", marginRight: 16 }}>
+        <Link to="/" className="navbar-logo admin-topbar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
+        <span className="admin-topbar-role">{t("adminPanel")}</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          <div ref={bellRef} style={{ position: "relative" }}>
             <button
               type="button"
+              className="admin-topbar-icon-btn"
               onClick={() => setBellOpen((o) => !o)}
               aria-expanded={bellOpen}
               aria-label={t("notifications:adminAlerts")}
               title={t("notifications:adminAlerts")}
-              style={{
-                position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(244,196,48,0.3)",
-                background: "rgba(255,255,255,0.05)", color: "var(--nav-text, #E8D9C0)", cursor: "pointer",
-              }}
             >
               <Bell size={15} />
               {alertsUnread > 0 && (
@@ -910,7 +925,7 @@ export default function Admin() {
             </button>
             {bellOpen && (
               <div style={{
-                position: "absolute", top: "calc(100% + 8px)", left: 0, width: 320,
+                position: "absolute", top: "calc(100% + 8px)", right: 0, width: 320,
                 background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 10,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.25)", overflow: "hidden", zIndex: 200,
               }}>
@@ -922,10 +937,29 @@ export default function Admin() {
                       <div
                         key={n._id}
                         onClick={() => handleAlertClick(n)}
-                        style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)" }}
+                        style={{
+                          padding: "10px 16px", fontSize: 13, cursor: "pointer",
+                          opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)",
+                          display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0,
+                        }}
                       >
-                        <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)" }}>{n.title}</div>
-                        <div style={{ color: "var(--muted)", fontSize: 12 }}>{n.message}</div>
+                        <div style={{ flex: 1, minWidth: 0, whiteSpace: "normal" }}>
+                          <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)", wordBreak: "break-word", whiteSpace: "normal" }}>{n.title}</div>
+                          <div style={{ color: "var(--muted)", fontSize: 12, wordBreak: "break-word", whiteSpace: "normal" }}>{n.message}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAlertDelete(e, n)}
+                          aria-label={t("notifications:delete")}
+                          title={t("notifications:delete")}
+                          style={{
+                            flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                            color: "var(--muted)", padding: 4, display: "flex",
+                            alignItems: "center", justifyContent: "center", borderRadius: 4,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     ))
                   )}
@@ -947,7 +981,36 @@ export default function Admin() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+          >
+            <Globe size={13} /> <span className="admin-topbar-btn-label">{language === "en" ? "বাংলা" : "English"}</span>
+          </button>
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={async () => { await logout(); navigate("/"); }}
+          >
+            <LogOut size={13} /> <span className="admin-topbar-btn-label">{t("logout")}</span>
+          </button>
         </div>
+      </header>
+
+      {mobileNavOpen && <div className="admin-sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+
+      <div className="admin-body">
+      <aside className={`admin-sidebar${mobileNavOpen ? " admin-sidebar-open" : ""}`}>
+        <button
+          type="button"
+          className="admin-sidebar-close-btn"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label={t("close")}
+        >
+          <X size={18} />
+        </button>
         {[
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
@@ -982,25 +1045,11 @@ export default function Admin() {
         ))}
         <div style={{ marginTop: "auto", padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
           <button
-            className="admin-nav-btn"
-            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-            style={{ opacity: 0.7, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <Globe size={13} /> {language === "en" ? "বাংলা" : "English"}
-          </button>
-          <button
-            className="admin-nav-btn"
-            onClick={() => navigate("/")}
-            style={{ opacity: 0.55, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <ArrowLeft size={13} /> {t("backToStore")}
-          </button>
-          <button
             className="admin-nav-btn admin-logout-btn"
-            onClick={async () => { await logout(); navigate("/"); }}
+            onClick={() => navigate("/")}
             style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <LogOut size={13} /> {t("logout")}
+            <ArrowLeft size={13} /> {t("backToStore")}
           </button>
         </div>
       </aside>
@@ -1224,7 +1273,14 @@ export default function Admin() {
                           <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
                         </td>
-                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.requestType}</td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>
+                          {rf.requestType}
+                          {rf.requestType === "exchange" && rf.exchangeProduct?.nameSnapshot && (
+                            <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "none", marginTop: 2 }}>
+                              → {rf.exchangeProduct.nameSnapshot}
+                            </div>
+                          )}
+                        </td>
                         <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
                         <td style={s.td}>{fmt(rf.refundAmount)}</td>
                         <td style={s.td}>
@@ -1477,7 +1533,7 @@ export default function Admin() {
                     <table style={s.table}>
                       <thead>
                         <tr>
-                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colActive"),t("colActions")].map(h => (
+                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colBestSeller"),t("colActive"),t("colActions")].map(h => (
                             <th key={h} style={s.th}>{h}</th>
                           ))}
                         </tr>
@@ -1492,10 +1548,9 @@ export default function Admin() {
                               }
                             </td>
                             <td style={s.td}>
-                              <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
-                              {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(p.name, language)}</div>
                             </td>
-                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
+                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name ? localized(p.category.name, language) : "—"}</td>
                             <td style={s.td}>{fmt(p.basePrice)}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
@@ -1508,6 +1563,7 @@ export default function Admin() {
                               )}
                             </td>
                             <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? <Star size={14} fill="var(--gold)" color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isBestSeller ? <TrendingUp size={14} color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
                                 {p.isActive ? t("yes") : t("no")}
@@ -1561,8 +1617,7 @@ export default function Admin() {
                           }
                         </td>
                         <td style={s.td}>
-                          <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name?.en}</div>
-                          {c.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.name.bn}</div>}
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(c.name, language)}</div>
                         </td>
                         <td style={{ ...s.td, fontSize: 12, fontFamily: "monospace", color: "var(--muted)" }}>{c.slug}</td>
                         <td style={{ ...s.td, whiteSpace: "nowrap" }}>
@@ -1761,11 +1816,26 @@ export default function Admin() {
                     key={n._id}
                     onClick={() => handleAlertClick(n)}
                     className="panel"
-                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1, display: "flex", alignItems: "flex-start", gap: 10 }}
                   >
-                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
-                    <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAlertDelete(e, n)}
+                      aria-label={t("notifications:delete")}
+                      title={t("notifications:delete")}
+                      style={{
+                        flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                        color: "var(--muted)", padding: 4, display: "flex",
+                        alignItems: "center", justifyContent: "center", borderRadius: 4,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1891,6 +1961,7 @@ export default function Admin() {
           </div>
         )}
       </main>
+      </div>
 
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
@@ -2179,6 +2250,10 @@ export default function Admin() {
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
                 {t("featuredOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("bestSellingOnHomepage")}
               </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
