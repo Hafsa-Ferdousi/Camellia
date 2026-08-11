@@ -6,8 +6,8 @@ export const getCustomerDetail = (userId) => client.get(`/admin/customers/${user
 export const resetCustomerPassword = (userId, newPassword) =>
   client.post(`/admin/customers/${userId}/reset-password`, { newPassword });
 export const getAllOrders    = ()          => client.get("/orders/all");
-export const updateOrderStatus = (id, status) =>
-  client.patch(`/orders/${id}/status`, { status });
+export const updateOrderStatus = (id, status, adminNote) =>
+  client.patch(`/orders/${id}/status`, adminNote === undefined ? { status } : { status, adminNote });
 
 export const getAdminSettings = ()        => client.get("/admin/settings");
 export const updateAdminSettings = (data) => client.put("/admin/settings", data);

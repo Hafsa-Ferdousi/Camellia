@@ -426,7 +426,16 @@ export const updateOrderStatus = async (req, res) => {
     const justMarkedPaid = req.body.status === "delivered" && order.payment.method === "cod" && order.payment.status !== "paid";
     if (justMarkedPaid) {
       order.payment.status = "paid";
+      order.payment.paidAt = new Date();
     }
+
+    // Optional — admin can attach/update a private note in the same
+    // request. Empty string clears it; omit the field entirely to leave
+    // the existing note untouched.
+    if (typeof req.body.adminNote === "string") {
+      order.payment.adminNote = req.body.adminNote.trim() || null;
+    }
+
     await order.save();
 
     // Best-effort notification — never blocks the response if email fails
