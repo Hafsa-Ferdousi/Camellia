@@ -168,7 +168,12 @@ export const checkout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
@@ -287,7 +292,12 @@ export const guestCheckout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
@@ -374,7 +384,8 @@ export const getOrders = async (req, res) => {
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
       .populate("user", "name email phone")
-      .populate("items.product", "name images");
+      .populate("items.product", "name images")
+      .lean();
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch orders." });

@@ -10,7 +10,7 @@ const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 // straight from req.body.
 const ALLOWED_PRODUCT_FIELDS = [
   "name", "description", "category", "basePrice", "images",
-  "totalStock", "isFeatured", "isActive",
+  "totalStock", "isFeatured", "isBestSeller", "isActive",
 ];
 
 const pickProductFields = (body) => {
@@ -69,6 +69,7 @@ export const getProducts = async (req, res) => {
       }
     }
     if (featured === "true") query.isFeatured = true;
+    if (req.query.bestSeller === "true") query.isBestSeller = true;
 
     const total = await Product.countDocuments(query);
 
@@ -116,8 +117,10 @@ export const getProducts = async (req, res) => {
       // ✅ SMART SEARCH RANKING: rank the FULL match set before paginating,
       // so a better match on a later page can't be hidden by DB sort order.
       const allMatches = await Product.find(query)
+        .select("name description category basePrice images totalStock isFeatured isBestSeller createdAt")
         .populate("category", "name slug")
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean();
       const ranked = rankBySearchRelevance(allMatches, searchTerm);
       products = ranked.slice((currentPage - 1) * size, currentPage * size);
     } else {
@@ -143,12 +146,35 @@ export const getProducts = async (req, res) => {
   }
 };
 
+// ── GET /api/products/best-sellers?limit= ────────────────────────────────────
+// Admin-curated via the isBestSeller flag (set from the product form), same
+// pattern as isFeatured — deliberately NOT computed from Order history, so it
+// can't go empty just because orders/products got reseeded, and admins can
+// promote a new product before it has any sales.
+export const getBestSellers = async (req, res) => {
+  try {
+    const limitNum = Math.min(Math.max(Number(req.query.limit) || 4, 1), 20);
+
+    // Excludes isFeatured products so the homepage's Featured and Best
+    // Selling sections never show the same item twice.
+    const bestSellers = await Product.find({ isActive: true, isBestSeller: true, isFeatured: false })
+      .populate("category", "name slug")
+      .sort({ updatedAt: -1 })
+      .limit(limitNum);
+
+    res.json(bestSellers);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // ── GET /api/products/admin/all ──────────────────────────────────────────────
 export const getAllProductsAdmin = async (req, res) => {
   try {
     const products = await Product.find()
       .populate("category", "name slug")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -173,6 +199,7 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const product = await Product.create(pickProductFields(req.body));
+    await product.populate("category", "name slug");
     res.status(201).json(product);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -189,7 +216,7 @@ export const updateProduct = async (req, res) => {
       req.params.id,
       pickProductFields(req.body),
       { new: true, runValidators: true }
-    );
+    ).populate("category", "name slug");
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {

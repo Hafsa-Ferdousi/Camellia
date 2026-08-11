@@ -296,7 +296,7 @@ export const getSettings = async (req, res) => {
 // PUT /api/admin/settings
 export const updateSettings = async (req, res) => {
   try {
-    const { vatRate, defaultDeliveryCharge, districtDeliveryCharges, lowStockThreshold, defaultLanguage } = req.body;
+    const { vatRate, defaultDeliveryCharge, districtDeliveryCharges, lowStockThreshold, defaultLanguage, bkashMerchantNumber, bkashNumberType } = req.body;
 
     if (vatRate !== undefined && (isNaN(Number(vatRate)) || Number(vatRate) < 0 || Number(vatRate) > 1)) {
       return res.status(400).json({ message: "VAT rate must be a number between 0 and 1 (e.g. 0.10 for 10%)." });
@@ -317,6 +317,12 @@ export const updateSettings = async (req, res) => {
     if (defaultLanguage !== undefined && !["en", "bn"].includes(defaultLanguage)) {
       return res.status(400).json({ message: "Default language must be 'en' or 'bn'." });
     }
+    if (bkashMerchantNumber !== undefined && bkashMerchantNumber !== "" && !/^01[3-9]\d{8}$/.test(bkashMerchantNumber)) {
+      return res.status(400).json({ message: "bKash number must be a valid 11-digit Bangladeshi mobile number (e.g. 01712345678)." });
+    }
+    if (bkashNumberType !== undefined && !["personal", "merchant"].includes(bkashNumberType)) {
+      return res.status(400).json({ message: "bKash number type must be 'personal' or 'merchant'." });
+    }
 
     const settings = await Setting.getSingleton();
     if (vatRate !== undefined) settings.vatRate = Number(vatRate);
@@ -329,6 +335,8 @@ export const updateSettings = async (req, res) => {
     }
     if (lowStockThreshold !== undefined) settings.lowStockThreshold = Number(lowStockThreshold);
     if (defaultLanguage !== undefined) settings.defaultLanguage = defaultLanguage;
+    if (bkashMerchantNumber !== undefined) settings.bkashMerchantNumber = bkashMerchantNumber;
+    if (bkashNumberType !== undefined) settings.bkashNumberType = bkashNumberType;
     await settings.save();
 
     res.json(settings);

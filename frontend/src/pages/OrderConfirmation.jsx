@@ -1,17 +1,18 @@
 // frontend/src/pages/OrderConfirmation.jsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, Printer, Package } from 'lucide-react';
 import './OrderConfirmation.css';
 import Invoice from '../components/Invoice';
+import BkashPaymentPanel from '../components/BkashPaymentPanel';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
   const { language } = useLanguage();
   const { state } = useLocation();
-  const order = state?.order;
+  const [order, setOrder] = useState(state?.order || null);
   const receiptRef = useRef(null);
 
   // Backend stores payment.method as a short code (cod | bkash | nagad | bank)
@@ -30,7 +31,7 @@ export default function OrderConfirmation() {
 
   if (!order) {
     return (
-      <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
+      <div className="container" style={{ paddingTop: 60, paddingBottom: 60, textAlign: "center" }}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>
@@ -81,6 +82,16 @@ export default function OrderConfirmation() {
             {t('placedOn', { date: placedDate, time: placedTime })}
           </p>
         </div>
+
+        {order.payment?.method === 'bkash' && (
+          <div className="bkash-payment-section" style={{ padding: '0 4px' }}>
+            <BkashPaymentPanel
+              order={order}
+              guestEmail={!order.user ? (order.guestInfo?.email || order.email) : undefined}
+              onUpdated={(payment) => setOrder((prev) => ({ ...prev, payment }))}
+            />
+          </div>
+        )}
 
         <div className="receipt-body">
           <div className="receipt-section">

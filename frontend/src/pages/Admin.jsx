@@ -5,11 +5,13 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2, Bell,
+  Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
+  RotateCcw, PackageCheck, Wallet, Menu, X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { generateDescription } from "../api/admin";
-import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
+import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
@@ -45,9 +47,9 @@ import {
   deleteCoupon as deleteCouponApi,
   setCouponStatus,
 } from "../api/coupons";
+import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
 import client from "../api/client";
 
-// ── helpers ──────────────────────────────────────────────────
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
   confirmed:  { bg: "#DBEAFE", color: "#1E40AF" },
@@ -71,6 +73,33 @@ const StatusBadge = ({ status }) => {
       textTransform: "capitalize", whiteSpace: "nowrap",
     }}>
       {t(statusLabelKey(status))}
+    </span>
+  );
+};
+
+const BKASH_STATUS_COLORS = {
+  awaiting_submission:  { bg: "#F3F4F6", color: "#4B5563" },
+  pending_verification: { bg: "#FEF9C3", color: "#854D0E" },
+  verified:              { bg: "#DCFCE7", color: "#166534" },
+  rejected:              { bg: "#FEE2E2", color: "#991B1B" },
+};
+const BKASH_STATUS_LABEL_KEYS = {
+  awaiting_submission: "bkashFilterAwaiting",
+  pending_verification: "bkashFilterPending",
+  verified: "bkashFilterVerified",
+  rejected: "bkashFilterRejected",
+};
+const BkashStatusBadge = ({ status }) => {
+  const { t } = useTranslation("admin");
+  const c = BKASH_STATUS_COLORS[status] || BKASH_STATUS_COLORS.awaiting_submission;
+  return (
+    <span style={{
+      background: c.bg, color: c.color,
+      padding: "3px 10px", borderRadius: 20,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
+      whiteSpace: "nowrap",
+    }}>
+      {t(BKASH_STATUS_LABEL_KEYS[status] || "bkashFilterAwaiting")}
     </span>
   );
 };
@@ -142,15 +171,50 @@ const Pagination = ({ page, totalPages, onChange }) => {
 };
 const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
-// ── blank product form ────────────────────────────────────────
+const CheckboxMultiSelect = ({ options, selected, onToggle, placeholder }) => {
+  const { t } = useTranslation("admin");
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options;
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", overflow: "hidden" }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", padding: "7px 10px", border: "none", borderBottom: "1px solid var(--border)", fontSize: 12, boxSizing: "border-box", fontFamily: "var(--font-body)" }}
+      />
+      <div style={{ maxHeight: 150, overflowY: "auto", padding: 4 }}>
+        {filtered.length === 0 && <p style={{ fontSize: 12, color: "var(--muted)", padding: "6px 8px" }}>{t("noMatches")}</p>}
+        {filtered.map(o => (
+          <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", fontSize: 13, cursor: "pointer", borderRadius: 4 }}>
+            <input
+              type="checkbox"
+              checked={selected.includes(o.value)}
+              onChange={() => onToggle(o.value)}
+              style={{ width: 14, height: 14, accentColor: "var(--maroon)", flexShrink: 0 }}
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+      {selected.length > 0 && (
+        <div style={{ padding: "5px 8px", fontSize: 11, color: "var(--muted)", borderTop: "1px solid var(--border)" }}>
+          {t("selectedCount", { count: selected.length })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
   category: "", basePrice: "", totalStock: "",
-  images: [], isFeatured: false, isActive: true,
+  images: [], isFeatured: false, isBestSeller: false, isActive: true,
 };
 
-// ── blank category form ─────────────────────────────────────────
 const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
 const BLANK_COUPON = { code: "", title: "", description: "", discountType: "percentage", discountValue: "", minimumPurchase: "", maximumDiscount: "", usageLimit: "", perUserLimit: "", startDate: "", endDate: "", applicableProducts: [], applicableCategories: [], excludedProducts: [], isActive: true };
 
@@ -158,8 +222,8 @@ const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const isCouponExpired = (c) => new Date(c.endDate) < new Date();
 const isCouponUpcoming = (c) => new Date(c.startDate) > new Date();
 const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const isCloudinaryUploadUrl = (url) => typeof url === "string" && url.includes("/camellia/products/");
 
-// Which admin tab a notification's "view" click should jump to.
 const NOTIFICATION_TAB = {
   new_order: "orders",
   low_stock: "products",
@@ -168,7 +232,6 @@ const NOTIFICATION_TAB = {
   payment: "orders",
 };
 
-// ═══════════════════════════════════════════════════════════════
 export default function Admin() {
   const { t } = useTranslation(["admin", "notifications"]);
   const { language, setLanguage } = useLanguage();
@@ -176,10 +239,10 @@ export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
 
-  // ── admin alert bell ────────────────────────────────────────
   const [alerts, setAlerts]           = useState([]);
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const bellRef = useRef(null);
 
   const loadAlerts = useCallback(() => {
@@ -219,6 +282,13 @@ export default function Admin() {
     try { await markAllAsRead(); } catch { /* best-effort */ }
   };
 
+  const handleAlertDelete = async (e, n) => {
+    e.stopPropagation();
+    setAlerts((list) => list.filter((x) => x._id !== n._id));
+    if (!n.read) setAlertsUnread((c) => Math.max(0, c - 1));
+    try { await deleteNotification(n._id); } catch { /* best-effort */ }
+  };
+
   const [stats, setStats]       = useState(null);
   const [statsErr, setStatsErr] = useState("");
   const [orders, setOrders]           = useState([]);
@@ -227,13 +297,12 @@ export default function Admin() {
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
-  const [orderDetail, setOrderDetail] = useState(null); // selected order for detail modal
+  const [orderDetail, setOrderDetail] = useState(null);
   const [exportFrom, setExportFrom]   = useState("");
   const [exportTo, setExportTo]       = useState("");
   const [exporting, setExporting]     = useState(false);
   const [exportErr, setExportErr]     = useState("");
 
-  // customers
   const [customers, setCustomers]         = useState([]);
   const [customersLoading, setCustL]      = useState(false);
   const [customerFilter, setCustomerFilter] = useState("all");
@@ -261,7 +330,6 @@ export default function Admin() {
   const [lowStockIds, setLowStockIds]     = useState(new Set());
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
-  // settings
   const [settings, setSettings]           = useState(null);
   const [settingsLoading, setSTL]         = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -291,7 +359,6 @@ export default function Admin() {
   const [couponStatsTarget, setCouponStatsTarget] = useState(null);
   const [couponPage, setCouponPage]         = useState(1);
 
-  // ── MESSAGES state ──────────────────────────────────────────
   const [messages, setMessages]         = useState([]);
   const [messagesLoading, setML]        = useState(false);
   const [messageFilter, setMessageFilter] = useState("all");
@@ -299,11 +366,25 @@ export default function Admin() {
   const [replyText, setReplyText]       = useState("");
   const [replySending, setReplySending] = useState(false);
 
-  // ── CHATS (AI conversations) state ──────────────────────────
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConvL]  = useState(false);
   const [conversationDetail, setConversationDetail] = useState(null);
   const [conversationDetailLoading, setConvDL] = useState(false);
+
+  const [refunds, setRefunds]                 = useState([]);
+  const [refundsLoading, setRL]                = useState(false);
+  const [refundStatusFilter, setRefundStatusFilter] = useState("pending");
+  const [refundActionId, setRefundActionId]    = useState(null);
+
+  // ── bKash payment verification state ────────────────────────
+  const [bkashSubmissions, setBkashSubmissions] = useState([]);
+  const [bkashLoading, setBkashL] = useState(false);
+  const [bkashStatusFilter, setBkashStatusFilter] = useState("pending_verification");
+  const [bkashSearch, setBkashSearch] = useState("");
+  const [bkashDetail, setBkashDetail] = useState(null);
+  const [bkashRejectReason, setBkashRejectReason] = useState("");
+  const [bkashActing, setBkashActing] = useState(false);
+  const [bkashActErr, setBkashActErr] = useState("");
 
   // ── data loaders ────────────────────────────────────────────
   const loadStats = useCallback(async () => {
@@ -355,7 +436,6 @@ export default function Admin() {
     finally { setCoL(false); }
   }, []);
 
-  // ── MESSAGES loader ─────────────────────────────────────────
   const loadMessages = useCallback(async () => {
     setML(true);
     try { const r = await client.get("/contact"); setMessages(r.data); }
@@ -391,7 +471,6 @@ export default function Admin() {
     finally { setReplySending(false); }
   };
 
-  // ── CHATS loader ────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
     setConvL(true);
     try { const r = await getAllConversations(); setConversations(r.data); }
@@ -414,6 +493,57 @@ export default function Admin() {
     } catch { /* ignore */ }
   };
 
+  const loadRefunds = useCallback(async (status = refundStatusFilter) => {
+    setRL(true);
+    try { const r = await getAllRefunds(status); setRefunds(r.data); }
+    catch { setRefunds([]); }
+    finally { setRL(false); }
+  }, [refundStatusFilter]);
+
+  const handleRefundStatusChange = async (refund, status) => {
+    let adminNote = "";
+    if (status === "rejected") {
+      adminNote = window.prompt(t("refundRejectPrompt")) || "";
+      if (adminNote === "" && !window.confirm(t("refundRejectConfirmNoReason"))) return;
+    }
+    setRefundActionId(refund._id);
+    try {
+      const r = await updateRefundStatusApi(refund._id, status, adminNote);
+      setRefunds(prev =>
+        refundStatusFilter === "all"
+          ? prev.map(x => x._id === refund._id ? r.data : x)
+          : prev.filter(x => x._id !== refund._id)
+      );
+    } catch { /* ignore */ }
+    finally { setRefundActionId(null); }
+  };
+
+  // ── bKash loader / handlers ─────────────────────────────────
+  const loadBkash = useCallback(async () => {
+    setBkashL(true);
+    try { const r = await getBkashSubmissions(bkashStatusFilter); setBkashSubmissions(r.data); }
+    catch { setBkashSubmissions([]); }
+    finally { setBkashL(false); }
+  }, [bkashStatusFilter]);
+
+  const openBkashDetail = (order) => { setBkashDetail(order); setBkashRejectReason(""); setBkashActErr(""); };
+  const closeBkashDetail = () => { setBkashDetail(null); setBkashRejectReason(""); setBkashActErr(""); };
+
+  const handleBkashDecision = async (approve) => {
+    if (!bkashDetail) return;
+    setBkashActing(true);
+    setBkashActErr("");
+    try {
+      await verifyBkashPaymentApi(bkashDetail._id, { approve, rejectionReason: bkashRejectReason });
+      setBkashSubmissions(prev => prev.filter(o => o._id !== bkashDetail._id));
+      closeBkashDetail();
+    } catch (err) {
+      setBkashActErr(err.response?.data?.message || t("bkashActionError"));
+    } finally {
+      setBkashActing(false);
+    }
+  };
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -421,10 +551,15 @@ export default function Admin() {
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
     if (tab === "settings")   loadSettings();
-    if (tab === "coupons")    loadCoupons();
+    if (tab === "coupons")    { loadCoupons(); }
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations]);
+    if (tab === "refunds")    loadRefunds();
+    if (tab === "bkash")      loadBkash();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
+
+  useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
+  useEffect(() => { setMobileNavOpen(false); }, [tab]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -488,7 +623,6 @@ export default function Admin() {
     } catch { /* keep old */ } finally { setSU(null); }
   };
 
-  // ── sales CSV export ─────────────────────────────────────────
   const handleExportSales = async () => {
     setExportErr(""); setExporting(true);
     try {
@@ -512,7 +646,6 @@ export default function Admin() {
     }
   };
 
-  // ── product form helpers ─────────────────────────────────────
   const openAdd = () => {
     setForm({ ...BLANK_PRODUCT, category: categories[0]?._id || "" });
     setEditTarget(null);
@@ -530,9 +663,10 @@ export default function Admin() {
       category:   p.category?._id || p.category || "",
       basePrice:  p.basePrice,
       totalStock: p.totalStock ?? 0,
-      images:     p.images || [],
-      isFeatured: p.isFeatured || false,
-      isActive:   p.isActive !== false,
+      images:      p.images || [],
+      isFeatured:  p.isFeatured || false,
+      isBestSeller: p.isBestSeller || false,
+      isActive:    p.isActive !== false,
     });
     setEditTarget(p);
     setFormErr("");
@@ -549,7 +683,7 @@ export default function Admin() {
 
   const handleProductImageSelect = async (e) => {
     const files = Array.from(e.target.files || []);
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!files.length) return;
     setFormErr(""); setImageUploading(true);
     try {
@@ -580,9 +714,10 @@ export default function Admin() {
     category:    form.category,
     basePrice:   Number(form.basePrice),
     totalStock:  Number(form.totalStock) || 0,
-    images:      form.images,
-    isFeatured:  form.isFeatured,
-    isActive:    form.isActive,
+    images:       form.images,
+    isFeatured:   form.isFeatured,
+    isBestSeller: form.isBestSeller,
+    isActive:     form.isActive,
   });
 
   const handleSaveProduct = async () => {
@@ -600,8 +735,6 @@ export default function Admin() {
         const r = await updateProduct(editTarget._id, buildPayload());
         setProducts(prev => prev.map(p => p._id === editTarget._id ? r.data : p));
       }
-      // Best-effort cleanup of images the admin removed in this session — a
-      // failed delete here shouldn't block the save that already succeeded.
       pendingDeleteImages.forEach(url => { deleteUploadedImage(url).catch(() => {}); });
       closeModal();
     } catch (err) {
@@ -617,7 +750,6 @@ export default function Admin() {
     setConfirmDelete(null);
   };
 
-  // ── category form helpers ───────────────────────────────────────
   const openAddCategory = () => {
     setCatForm(BLANK_CATEGORY);
     setCatEditTarget(null);
@@ -646,8 +778,6 @@ export default function Admin() {
     const { name, value, type, checked } = e.target;
     setCatForm(f => {
       const next = { ...f, [name]: type === "checkbox" ? checked : value };
-      // Auto-fill the slug from the English name while adding, unless the
-      // admin has already typed a slug of their own.
       if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) {
         next.slug = slugify(value);
       }
@@ -727,7 +857,6 @@ export default function Admin() {
     } finally { setCatReordering(null); }
   };
 
-  // ── guards ───────────────────────────────────────────────────
   const openAddCoupon = () => { setCouponForm(BLANK_COUPON); setCouponEditTarget(null); setCouponFormErr(""); setCouponModal("add"); };
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
@@ -756,30 +885,31 @@ export default function Admin() {
   if (authLoading) return <div style={s.center}>{t("loading")}</div>;
   if (!user || user.role !== "admin") return null;
 
-  // ════════════════════════════════════════════════════════════
   return (
     <div className="admin-layout">
-      {/* SIDEBAR */}
-      <aside className="admin-sidebar">
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <div>
-            <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
-            <div className="admin-sidebar-role">{t("adminPanel")}</div>
-          </div>
+      <header className="admin-topbar">
+        <button
+          type="button"
+          className="admin-hamburger-btn"
+          onClick={() => setMobileNavOpen(o => !o)}
+          aria-label={t("adminPanel")}
+          aria-expanded={mobileNavOpen}
+        >
+          <Menu size={20} />
+        </button>
 
-          {/* ADMIN ALERT BELL */}
-          <div ref={bellRef} style={{ position: "relative", marginRight: 16 }}>
+        <Link to="/" className="navbar-logo admin-topbar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
+        <span className="admin-topbar-role">{t("adminPanel")}</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          <div ref={bellRef} style={{ position: "relative" }}>
             <button
               type="button"
+              className="admin-topbar-icon-btn"
               onClick={() => setBellOpen((o) => !o)}
               aria-expanded={bellOpen}
               aria-label={t("notifications:adminAlerts")}
               title={t("notifications:adminAlerts")}
-              style={{
-                position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(244,196,48,0.3)",
-                background: "rgba(255,255,255,0.05)", color: "var(--nav-text, #E8D9C0)", cursor: "pointer",
-              }}
             >
               <Bell size={15} />
               {alertsUnread > 0 && (
@@ -795,7 +925,7 @@ export default function Admin() {
             </button>
             {bellOpen && (
               <div style={{
-                position: "absolute", top: "calc(100% + 8px)", left: 0, width: 320,
+                position: "absolute", top: "calc(100% + 8px)", right: 0, width: 320,
                 background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 10,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.25)", overflow: "hidden", zIndex: 200,
               }}>
@@ -807,10 +937,29 @@ export default function Admin() {
                       <div
                         key={n._id}
                         onClick={() => handleAlertClick(n)}
-                        style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)" }}
+                        style={{
+                          padding: "10px 16px", fontSize: 13, cursor: "pointer",
+                          opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)",
+                          display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0,
+                        }}
                       >
-                        <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)" }}>{n.title}</div>
-                        <div style={{ color: "var(--muted)", fontSize: 12 }}>{n.message}</div>
+                        <div style={{ flex: 1, minWidth: 0, whiteSpace: "normal" }}>
+                          <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)", wordBreak: "break-word", whiteSpace: "normal" }}>{n.title}</div>
+                          <div style={{ color: "var(--muted)", fontSize: 12, wordBreak: "break-word", whiteSpace: "normal" }}>{n.message}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAlertDelete(e, n)}
+                          aria-label={t("notifications:delete")}
+                          title={t("notifications:delete")}
+                          style={{
+                            flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                            color: "var(--muted)", padding: 4, display: "flex",
+                            alignItems: "center", justifyContent: "center", borderRadius: 4,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     ))
                   )}
@@ -832,10 +981,41 @@ export default function Admin() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+          >
+            <Globe size={13} /> <span className="admin-topbar-btn-label">{language === "en" ? "বাংলা" : "English"}</span>
+          </button>
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={async () => { await logout(); navigate("/"); }}
+          >
+            <LogOut size={13} /> <span className="admin-topbar-btn-label">{t("logout")}</span>
+          </button>
         </div>
+      </header>
+
+      {mobileNavOpen && <div className="admin-sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+
+      <div className="admin-body">
+      <aside className={`admin-sidebar${mobileNavOpen ? " admin-sidebar-open" : ""}`}>
+        <button
+          type="button"
+          className="admin-sidebar-close-btn"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label={t("close")}
+        >
+          <X size={18} />
+        </button>
         {[
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
+          { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
+          { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
@@ -856,37 +1036,26 @@ export default function Admin() {
                 {messages.filter(m => m.status === "unread").length}
               </span>
             )}
+            {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {refunds.length}
+              </span>
+            )}
           </button>
         ))}
         <div style={{ marginTop: "auto", padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
           <button
-            className="admin-nav-btn"
-            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-            style={{ opacity: 0.7, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <Globe size={13} /> {language === "en" ? "বাংলা" : "English"}
-          </button>
-          <button
-            className="admin-nav-btn"
-            onClick={() => navigate("/")}
-            style={{ opacity: 0.55, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <ArrowLeft size={13} /> {t("backToStore")}
-          </button>
-          <button
             className="admin-nav-btn admin-logout-btn"
-            onClick={async () => { await logout(); navigate("/"); }}
+            onClick={() => navigate("/")}
             style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <LogOut size={13} /> {t("logout")}
+            <ArrowLeft size={13} /> {t("backToStore")}
           </button>
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="admin-main">
 
-        {/* ── OVERVIEW ── */}
         {tab === "overview" && (
           <div>
             <h2 style={s.pageTitle}>{t("overview")}</h2>
@@ -920,7 +1089,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Recent orders */}
                 <h3 style={{ ...s.sectionTitle, marginTop: 32 }}>{t("recentOrders")}</h3>
                 <div style={s.tableWrap}>
                   <table style={s.table}>
@@ -949,7 +1117,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── ORDERS ── */}
         {tab === "orders" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1021,6 +1188,21 @@ export default function Admin() {
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.method === "bkash" && (
+                                <div style={{ marginTop: 5 }}>
+                                  {o.payment?.bkash?.trxId && (
+                                    <div style={{ ...s.mono, fontSize: 11 }}>{o.payment.bkash.trxId}</div>
+                                  )}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                                    <BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+                                    {o.payment?.bkash?.verificationStatus && o.payment.bkash.verificationStatus !== "awaiting_submission" && (
+                                      <button onClick={() => openBkashDetail(o)} style={{ ...s.editBtn, marginRight: 0, padding: "3px 9px" }}>
+                                        {o.payment.bkash.verificationStatus === "pending_verification" ? t("verifyAction") : t("viewDetails")}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td style={s.td}><StatusBadge status={o.status} /></td>
                             <td style={s.td}>
@@ -1043,7 +1225,195 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CUSTOMERS ── */}
+        {tab === "refunds" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("refundsTitle")}</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["pending", "approved", "processed", "rejected", "all"].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setRefundStatusFilter(f)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer",
+                      fontSize: 12, fontWeight: 500, textTransform: "capitalize",
+                      borderColor: refundStatusFilter === f ? "var(--maroon)" : "var(--border)",
+                      background: refundStatusFilter === f ? "var(--maroon)" : "transparent",
+                      color: refundStatusFilter === f ? "#fff" : "var(--muted)",
+                    }}
+                  >
+                    {t(`refundFilter_${f}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {refundsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
+            {!refundsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refunds.map(rf => (
+                      <tr key={rf._id} style={s.tr}>
+                        <td style={s.td}>
+                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 200 }}>
+                          <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>
+                          {rf.requestType}
+                          {rf.requestType === "exchange" && rf.exchangeProduct?.nameSnapshot && (
+                            <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "none", marginTop: 2 }}>
+                              → {rf.exchangeProduct.nameSnapshot}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
+                        <td style={s.td}>{fmt(rf.refundAmount)}</td>
+                        <td style={s.td}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
+                            background: rf.status === "pending" ? "#FEF9C3" : rf.status === "approved" ? "#DBEAFE" : rf.status === "processed" ? "#DCFCE7" : "#FEE2E2",
+                            color: rf.status === "pending" ? "#854D0E" : rf.status === "approved" ? "#1E40AF" : rf.status === "processed" ? "#166534" : "#991B1B",
+                          }}>
+                            {rf.status}
+                          </span>
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          {rf.status === "pending" && (
+                            <>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "approved")}
+                                style={{ ...s.editBtn, background: "var(--green)" }}
+                              >
+                                {t("refundApprove")}
+                              </button>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                style={s.delBtn}
+                              >
+                                {t("refundReject")}
+                              </button>
+                            </>
+                          )}
+                          {rf.status === "approved" && (
+                            <button
+                              disabled={refundActionId === rf._id}
+                              onClick={() => handleRefundStatusChange(rf, "processed")}
+                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                              <PackageCheck size={12} /> {t("refundProcess")}
+                            </button>
+                          )}
+                          {(rf.status === "processed" || rf.status === "rejected") && (
+                            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                              {rf.status === "processed" ? t("refundStockRestored") : (rf.adminNote || "—")}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {refunds.length === 0 && (
+                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── bKASH MANUAL VERIFICATION ── */}
+        {tab === "bkash" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("bkashTitle")}</h2>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("bkashSearchPlaceholder")}
+                  value={bkashSearch}
+                  onChange={e => setBkashSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
+                  <option value="pending_verification">{t("bkashFilterPending")}</option>
+                  <option value="verified">{t("bkashFilterVerified")}</option>
+                  <option value="rejected">{t("bkashFilterRejected")}</option>
+                  <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
+                  <option value="all">{t("bkashFilterAll")}</option>
+                </select>
+              </div>
+            </div>
+
+            {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
+            {!bkashLoading && (() => {
+              const q = bkashSearch.trim().toLowerCase();
+              const filteredBkash = !q ? bkashSubmissions : bkashSubmissions.filter(o => {
+                const idMatch = (o._id || "").toString().toLowerCase().includes(q);
+                const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
+                const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
+                const trxId = (o.payment?.bkash?.trxId || "").toLowerCase();
+                const senderNumber = (o.payment?.bkash?.senderNumber || "").toLowerCase();
+                return idMatch || name.includes(q) || email.includes(q) || trxId.includes(q) || senderNumber.includes(q);
+              });
+              return (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("bkashColSenderNumber"), t("bkashColTrxId"), t("colFiledOn"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBkash.map(o => (
+                      <tr key={o._id} style={s.tr}>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <span style={s.mono}>#{(o._id || "").toString().slice(-6).toUpperCase()}</span>
+                        </td>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <div style={{ fontSize: 13 }}>
+                            {o.user?.name || o.guestInfo?.name || "—"}
+                            {o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestRequestBadge")}</span>}
+                          </div>
+                        </td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.senderNumber || "—"}</span></td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.trxId || "—"}</span></td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{o.payment?.bkash?.submittedAt ? fmtDate(o.payment.bkash.submittedAt) : "—"}</span></td>
+                        <td style={s.td}><BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} /></td>
+                        <td style={s.td}>
+                          <button onClick={() => openBkashDetail(o)} style={s.editBtn}>{t("viewDetails")}</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredBkash.length === 0 && (
+                      <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noBkashFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              );
+            })()}
+          </div>
+        )}
+
         {tab === "customers" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1117,7 +1487,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── PRODUCTS ── */}
         {tab === "products" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1164,7 +1533,7 @@ export default function Admin() {
                     <table style={s.table}>
                       <thead>
                         <tr>
-                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colActive"),t("colActions")].map(h => (
+                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colBestSeller"),t("colActive"),t("colActions")].map(h => (
                             <th key={h} style={s.th}>{h}</th>
                           ))}
                         </tr>
@@ -1179,10 +1548,9 @@ export default function Admin() {
                               }
                             </td>
                             <td style={s.td}>
-                              <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
-                              {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(p.name, language)}</div>
                             </td>
-                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
+                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name ? localized(p.category.name, language) : "—"}</td>
                             <td style={s.td}>{fmt(p.basePrice)}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
@@ -1195,6 +1563,7 @@ export default function Admin() {
                               )}
                             </td>
                             <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? <Star size={14} fill="var(--gold)" color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isBestSeller ? <TrendingUp size={14} color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
                                 {p.isActive ? t("yes") : t("no")}
@@ -1219,7 +1588,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CATEGORIES ── */}
         {tab === "categories" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
@@ -1249,8 +1617,7 @@ export default function Admin() {
                           }
                         </td>
                         <td style={s.td}>
-                          <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name?.en}</div>
-                          {c.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.name.bn}</div>}
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(c.name, language)}</div>
                         </td>
                         <td style={{ ...s.td, fontSize: 12, fontFamily: "monospace", color: "var(--muted)" }}>{c.slug}</td>
                         <td style={{ ...s.td, whiteSpace: "nowrap" }}>
@@ -1291,7 +1658,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── COUPONS ── */}
         {tab === "coupons" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1347,7 +1713,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── MESSAGES ── */}
         {tab === "messages" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1399,7 +1764,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CHATS ── */}
         {tab === "chats" && (
           <div>
             <h2 style={s.pageTitle}>{t("chatsTitle")}</h2>
@@ -1433,7 +1797,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── NOTIFICATIONS ── */}
         {tab === "notifications" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -1453,11 +1816,26 @@ export default function Admin() {
                     key={n._id}
                     onClick={() => handleAlertClick(n)}
                     className="panel"
-                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1, display: "flex", alignItems: "flex-start", gap: 10 }}
                   >
-                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
-                    <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAlertDelete(e, n)}
+                      aria-label={t("notifications:delete")}
+                      title={t("notifications:delete")}
+                      style={{
+                        flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                        color: "var(--muted)", padding: 4, display: "flex",
+                        alignItems: "center", justifyContent: "center", borderRadius: 4,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1465,7 +1843,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── SETTINGS ── */}
         {tab === "settings" && (
           <div>
             <h2 style={s.pageTitle}>{t("settingsTitle")}</h2>
@@ -1542,6 +1919,38 @@ export default function Admin() {
                   </select>
                 </label>
 
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("bkashSectionTitle")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("bkashSectionHint")}
+                </p>
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <label style={s.label}>
+                      {t("bkashMerchantNumberLabel")}
+                      <input
+                        className="input"
+                        type="tel"
+                        placeholder="01XXXXXXXXX"
+                        value={settings.bkashMerchantNumber || ""}
+                        onChange={e => setSettings(s => ({ ...s, bkashMerchantNumber: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      />
+                    </label>
+                    <label style={s.label}>
+                      {t("bkashNumberTypeLabel")}
+                      <select
+                        className="input"
+                        value={settings.bkashNumberType || "personal"}
+                        onChange={e => setSettings(s => ({ ...s, bkashNumberType: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      >
+                        <option value="personal">{t("bkashTypePersonalOpt")}</option>
+                        <option value="merchant">{t("bkashTypeMerchantOpt")}</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
                     {settingsSaving ? t("saving") : t("saveSettings")}
@@ -1552,8 +1961,8 @@ export default function Admin() {
           </div>
         )}
       </main>
+      </div>
 
-      {/* ── ORDER DETAIL MODAL ── */}
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1613,7 +2022,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CUSTOMER DETAIL MODAL ── */}
       {customerDetail && (
         <div style={s.overlay} onClick={closeCustomerDetail}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1685,7 +2093,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONVERSATION DETAIL MODAL ── */}
       {conversationDetail && (
         <div style={s.overlay} onClick={() => setConversationDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1724,7 +2131,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── PRODUCT MODAL ── */}
       {modal && (
         <div style={s.overlay} onClick={closeModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1749,7 +2155,6 @@ export default function Admin() {
                 <textarea className="input" name="descBn" value={form.descBn} onChange={setF} rows={2} placeholder="বাংলা বিবরণ…" style={{ resize: "vertical" }} />
               </label>
 
-              {/* ── AI Description Generator Button ── */}
               <div style={{ gridColumn: "1 / -1", marginTop: -8, marginBottom: 8 }}>
                 <button
                   type="button"
@@ -1847,6 +2252,10 @@ export default function Admin() {
                 {t("featuredOnHomepage")}
               </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("bestSellingOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
                 {t("activeVisibleInStore")}
               </label>
@@ -1861,7 +2270,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE MODAL ── */}
       {confirmDelete && (
         <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -1879,7 +2287,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CATEGORY MODAL ── */}
       {catModal && (
         <div style={s.overlay} onClick={closeCatModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1949,7 +2356,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE CATEGORY MODAL ── */}
       {catConfirmDelete && (
         <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -1967,7 +2373,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON MODAL ── */}
       {couponModal && (
         <div style={s.overlay} onClick={closeCouponModal}>
           <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
@@ -1998,7 +2403,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE COUPON MODAL ── */}
       {couponConfirmDelete && (
         <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -2012,7 +2416,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON USAGE STATS MODAL ── */}
       {couponStatsTarget && (
         <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
           <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
@@ -2027,7 +2430,6 @@ export default function Admin() {
           </div>
         </div>
       )}
-      {/* ── MESSAGE REPLY MODAL ── */}
       {replyTarget && (
         <div style={s.overlay} onClick={closeReplyModal}>
           <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
@@ -2060,11 +2462,90 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {bkashDetail && (
+        <div style={s.overlay} onClick={closeBkashDetail}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
+
+            <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
+              {t("orderReference")}: <span style={s.mono}>#{(bkashDetail._id || "").toString().slice(-6).toUpperCase()}</span>
+              {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div style={s.modalSubTitle}>{t("colCustomer")}</div>
+                <div style={{ fontSize: 13 }}>{bkashDetail.user?.name || bkashDetail.guestInfo?.name || "—"}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{bkashDetail.user?.email || bkashDetail.guestInfo?.email || ""}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashAmount")}</div>
+                <div style={{ fontSize: 13 }}>{fmt(bkashDetail.payment?.amount || bkashDetail.totalAmount || 0)}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColSenderNumber")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.senderNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColTrxId")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.trxId || "—"}</div>
+              </div>
+            </div>
+
+            {bkashDetail.payment?.bkash?.screenshot && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("attachedPhotos")}</div>
+                <a href={bkashDetail.payment.bkash.screenshot} target="_blank" rel="noreferrer">
+                  <img
+                    src={bkashDetail.payment.bkash.screenshot}
+                    alt=""
+                    style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </a>
+              </div>
+            )}
+
+            {bkashDetail.payment?.bkash?.verificationStatus === "pending_verification" ? (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                {bkashActErr && <div style={s.formErr}>{bkashActErr}</div>}
+                <label style={s.label}>
+                  {t("bkashRejectionReasonLabel")}
+                  <textarea
+                    value={bkashRejectReason}
+                    onChange={e => setBkashRejectReason(e.target.value)}
+                    rows={2}
+                    placeholder={t("bkashRejectionReasonPlaceholder")}
+                    style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+                  />
+                </label>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                  <button className="btn btn-outline" onClick={closeBkashDetail}>{t("cancel")}</button>
+                  <button
+                    className="btn"
+                    style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
+                    disabled={bkashActing}
+                    onClick={() => handleBkashDecision(false)}
+                  >
+                    {t("bkashReject")}
+                  </button>
+                  <button className="btn" disabled={bkashActing} onClick={() => handleBkashDecision(true)}>
+                    {bkashActing ? t("bkashSaving") : t("bkashApprove")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── inline styles ─────────────────────────────────────────────
 const s = {
   center:       { display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--muted)" },
   pageTitle:    { fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--charcoal)", marginBottom: 24 },

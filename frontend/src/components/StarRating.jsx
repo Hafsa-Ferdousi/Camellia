@@ -28,7 +28,7 @@ const StarRating = ({ rating = 0, totalReviews = 0, onRatingChange, interactive 
                 userSelect: 'none',
               }}
             >
-              <span style={{ color: '#ddd' }}>★</span>
+              <span style={{ color: 'var(--faint)' }}>★</span>
               {(isFull || isHalf) && (
                 <span
                   style={{
@@ -37,7 +37,7 @@ const StarRating = ({ rating = 0, totalReviews = 0, onRatingChange, interactive 
                     top: 0,
                     overflow: 'hidden',
                     width: isFull ? '100%' : '50%',
-                    color: '#f5b301',
+                    color: 'var(--gold)',
                   }}
                 >
                   ★
@@ -48,7 +48,7 @@ const StarRating = ({ rating = 0, totalReviews = 0, onRatingChange, interactive 
         })}
       </div>
       {totalReviews !== undefined && (
-        <span style={{ color: '#555', fontSize: '14px' }}>
+        <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
           {t('reviewCount', { count: totalReviews })}
         </span>
       )}

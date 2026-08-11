@@ -5,3 +5,5 @@ export const getNotifications = () => client.get("/notifications");
 export const markAsRead = (id) => client.patch(`/notifications/${id}/read`);
 
 export const markAllAsRead = () => client.patch("/notifications/read-all");
+
+export const deleteNotification = (id) => client.delete(`/notifications/${id}`);
