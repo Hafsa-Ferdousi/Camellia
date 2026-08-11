@@ -6,6 +6,7 @@ import { Phone } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
+import { guestLookupOrder } from "../api/cart";
 
 export default function TrackOrder() {
   const { t } = useTranslation("orders");
@@ -50,19 +51,7 @@ export default function TrackOrder() {
     if (phone.trim()) payload.phone = phone.trim();
 
     try {
-      // Use fetch directly (bypasses Axios, sends phone number correctly)
-      const response = await fetch('/api/orders/guest-lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || t("orderNotFoundError"));
-      }
-
-      const data = await response.json();
+      const { data } = await guestLookupOrder(payload);
 
       if (data.orders && data.orders.length > 0) {
         setOrders(data.orders);
@@ -70,7 +59,7 @@ export default function TrackOrder() {
         setError(t("noOrderForIdEmail"));
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(err.response?.data?.message || t("networkError"));
     } finally {
       setLoading(false);
     }

@@ -26,7 +26,7 @@ export const getOrderById = (orderId) => client.get(`/orders/${orderId}`);
 export const guestCheckout = (items, address, paymentMethod, guestInfo, couponCode) =>
   client.post("/orders/guest-checkout", { items, address, paymentMethod, guestInfo, couponCode: couponCode || undefined });
 
-// Guest order tracking — no account required. Looks an order up by its ID
-// plus the email used at checkout.
-export const guestLookupOrder = (orderId, email) =>
-  client.post("/orders/guest-lookup", { orderId, email });
+// Guest order tracking — no account required. Looks an order up by email
+// plus either the order ID or the phone number used at checkout.
+export const guestLookupOrder = ({ email, orderId, phone, name }) =>
+  client.post("/orders/guest-lookup", { email, orderId, phone, name });

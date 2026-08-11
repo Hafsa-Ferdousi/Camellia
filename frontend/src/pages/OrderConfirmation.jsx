@@ -54,7 +54,7 @@ export default function OrderConfirmation() {
     setLookupLoading(true);
     setLookupError('');
     try {
-      const { data } = await guestLookupOrder(id, email);
+      const { data } = await guestLookupOrder({ orderId: id, email });
       if (data.orders?.length > 0) {
         setOrder(data.orders[0]);
         setNeedsGuestEmail(false);
