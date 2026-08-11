@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
+import { sendError } from "../utils/errorResponse.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -142,7 +143,7 @@ export const getProducts = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -164,7 +165,7 @@ export const getBestSellers = async (req, res) => {
 
     res.json(bestSellers);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -177,7 +178,7 @@ export const getAllProductsAdmin = async (req, res) => {
       .lean();
     res.json(products);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -191,7 +192,7 @@ export const getProductById = async (req, res) => {
     if (!product || !product.isActive) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -202,7 +203,7 @@ export const createProduct = async (req, res) => {
     await product.populate("category", "name slug");
     res.status(201).json(product);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 
@@ -220,7 +221,7 @@ export const updateProduct = async (req, res) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    sendError(res, error, 400);
   }
 };
 
@@ -238,7 +239,7 @@ export const deleteProduct = async (req, res) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json({ message: "Product removed" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -275,7 +276,7 @@ export const getRecommendations = async (req, res) => {
 
     res.json(recommendations);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -316,6 +317,6 @@ export const searchProducts = async (req, res) => {
 
     res.json({ products, categories });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };

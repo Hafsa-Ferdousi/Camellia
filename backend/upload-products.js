@@ -21,8 +21,24 @@ import { v2 as cloudinary } from 'cloudinary';
 const SRC = process.argv[2] || '../Productsfor412';
 const CLOUD_FOLDER = 'camellia/products';
 const OUT = './cloudinaryProducts.json';
+const CURATED = './curatedProducts.json';
 const IMAGES_PER_PRODUCT = 3;
 const CONCURRENCY = 4;
+
+/**
+ * categorySlug -> array of { name, description, basePrice, totalStock, isFeatured },
+ * consumed in order as each product for that category is built. Products beyond
+ * the curated list (or run without curatedProducts.json) fall back to a
+ * placeholder that still needs manual pricing/copy before seeding.
+ */
+async function loadCuratedProducts() {
+  try {
+    return JSON.parse(await fs.readFile(CURATED, 'utf8'));
+  } catch (err) {
+    if (err.code === 'ENOENT') return {};
+    throw err;
+  }
+}
 
 /**
  * Source folder name -> category. Slugs match the ones already in seed.js so
@@ -112,6 +128,12 @@ async function buildJobs() {
   return jobs;
 }
 
+function curatedFor(curated, categorySlug, productNo) {
+  const list = curated[categorySlug];
+  if (!list) return null;
+  return list[Number(productNo) - 1] || null;
+}
+
 async function uploadOne(image, categorySlug) {
   const res = await cloudinary.uploader.upload(image.localPath, {
     public_id: image.publicId,
@@ -134,12 +156,14 @@ async function main() {
   }
   cloudinary.config({ secure: true });
 
+  const curated = await loadCuratedProducts();
   const jobs = await buildJobs();
   const totalImages = jobs.reduce((n, j) => n + j.images.length, 0);
   console.log(`${jobs.length} products / ${totalImages} images\n`);
 
   const products = [];
   const failures = [];
+  const missingCuration = [];
   let done = 0;
 
   const queue = [...jobs];
@@ -157,15 +181,19 @@ async function main() {
         process.stdout.write(`\r  ${done}/${totalImages}`);
       }
       if (uploaded.length) {
+        const curatedEntry = curatedFor(curated, job.categorySlug, job.productNo);
+        if (!curatedEntry) missingCuration.push(`${job.categorySlug}-${job.productNo}`);
+
         products.push({
           categorySlug: job.categorySlug,
           productNo: job.productNo,
-          // TODO: fill these in before seeding
-          name: { en: `${job.categorySlug} ${job.productNo}`, bn: '' },
-          description: { en: '', bn: '' },
-          basePrice: 0,
-          totalStock: 0,
-          isFeatured: false,
+          // Falls back to a placeholder (needs manual pricing/copy) when
+          // curatedProducts.json has no entry for this category/index.
+          name: curatedEntry?.name ?? { en: `${job.categorySlug} ${job.productNo}`, bn: '' },
+          description: curatedEntry?.description ?? { en: '', bn: '' },
+          basePrice: curatedEntry?.basePrice ?? 0,
+          totalStock: curatedEntry?.totalStock ?? 0,
+          isFeatured: curatedEntry?.isFeatured ?? false,
           // Product.images is [String] — thumb first, since ProductCard reads images[0]
           images: uploaded.map((u) => u.thumb),
           gallery: uploaded.map(({ publicId, thumb, detail, zoom }) => ({
@@ -197,6 +225,12 @@ async function main() {
   console.log(
     `New categories for seed.js: ${categories.filter((c) => c.isNew).map((c) => c.slug).join(', ')}`,
   );
+  if (missingCuration.length) {
+    console.log(
+      `\nNo curated copy in ${CURATED} for ${missingCuration.length} product(s) — fill in name/description/price before seeding:`,
+    );
+    console.log(`  ${missingCuration.join(', ')}`);
+  }
   if (failures.length) {
     console.log('\nFailures (re-run to retry):');
     failures.forEach((f) => console.log(`  ${f.publicId} — ${f.error}`));
