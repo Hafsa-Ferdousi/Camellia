@@ -30,10 +30,15 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  getAdminSettings,
+  updateAdminSettings,
   getLowStockProducts,
   exportSalesCSV,
   uploadImage,
   deleteUploadedImage,
+  getAllConversations,
+  getConversationById,
+  deleteConversation as deleteConversationApi,
 } from "../api/admin";
 import {
   getAllCoupons,
@@ -43,10 +48,7 @@ import {
   setCouponStatus,
 } from "../api/coupons";
 import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
-import AdminMessagesTab from "./admin/AdminMessagesTab";
-import AdminChatsTab from "./admin/AdminChatsTab";
-import AdminNotificationsTab from "./admin/AdminNotificationsTab";
-import AdminSettingsTab from "./admin/AdminSettingsTab";
+import client from "../api/client";
 
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
@@ -100,6 +102,46 @@ const BkashStatusBadge = ({ status }) => {
       {t(BKASH_STATUS_LABEL_KEYS[status] || "bkashFilterAwaiting")}
     </span>
   );
+};
+
+// Private note for staff eyes only. Keeps its own draft state (initialized
+// once from the order's saved note) so typing isn't interrupted by the
+// orders list re-rendering; only saved back to the order on blur/Save.
+const AdminNoteInput = ({ order, saving, onSave }) => {
+  const { t } = useTranslation("admin");
+  const [draft, setDraft] = useState(order.payment?.adminNote || "");
+  const [dirty, setDirty] = useState(false);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <textarea
+        value={draft}
+        onChange={e => { setDraft(e.target.value); setDirty(true); }}
+        placeholder={t("adminNotePlaceholder")}
+        rows={2}
+        style={{
+          width: "100%", minWidth: 160, resize: "vertical",
+          padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4,
+          fontSize: 11.5, fontFamily: "var(--font-body)", background: "var(--cream)",
+          color: "var(--ink)", boxSizing: "border-box",
+        }}
+      />
+      {dirty && (
+        <button
+          onClick={() => { onSave(order, draft.trim()); setDirty(false); }}
+          disabled={saving}
+          style={{ ...styles_editBtnSmall, marginTop: 4 }}
+        >
+          {saving ? t("saving") : t("saveNote")}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const styles_editBtnSmall = {
+  padding: "3px 10px", background: "var(--maroon)", color: "#fff", border: "none",
+  borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "var(--font-body)",
 };
 
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
@@ -292,6 +334,7 @@ export default function Admin() {
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
+  const [noteSaving, setNoteSaving]   = useState(null);
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
@@ -328,6 +371,11 @@ export default function Admin() {
   const [lowStockIds, setLowStockIds]     = useState(new Set());
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
+  const [settings, setSettings]           = useState(null);
+  const [settingsLoading, setSTL]         = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMsg, setSettingsMsg]     = useState("");
+  const [settingsErr, setSettingsErr]     = useState("");
   const PAGE_SIZE = 10;
   const [catLoading, setCL]               = useState(false);
   const [catModal, setCatModal]           = useState(null);
@@ -352,7 +400,17 @@ export default function Admin() {
   const [couponStatsTarget, setCouponStatsTarget] = useState(null);
   const [couponPage, setCouponPage]         = useState(1);
 
-  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [messages, setMessages]         = useState([]);
+  const [messagesLoading, setML]        = useState(false);
+  const [messageFilter, setMessageFilter] = useState("all");
+  const [replyTarget, setReplyTarget]   = useState(null);
+  const [replyText, setReplyText]       = useState("");
+  const [replySending, setReplySending] = useState(false);
+
+  const [conversations, setConversations] = useState([]);
+  const [conversationsLoading, setConvL]  = useState(false);
+  const [conversationDetail, setConversationDetail] = useState(null);
+  const [conversationDetailLoading, setConvDL] = useState(false);
 
   const [refunds, setRefunds]                 = useState([]);
   const [refundsLoading, setRL]                = useState(false);
@@ -407,11 +465,74 @@ export default function Admin() {
     finally { setCL(false); }
   }, []);
 
+  const loadSettings = useCallback(async () => {
+    setSTL(true);
+    try { const r = await getAdminSettings(); setSettings(r.data); }
+    finally { setSTL(false); }
+  }, []);
+
   const loadCoupons = useCallback(async () => {
     setCoL(true);
     try { const [cr, pr, catr] = await Promise.all([getAllCoupons(), getAllProducts(), getCategories()]); setCoupons(cr.data); setProducts(pr.data); setCategories(catr.data); }
     finally { setCoL(false); }
   }, []);
+
+  const loadMessages = useCallback(async () => {
+    setML(true);
+    try { const r = await client.get("/contact"); setMessages(r.data); }
+    catch { setMessages([]); }
+    finally { setML(false); }
+  }, []);
+
+  const handleUpdateMessageStatus = async (id, status) => {
+    try {
+      await client.patch(`/contact/${id}/status`, { status });
+      setMessages(prev => prev.map(m => m._id === id ? { ...m, status } : m));
+    } catch { /* ignore */ }
+  };
+
+  const handleDeleteMessage = async (id) => {
+    try {
+      await client.delete(`/contact/${id}`);
+      setMessages(prev => prev.filter(m => m._id !== id));
+    } catch { /* ignore */ }
+  };
+
+  const openReplyModal = (m) => { setReplyTarget(m); setReplyText(""); };
+  const closeReplyModal = () => { setReplyTarget(null); setReplyText(""); };
+
+  const handleSendReply = async () => {
+    if (!replyTarget || !replyText.trim()) return;
+    setReplySending(true);
+    try {
+      await client.post(`/contact/${replyTarget._id}/reply`, { reply: replyText.trim() });
+      setMessages(prev => prev.map(m => m._id === replyTarget._id ? { ...m, status: "replied", reply: replyText.trim() } : m));
+      closeReplyModal();
+    } catch { /* ignore */ }
+    finally { setReplySending(false); }
+  };
+
+  const loadConversations = useCallback(async () => {
+    setConvL(true);
+    try { const r = await getAllConversations(); setConversations(r.data); }
+    catch { setConversations([]); }
+    finally { setConvL(false); }
+  }, []);
+
+  const openConversationDetail = async (id) => {
+    setConvDL(true);
+    setConversationDetail({ _id: id, messages: [] });
+    try { const r = await getConversationById(id); setConversationDetail(r.data); }
+    catch { setConversationDetail(null); }
+    finally { setConvDL(false); }
+  };
+
+  const handleDeleteConversation = async (id) => {
+    try {
+      await deleteConversationApi(id);
+      setConversations(prev => prev.filter(c => c._id !== id));
+    } catch { /* ignore */ }
+  };
 
   const loadRefunds = useCallback(async (status = refundStatusFilter) => {
     setRL(true);
@@ -470,10 +591,13 @@ export default function Admin() {
     if (tab === "customers")  loadCustomers();
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
+    if (tab === "settings")   loadSettings();
     if (tab === "coupons")    { loadCoupons(); }
+    if (tab === "messages")   loadMessages();
+    if (tab === "chats")      loadConversations();
     if (tab === "refunds")    loadRefunds();
     if (tab === "bkash")      loadBkash();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadCoupons, loadRefunds, loadBkash]);
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
 
   useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
   useEffect(() => { setMobileNavOpen(false); }, [tab]);
@@ -509,12 +633,43 @@ export default function Admin() {
     }
   };
 
+  const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
+  const setDefaultDelivery = (v) => setSettings(s => ({ ...s, defaultDeliveryCharge: Number(v) }));
+  const setDistrictCharge = (idx, field, value) => setSettings(s => ({ ...s, districtDeliveryCharges: s.districtDeliveryCharges.map((d, i) => i === idx ? { ...d, [field]: field === "charge" ? Number(value) : value } : d) }));
+  const addDistrictCharge = () => setSettings(s => ({ ...s, districtDeliveryCharges: [...s.districtDeliveryCharges, { district: "", charge: 0 }] }));
+  const removeDistrictCharge = (idx) => setSettings(s => ({ ...s, districtDeliveryCharges: s.districtDeliveryCharges.filter((_, i) => i !== idx) }));
+
+  const handleSaveSettings = async () => {
+    if (settings.districtDeliveryCharges.some(d => !d.district.trim())) {
+      setSettingsErr(t("districtRowError"));
+      return;
+    }
+    setSettingsErr(""); setSettingsMsg(""); setSettingsSaving(true);
+    try {
+      const r = await updateAdminSettings(settings);
+      setSettings(r.data);
+      setSettingsMsg(t("settingsSaved"));
+    } catch (err) {
+      setSettingsErr(err.response?.data?.message || t("saveFailed"));
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   const handleStatusChange = async (orderId, newStatus) => {
     setSU(orderId);
     try {
       const r = await updateOrderStatus(orderId, newStatus);
       setOrders(prev => prev.map(o => o._id === orderId ? r.data : o));
     } catch { /* keep old */ } finally { setSU(null); }
+  };
+
+  const handleSaveAdminNote = async (order, noteText) => {
+    setNoteSaving(order._id);
+    try {
+      const r = await updateOrderStatus(order._id, order.status, noteText);
+      setOrders(prev => prev.map(o => o._id === order._id ? r.data : o));
+    } catch { /* keep old */ } finally { setNoteSaving(null); }
   };
 
   const handleExportSales = async () => {
@@ -925,9 +1080,9 @@ export default function Admin() {
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
             <navItem.icon size={15} /> {navItem.label}
-            {navItem.id === "messages" && unreadMessagesCount > 0 && (
+            {navItem.id === "messages" && messages.filter(m => m.status === "unread").length > 0 && (
               <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                {unreadMessagesCount}
+                {messages.filter(m => m.status === "unread").length}
               </span>
             )}
             {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
@@ -1082,6 +1237,9 @@ export default function Admin() {
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.status === "paid" && o.payment?.paidAt && (
+                                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1 }}>{t("paidOn", { date: fmtDate(o.payment.paidAt) })}</div>
+                              )}
                               {o.payment?.method === "bkash" && (
                                 <div style={{ marginTop: 5 }}>
                                   {o.payment?.bkash?.trxId && (
@@ -1103,6 +1261,7 @@ export default function Admin() {
                               <select value={o.status} disabled={statusUpdating === o._id} onChange={e => handleStatusChange(o._id, e.target.value)} style={s.select}>
                                 {ORDER_STATUSES.map(st => <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>)}
                               </select>
+                              <AdminNoteInput order={o} saving={noteSaving === o._id} onSave={handleSaveAdminNote} />
                             </td>
                           </tr>
                         ))}
@@ -1607,21 +1766,253 @@ export default function Admin() {
           </div>
         )}
 
-        {tab === "messages" && <AdminMessagesTab onUnreadCountChange={setUnreadMessagesCount} />}
-
-        {tab === "chats" && <AdminChatsTab />}
-
-        {tab === "notifications" && (
-          <AdminNotificationsTab
-            alerts={alerts}
-            alertsUnread={alertsUnread}
-            onMarkAllRead={handleAlertsMarkAllRead}
-            onAlertClick={handleAlertClick}
-            onAlertDelete={handleAlertDelete}
-          />
+        {tab === "messages" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("messagesTitle")}</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["all", "unread", "read", "replied"].map(f => (
+                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
+                ))}
+              </div>
+            </div>
+            {messagesLoading && <p style={{ color: "var(--muted)" }}>{t("loadingMessages")}</p>}
+            {!messagesLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead><tr>{[t("colName"),t("colEmail"),t("colMessage"),t("colDate"),t("colStatus"),t("colActions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {messages
+                      .filter(m => messageFilter === "all" || m.status === messageFilter)
+                      .map(m => (
+                        <tr key={m._id} style={{ ...s.tr, background: m.status === "unread" ? "#FFFBEB" : "transparent" }}>
+                          <td style={{ ...s.td, fontWeight: m.status === "unread" ? 600 : 400 }}>{m.name}</td>
+                          <td style={{ ...s.td, fontSize: 12 }}>{m.email}</td>
+                          <td style={{ ...s.td, maxWidth: 300 }}>
+                            <p style={{ fontSize: 13, color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 280 }}>{m.message}</p>
+                          </td>
+                          <td style={{ ...s.td, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(m.createdAt)}</td>
+                          <td style={s.td}>
+                            <span style={{
+                              fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
+                              background: m.status === "unread" ? "#FEF9C3" : m.status === "replied" ? "#DCFCE7" : "#F3F4F6",
+                              color: m.status === "unread" ? "#854D0E" : m.status === "replied" ? "#166534" : "#4B5563",
+                            }}>{t(`msg${m.status.charAt(0).toUpperCase()}${m.status.slice(1)}`)}</span>
+                          </td>
+                          <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
+                            {m.status !== "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--green)" }}>{t("reply")}</button>}
+                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("viewReply")}</button>}
+                            <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
+                          </td>
+                        </tr>
+                      ))}
+                    {messages.filter(m => messageFilter === "all" || m.status === messageFilter).length === 0 && (
+                      <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noMessagesFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
 
-        {tab === "settings" && <AdminSettingsTab />}
+        {tab === "chats" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("chatsTitle")}</h2>
+            {conversationsLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!conversationsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead><tr>{[t("colUser"), t("colLastMessage"), t("colMessages"), t("colUpdated"), t("colActions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {conversations.map(c => (
+                      <tr key={c._id} style={s.tr}>
+                        <td style={s.td}>{c.user?.name || t("guestBadge")}</td>
+                        <td style={{ ...s.td, maxWidth: 320 }}>
+                          <p style={{ fontSize: 13, color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>{c.lastMessage}</p>
+                        </td>
+                        <td style={s.td}>{c.messageCount}</td>
+                        <td style={{ ...s.td, fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(c.updatedAt)}</td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          <button onClick={() => openConversationDetail(c._id)} style={s.editBtn}>{t("viewChat")}</button>
+                          <button onClick={() => handleDeleteConversation(c._id)} style={s.delBtn}><Trash2 size={13} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                    {conversations.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noChatsFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "notifications" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={s.pageTitle}>{t("notifications:title")}</h2>
+              {alertsUnread > 0 && (
+                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--charcoal)" }}>
+                  {t("notifications:markAllRead")}
+                </button>
+              )}
+            </div>
+            {alerts.length === 0 ? (
+              <p style={{ color: "var(--muted)" }}>{t("notifications:empty")}</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {alerts.map((n) => (
+                  <div
+                    key={n._id}
+                    onClick={() => handleAlertClick(n)}
+                    className="panel"
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1, display: "flex", alignItems: "flex-start", gap: 10 }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAlertDelete(e, n)}
+                      aria-label={t("notifications:delete")}
+                      title={t("notifications:delete")}
+                      style={{
+                        flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                        color: "var(--muted)", padding: 4, display: "flex",
+                        alignItems: "center", justifyContent: "center", borderRadius: 4,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "settings" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("settingsTitle")}</h2>
+            {settingsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingSettings")}</p>}
+            {!settingsLoading && settings && (
+              <div style={{ ...s.tableWrap, padding: "28px 28px 32px", maxWidth: 640 }}>
+                {settingsErr && <div style={s.formErr}>{settingsErr}</div>}
+                {settingsMsg && <div style={{ background: "#DCFCE7", color: "#166534", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}><Check size={14} /> {settingsMsg}</div>}
+
+                <h3 style={s.sectionTitle}>{t("pricing")}</h3>
+                <label style={s.label}>
+                  {t("vatRate")}
+                  <input
+                    className="input"
+                    type="number" min="0" max="100" step="0.1"
+                    value={Math.round(settings.vatRate * 1000) / 10}
+                    onChange={e => setVatRate(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+                <label style={s.label}>
+                  {t("defaultDeliveryCharge")}
+                  <input
+                    className="input"
+                    type="number" min="0"
+                    value={settings.defaultDeliveryCharge}
+                    onChange={e => setDefaultDelivery(e.target.value)}
+                    style={{ maxWidth: 160 }}
+                  />
+                </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("districtDeliveryCharges")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("districtHint")}
+                </p>
+                {settings.districtDeliveryCharges.map((d, idx) => (
+                  <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                    <input
+                      className="input"
+                      placeholder={t("districtNamePlaceholder")}
+                      value={d.district}
+                      onChange={e => setDistrictCharge(idx, "district", e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      className="input"
+                      type="number" min="0"
+                      placeholder={t("chargePlaceholder")}
+                      value={d.charge}
+                      onChange={e => setDistrictCharge(idx, "charge", e.target.value)}
+                      style={{ width: 110 }}
+                    />
+                    <button onClick={() => removeDistrictCharge(idx)} style={s.delBtn}>{t("remove")}</button>
+                  </div>
+                ))}
+                <button className="btn btn-outline" onClick={addDistrictCharge} style={{ marginTop: 4, marginBottom: 24 }}>
+                  {t("addDistrict")}
+                </button>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("language")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("defaultLanguageHint")}
+                </p>
+                <label style={s.label}>
+                  {t("defaultLanguage")}
+                  <select
+                    className="input"
+                    value={settings.defaultLanguage || "en"}
+                    onChange={e => setSettings(s => ({ ...s, defaultLanguage: e.target.value }))}
+                    style={{ maxWidth: 160 }}
+                  >
+                    <option value="en">{t("english")}</option>
+                    <option value="bn">{t("bangla")}</option>
+                  </select>
+                </label>
+
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("bkashSectionTitle")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("bkashSectionHint")}
+                </p>
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <label style={s.label}>
+                      {t("bkashMerchantNumberLabel")}
+                      <input
+                        className="input"
+                        type="tel"
+                        placeholder="01XXXXXXXXX"
+                        value={settings.bkashMerchantNumber || ""}
+                        onChange={e => setSettings(s => ({ ...s, bkashMerchantNumber: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      />
+                    </label>
+                    <label style={s.label}>
+                      {t("bkashNumberTypeLabel")}
+                      <select
+                        className="input"
+                        value={settings.bkashNumberType || "personal"}
+                        onChange={e => setSettings(s => ({ ...s, bkashNumberType: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      >
+                        <option value="personal">{t("bkashTypePersonalOpt")}</option>
+                        <option value="merchant">{t("bkashTypeMerchantOpt")}</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
+                    {settingsSaving ? t("saving") : t("saveSettings")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
       </div>
 
@@ -1750,6 +2141,44 @@ export default function Admin() {
 
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
               <button className="btn btn-outline" onClick={closeCustomerDetail}>{t("close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {conversationDetail && (
+        <div style={s.overlay} onClick={() => setConversationDetail(null)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{conversationDetail.user?.name || t("guestBadge")}</h3>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{conversationDetail.user?.email}</p>
+
+            {conversationDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!conversationDetailLoading && (
+              <div style={{ maxHeight: 380, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                {conversationDetail.messages?.map((m, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                      maxWidth: "80%",
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      fontSize: 13,
+                      background: m.role === "user" ? "var(--gold-pale)" : "var(--cream-dark)",
+                      color: "var(--ink)",
+                    }}
+                  >
+                    {m.content}
+                  </div>
+                ))}
+                {conversationDetail.messages?.length === 0 && (
+                  <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("noChatsFound")}</p>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setConversationDetail(null)}>{t("close")}</button>
             </div>
           </div>
         </div>
@@ -2054,6 +2483,39 @@ export default function Admin() {
           </div>
         </div>
       )}
+      {replyTarget && (
+        <div style={s.overlay} onClick={closeReplyModal}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("replyToTitle", { name: replyTarget.name })}</h3>
+            <div style={{ background: "var(--cream-dark)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--muted)" }}>
+              {replyTarget.message}
+            </div>
+            {replyTarget.status === "replied" && replyTarget.reply && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("previousReply")}</div>
+                <div style={{ fontSize: 13, color: "var(--charcoal)", whiteSpace: "pre-wrap" }}>{replyTarget.reply}</div>
+              </div>
+            )}
+            <label style={s.label}>
+              {t("yourReply")}
+              <textarea
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                rows={5}
+                placeholder={t("replyPlaceholder")}
+                style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-outline" onClick={closeReplyModal}>{t("cancel")}</button>
+              <button className="btn" disabled={!replyText.trim() || replySending} onClick={handleSendReply}>
+                {replySending ? t("sending") : t("sendReply")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {bkashDetail && (
         <div style={s.overlay} onClick={closeBkashDetail}>
           <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
