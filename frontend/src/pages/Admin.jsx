@@ -1155,7 +1155,12 @@ export default function Admin() {
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
-                          <td style={s.td}><StatusBadge status={o.status} /></td>
+                          <td style={s.td}>
+                            <StatusBadge status={o.status} />
+                            {o.payment?.status === "paid" && o.payment?.paidAt && (
+                              <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 3 }}>{t("paidOn", { date: fmtDate(o.payment.paidAt) })}</div>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1200,7 +1205,7 @@ export default function Admin() {
 
             {ordersLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
             {!ordersLoading && (() => {
-              const q = orderSearch.trim().toLowerCase();
+              const q = orderSearch.trim().toLowerCase().replace(/^#/, "");
               const filtered = orders.filter(o => {
                 if (orderStatusFilter !== "all" && o.status !== orderStatusFilter) return false;
                 if (!q) return true;

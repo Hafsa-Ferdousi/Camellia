@@ -6,9 +6,18 @@ import Setting from "../models/Setting.js";
 import Notification from "../models/Notification.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.js";
-import { sendError } from "../utils/errorResponse.js";
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
+
+// Strips the staff-only admin note before an order (or list of orders) goes
+// out to anyone other than an admin — the schema comment promises this is
+// "never shown to the customer," so it must not leak in the raw JSON either,
+// even though the UI never renders it.
+const hideAdminNote = (order) => {
+  if (order?.payment) order.payment.adminNote = null;
+  return order;
+};
+const hideAdminNoteList = (orders) => orders.map(hideAdminNote);
 
 // ===== GENERATE CUSTOMER‑FRIENDLY ORDER ID =====
 // Format: ORD-FirstName-PhoneLast3-RandomTime
@@ -199,7 +208,7 @@ export const checkout = async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     await rollbackStock();
-    sendError(res, error, 400);
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -317,7 +326,7 @@ export const guestCheckout = async (req, res) => {
     res.status(201).json(order);
   } catch (error) {
     await rollbackStock();
-    sendError(res, error, 400);
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -371,7 +380,7 @@ export const guestLookupOrder = async (req, res) => {
       return res.status(404).json({ message: "No orders found for this email and phone." });
     }
 
-    res.json({ orders });
+    res.json({ orders: hideAdminNoteList(orders) });
   } catch (error) {
     console.error("Guest lookup error:", error);
     res.status(500).json({ message: "Failed to look up order. Please try again." });
@@ -381,13 +390,14 @@ export const guestLookupOrder = async (req, res) => {
 // ── GET /api/orders  (customer sees own, admin sees all) ───────────────────
 export const getOrders = async (req, res) => {
   try {
-    const filter = req.user.role === "admin" ? {} : { user: req.user._id };
+    const isAdmin = req.user.role === "admin";
+    const filter = isAdmin ? {} : { user: req.user._id };
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
       .populate("user", "name email phone")
       .populate("items.product", "name images")
       .lean();
-    res.json(orders);
+    res.json(isAdmin ? orders : hideAdminNoteList(orders));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch orders." });
   }
@@ -404,7 +414,7 @@ export const getOrderById = async (req, res) => {
     if (req.user.role !== "admin" && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
-    res.json(order);
+    res.json(req.user.role === "admin" ? order : hideAdminNote(order));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch order." });
   }
@@ -482,6 +492,12 @@ export const updateOrderStatus = async (req, res) => {
         }).catch(() => {});
       }
     }
+
+    // Repopulate before returning, so the Admin panel keeps showing the
+    // customer's name/email/phone after a status update instead of just
+    // a raw user ID (only affects registered customers — guest orders
+    // already carry their name inline in guestInfo).
+    await order.populate("user", "name email phone");
 
     res.json(order);
   } catch (error) {
