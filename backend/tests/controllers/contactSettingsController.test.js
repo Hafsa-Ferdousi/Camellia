@@ -1,485 +1,839 @@
 /**
  * Contact and Settings Controller Unit Tests
  */
-
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import Contact from '../models/Contact.js';
-import Setting from '../models/Setting.js';
-import { sendContactEmail } from '../utils/mailer.js';
 import {
-  submitContactForm,
-  getContacts,
-  deleteContact,
-  getSettings,
-  updateSettings,
-} from './contactController.js';
-import { getAppSettings, updateAppSettings } from './settingsController.js';
+  describe,
+  test,
+  expect,
+  jest,
+  beforeEach,
+} from "@jest/globals";
 
-jest.mock('../models/Contact.js');
-jest.mock('../models/Setting.js');
-jest.mock('../utils/mailer.js');
+// =========================================================
+// MOCK MODELS
+// =========================================================
 
-describe('Contact Controller', () => {
-  let mockReq, mockRes;
+jest.unstable_mockModule("../../models/Contact.js", () => ({
+  default: {
+    create: jest.fn(),
+    find: jest.fn(),
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+  },
+}));
+
+jest.unstable_mockModule("../../models/Setting.js", () => ({
+  default: {
+    getSingleton: jest.fn(),
+  },
+}));
+
+// =========================================================
+// MOCK MAILER
+// =========================================================
+
+jest.unstable_mockModule("../../utils/mailer.js", () => ({
+  sendContactReplyEmail: jest.fn(),
+}));
+
+// =========================================================
+// IMPORT AFTER MOCKS
+// =========================================================
+
+const { default: Contact } = await import("../../models/Contact.js");
+
+const { default: Setting } = await import("../../models/Setting.js");
+
+const { sendContactReplyEmail } =
+  await import("../../utils/mailer.js");
+
+const {
+  sendMessage,
+  getMessages,
+  updateMessageStatus,
+  replyToMessage,
+  deleteMessage,
+} = await import("../../controllers/contactController.js");
+
+const { getPublicPricing } =
+  await import("../../controllers/settingsController.js");
+
+// =========================================================
+// CONTACT CONTROLLER TESTS
+// =========================================================
+
+describe("Contact Controller", () => {
+  let req;
+  let res;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockReq = {
+    req = {
       body: {},
-      params: { id: 'contact123' },
-      user: { _id: 'admin123', role: 'admin' },
+      params: {
+        id: "contact123",
+      },
+      user: {
+        _id: "admin123",
+        role: "admin",
+      },
     };
 
-    mockRes = {
+    res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  // =======================================================
+  // sendMessage
+  // =======================================================
+
+  describe("sendMessage", () => {
+    test("should successfully send a contact message", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "john@example.com",
+        message:
+          "I would like to know more about your products.",
+      };
+
+      const createdContact = {
+        _id: "contact123",
+        ...req.body,
+      };
+
+      Contact.create.mockResolvedValue(createdContact);
+
+      await sendMessage(req, res);
+
+      expect(Contact.create).toHaveBeenCalledWith({
+        name: "John Doe",
+        email: "john@example.com",
+        message:
+          "I would like to know more about your products.",
+      });
+
+      expect(res.status).toHaveBeenCalledWith(201);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message:
+          "Your message has been sent successfully! We will get back to you soon.",
+        contact: createdContact,
+      });
+    });
+
+    test("should return 400 when name is missing", async () => {
+      req.body = {
+        email: "john@example.com",
+        message: "This is a valid message.",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Name, email and message are required.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should return 400 when email is missing", async () => {
+      req.body = {
+        name: "John Doe",
+        message: "This is a valid message.",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Name, email and message are required.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should return 400 when message is missing", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Name, email and message are required.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should reject invalid email format", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "invalid-email",
+        message: "This is a valid message.",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Please enter a valid email address.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should reject message shorter than 10 characters", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "john@example.com",
+        message: "Too short",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message must be at least 10 characters.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should reject whitespace-only short message", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "john@example.com",
+        message: "         ",
+      };
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message must be at least 10 characters.",
+      });
+
+      expect(Contact.create).not.toHaveBeenCalled();
+    });
+
+    test("should handle database errors", async () => {
+      req.body = {
+        name: "John Doe",
+        email: "john@example.com",
+        message:
+          "This is a valid contact message.",
+      };
+
+      Contact.create.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await sendMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message:
+          "Failed to send message. Please try again.",
+      });
+    });
   });
 
-  // ==================== SUBMIT CONTACT FORM TESTS ====================
-  describe('submitContactForm', () => {
-    test('should successfully submit contact form', async () => {
-      // Arrange
-      mockReq.body = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        subject: 'Inquiry about products',
-        message: 'I would like to know more about your jewelry',
-        phone: '1234567890',
-      };
+  // =======================================================
+  // getMessages
+  // =======================================================
 
-      Contact.create.mockResolvedValue({
-        _id: 'contact123',
-        ...mockReq.body,
-      });
-      sendContactEmail.mockResolvedValue(true);
-
-      // Act
-      await submitContactForm(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Contact form submitted successfully',
-      });
-      expect(Contact.create).toHaveBeenCalled();
-      expect(sendContactEmail).toHaveBeenCalled();
-    });
-
-    test('should return error when required fields are missing', async () => {
-      // Arrange
-      mockReq.body = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        // Missing subject and message
-      };
-
-      // Act
-      await submitContactForm(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('required'),
-        })
-      );
-    });
-
-    test('should validate email format', async () => {
-      // Arrange
-      mockReq.body = {
-        name: 'John Doe',
-        email: 'invalid-email',
-        subject: 'Inquiry',
-        message: 'Message',
-      };
-
-      // Act
-      await submitContactForm(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('email'),
-        })
-      );
-    });
-
-    test('should validate message length', async () => {
-      // Arrange
-      mockReq.body = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        subject: 'Inquiry',
-        message: 'Too short', // Assuming minimum length
-      };
-
-      // Act
-      await submitContactForm(mockReq, mockRes);
-
-      // Assert - depends on validation rules
-    });
-
-    test('should handle email sending errors', async () => {
-      // Arrange
-      mockReq.body = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        subject: 'Inquiry',
-        message: 'I would like to know more about your products',
-      };
-
-      Contact.create.mockResolvedValue({
-        _id: 'contact123',
-        ...mockReq.body,
-      });
-      sendContactEmail.mockRejectedValue(new Error('Email service error'));
-
-      // Act
-      await submitContactForm(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  // ==================== GET CONTACTS TESTS ====================
-  describe('getContacts', () => {
-    test('should retrieve all contacts with pagination', async () => {
-      // Arrange
-      mockReq.query = { page: '1', limit: '10' };
-
-      const contacts = [
+  describe("getMessages", () => {
+    test("should retrieve all messages", async () => {
+      const messages = [
         {
-          _id: 'contact1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          subject: 'Inquiry',
-          message: 'Message',
-          status: 'new',
+          _id: "contact1",
+          name: "John Doe",
+          email: "john@example.com",
+          message: "Hello there.",
+          status: "unread",
+        },
+        {
+          _id: "contact2",
+          name: "Jane Doe",
+          email: "jane@example.com",
+          message: "Need some information.",
+          status: "read",
         },
       ];
 
-      Contact.find
-        .mockReturnValue({
-          skip: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockResolvedValue(contacts),
-        });
-      Contact.countDocuments.mockResolvedValue(1);
+      const sortMock = jest.fn().mockResolvedValue(messages);
 
-      // Act
-      await getContacts(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        contacts,
-        totalContacts: 1,
-        totalPages: 1,
+      Contact.find.mockReturnValue({
+        sort: sortMock,
       });
+
+      await getMessages(req, res);
+
+      expect(Contact.find).toHaveBeenCalledWith();
+
+      expect(sortMock).toHaveBeenCalledWith({
+        createdAt: -1,
+      });
+
+      expect(res.json).toHaveBeenCalledWith(messages);
     });
 
-    test('should deny access to non-admin users', async () => {
-      // Arrange
-      mockReq.user = { _id: 'user123', role: 'user' };
+    test("should return empty array when there are no messages", async () => {
+      const sortMock = jest.fn().mockResolvedValue([]);
 
-      // Act
-      await getContacts(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Unauthorized access',
+      Contact.find.mockReturnValue({
+        sort: sortMock,
       });
+
+      await getMessages(req, res);
+
+      expect(res.json).toHaveBeenCalledWith([]);
     });
 
-    test('should filter contacts by status', async () => {
-      // Arrange
-      mockReq.query = { status: 'new', page: '1', limit: '10' };
+    test("should handle database errors", async () => {
+      const sortMock = jest
+        .fn()
+        .mockRejectedValue(new Error("Database error"));
 
-      const newContacts = [];
-      Contact.find
-        .mockReturnValue({
-          skip: jest.fn().mockReturnThis(),
-          limit: jest.fn().mockResolvedValue(newContacts),
-        });
-      Contact.countDocuments.mockResolvedValue(0);
+      Contact.find.mockReturnValue({
+        sort: sortMock,
+      });
 
-      // Act
-      await getContacts(mockReq, mockRes);
+      await getMessages(req, res);
 
-      // Assert
-      expect(Contact.find).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'new',
-        })
-      );
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Failed to fetch messages.",
+      });
     });
   });
 
-  // ==================== DELETE CONTACT TESTS ====================
-  describe('deleteContact', () => {
-    test('should delete contact message', async () => {
-      // Arrange
-      mockReq.params = { id: 'contact123' };
+  // =======================================================
+  // updateMessageStatus
+  // =======================================================
 
-      Contact.findByIdAndDelete.mockResolvedValue({
-        _id: 'contact123',
-        name: 'John Doe',
-      });
+  describe("updateMessageStatus", () => {
+    test("should update status to unread", async () => {
+      req.body = {
+        status: "unread",
+      };
 
-      // Act
-      await deleteContact(mockReq, mockRes);
+      const updatedContact = {
+        _id: "contact123",
+        status: "unread",
+      };
 
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Contact deleted successfully',
-      });
-      expect(Contact.findByIdAndDelete).toHaveBeenCalledWith('contact123');
+      Contact.findByIdAndUpdate.mockResolvedValue(
+        updatedContact
+      );
+
+      await updateMessageStatus(req, res);
+
+      expect(
+        Contact.findByIdAndUpdate
+      ).toHaveBeenCalledWith(
+        "contact123",
+        {
+          status: "unread",
+        },
+        {
+          new: true,
+        }
+      );
+
+      expect(res.json).toHaveBeenCalledWith(
+        updatedContact
+      );
     });
 
-    test('should return error when contact not found', async () => {
-      // Arrange
-      mockReq.params = { id: 'invalidId' };
+    test("should update status to read", async () => {
+      req.body = {
+        status: "read",
+      };
 
+      const updatedContact = {
+        _id: "contact123",
+        status: "read",
+      };
+
+      Contact.findByIdAndUpdate.mockResolvedValue(
+        updatedContact
+      );
+
+      await updateMessageStatus(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        updatedContact
+      );
+    });
+
+    test("should update status to replied", async () => {
+      req.body = {
+        status: "replied",
+      };
+
+      const updatedContact = {
+        _id: "contact123",
+        status: "replied",
+      };
+
+      Contact.findByIdAndUpdate.mockResolvedValue(
+        updatedContact
+      );
+
+      await updateMessageStatus(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        updatedContact
+      );
+    });
+
+    test("should reject invalid status", async () => {
+      req.body = {
+        status: "invalid",
+      };
+
+      await updateMessageStatus(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Invalid status.",
+      });
+
+      expect(
+        Contact.findByIdAndUpdate
+      ).not.toHaveBeenCalled();
+    });
+
+    test("should return 400 when status is missing", async () => {
+      req.body = {};
+
+      await updateMessageStatus(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Invalid status.",
+      });
+    });
+
+    test("should return 404 when contact is not found", async () => {
+      req.body = {
+        status: "read",
+      };
+
+      Contact.findByIdAndUpdate.mockResolvedValue(null);
+
+      await updateMessageStatus(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message not found.",
+      });
+    });
+
+    test("should handle database errors", async () => {
+      req.body = {
+        status: "read",
+      };
+
+      Contact.findByIdAndUpdate.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await updateMessageStatus(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message:
+          "Failed to update message status.",
+      });
+    });
+  });
+
+  // =======================================================
+  // replyToMessage
+  // =======================================================
+
+  describe("replyToMessage", () => {
+    test("should successfully reply to a contact message", async () => {
+      req.body = {
+        reply:
+          "Thank you for contacting us. We will help you shortly.",
+      };
+
+      const contact = {
+        _id: "contact123",
+        name: "John Doe",
+        email: "john@example.com",
+        message: "I need help with my order.",
+        status: "unread",
+        save: jest.fn().mockResolvedValue(true),
+      };
+
+      Contact.findById.mockResolvedValue(contact);
+
+      sendContactReplyEmail.mockResolvedValue({
+        sent: true,
+      });
+
+      await replyToMessage(req, res);
+
+      expect(Contact.findById).toHaveBeenCalledWith(
+        "contact123"
+      );
+
+      expect(
+        sendContactReplyEmail
+      ).toHaveBeenCalledWith(
+        "john@example.com",
+        {
+          name: "John Doe",
+          originalMessage:
+            "I need help with my order.",
+          reply:
+            "Thank you for contacting us. We will help you shortly.",
+        }
+      );
+
+      expect(contact.reply).toBe(
+        "Thank you for contacting us. We will help you shortly."
+      );
+
+      expect(contact.repliedAt).toBeInstanceOf(Date);
+
+      expect(contact.status).toBe("replied");
+
+      expect(contact.save).toHaveBeenCalled();
+
+      expect(res.json).toHaveBeenCalledWith({
+        contact,
+        emailSent: true,
+      });
+    });
+
+    test("should reject missing reply", async () => {
+      req.body = {};
+
+      await replyToMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Reply message is required.",
+      });
+
+      expect(Contact.findById).not.toHaveBeenCalled();
+
+      expect(
+        sendContactReplyEmail
+      ).not.toHaveBeenCalled();
+    });
+
+    test("should reject empty reply", async () => {
+      req.body = {
+        reply: "   ",
+      };
+
+      await replyToMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Reply message is required.",
+      });
+
+      expect(Contact.findById).not.toHaveBeenCalled();
+    });
+
+    test("should return 404 when contact does not exist", async () => {
+      req.body = {
+        reply: "Thank you for contacting us.",
+      };
+
+      Contact.findById.mockResolvedValue(null);
+
+      await replyToMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message not found.",
+      });
+
+      expect(
+        sendContactReplyEmail
+      ).not.toHaveBeenCalled();
+    });
+
+    test("should handle email sending errors", async () => {
+      req.body = {
+        reply: "Thank you for contacting us.",
+      };
+
+      const contact = {
+        _id: "contact123",
+        name: "John Doe",
+        email: "john@example.com",
+        message: "I need help.",
+        save: jest.fn(),
+      };
+
+      Contact.findById.mockResolvedValue(contact);
+
+      sendContactReplyEmail.mockRejectedValue(
+        new Error("Email service error")
+      );
+
+      await replyToMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Failed to send reply.",
+      });
+    });
+
+    test("should handle database errors", async () => {
+      req.body = {
+        reply: "Thank you for contacting us.",
+      };
+
+      Contact.findById.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await replyToMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Failed to send reply.",
+      });
+    });
+  });
+
+  // =======================================================
+  // deleteMessage
+  // =======================================================
+
+  describe("deleteMessage", () => {
+    test("should successfully delete a message", async () => {
+      const deletedContact = {
+        _id: "contact123",
+        name: "John Doe",
+      };
+
+      Contact.findByIdAndDelete.mockResolvedValue(
+        deletedContact
+      );
+
+      await deleteMessage(req, res);
+
+      expect(
+        Contact.findByIdAndDelete
+      ).toHaveBeenCalledWith("contact123");
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message deleted successfully.",
+      });
+    });
+
+    test("should return 404 when message is not found", async () => {
       Contact.findByIdAndDelete.mockResolvedValue(null);
 
-      // Act
-      await deleteContact(mockReq, mockRes);
+      await deleteMessage(req, res);
 
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Contact not found',
+      expect(res.status).toHaveBeenCalledWith(404);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Message not found.",
+      });
+    });
+
+    test("should handle database errors", async () => {
+      Contact.findByIdAndDelete.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await deleteMessage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Failed to delete message.",
       });
     });
   });
 });
 
-describe('Settings Controller', () => {
-  let mockReq, mockRes, mockSettings;
+// =========================================================
+// SETTINGS CONTROLLER TESTS
+// =========================================================
+
+describe("Settings Controller", () => {
+  let req;
+  let res;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockReq = {
+    req = {
       body: {},
-      user: { _id: 'admin123', role: 'admin' },
     };
 
-    mockRes = {
+    res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
-
-    mockSettings = {
-      _id: 'settings123',
-      storeName: 'Camellia Jewelry',
-      storeEmail: 'info@camellia.com',
-      storeLogo: 'logo.png',
-      currency: 'USD',
-      shippingCost: 5.00,
-      taxRate: 0.1,
-      maintenanceMode: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      save: jest.fn().mockResolvedValue(true),
-    };
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  // =======================================================
+  // getPublicPricing
+  // =======================================================
 
-  // ==================== GET SETTINGS TESTS ====================
-  describe('getAppSettings', () => {
-    test('should retrieve application settings', async () => {
-      // Arrange
-      Setting.findOne.mockResolvedValue(mockSettings);
-
-      // Act
-      await getAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith(mockSettings);
-      expect(Setting.findOne).toHaveBeenCalled();
-    });
-
-    test('should return default settings if none exist', async () => {
-      // Arrange
-      Setting.findOne.mockResolvedValue(null);
-      const defaultSettings = {
-        storeName: 'Camellia',
-        currency: 'USD',
-        taxRate: 0,
+  describe("getPublicPricing", () => {
+    test("should return public pricing settings", async () => {
+      const settings = {
+        vatRate: 0.15,
+        defaultDeliveryCharge: 100,
+        districtDeliveryCharges: {
+          Dhaka: 60,
+          Chittagong: 120,
+          Sylhet: 130,
+        },
+        defaultLanguage: "en",
       };
 
-      Setting.create.mockResolvedValue(defaultSettings);
+      Setting.getSingleton.mockResolvedValue(settings);
 
-      // Act
-      await getAppSettings(mockReq, mockRes);
+      await getPublicPricing(req, res);
 
-      // Assert
-      expect(mockRes.json).toHaveBeenCalled();
-    });
-  });
+      expect(
+        Setting.getSingleton
+      ).toHaveBeenCalledTimes(1);
 
-  // ==================== UPDATE SETTINGS TESTS ====================
-  describe('updateAppSettings', () => {
-    test('should update application settings', async () => {
-      // Arrange
-      mockReq.body = {
-        storeName: 'Updated Camellia Jewelry',
-        storeEmail: 'newemail@camellia.com',
-        taxRate: 0.15,
-      };
-
-      const updatedSettings = { ...mockSettings, ...mockReq.body };
-      Setting.findOneAndUpdate.mockResolvedValue(updatedSettings);
-
-      // Act
-      await updateAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Settings updated successfully',
-        })
-      );
-      expect(Setting.findOneAndUpdate).toHaveBeenCalled();
-    });
-
-    test('should deny access to non-admin users', async () => {
-      // Arrange
-      mockReq.user = { _id: 'user123', role: 'user' };
-      mockReq.body = { storeName: 'Updated Name' };
-
-      // Act
-      await updateAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(403);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Unauthorized access',
+      expect(res.json).toHaveBeenCalledWith({
+        vatRate: 0.15,
+        defaultDeliveryCharge: 100,
+        districtDeliveryCharges: {
+          Dhaka: 60,
+          Chittagong: 120,
+          Sylhet: 130,
+        },
+        defaultLanguage: "en",
       });
     });
 
-    test('should validate email format', async () => {
-      // Arrange
-      mockReq.body = {
-        storeEmail: 'invalid-email',
+    test("should return VAT rate correctly", async () => {
+      const settings = {
+        vatRate: 0.075,
+        defaultDeliveryCharge: 80,
+        districtDeliveryCharges: {},
+        defaultLanguage: "bn",
       };
 
-      // Act
-      await updateAppSettings(mockReq, mockRes);
+      Setting.getSingleton.mockResolvedValue(settings);
 
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
+      await getPublicPricing(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('email'),
+          vatRate: 0.075,
         })
       );
     });
 
-    test('should validate tax rate range', async () => {
-      // Arrange
-      mockReq.body = {
-        taxRate: 1.5, // Invalid: > 1
+    test("should return default delivery charge correctly", async () => {
+      const settings = {
+        vatRate: 0.15,
+        defaultDeliveryCharge: 100,
+        districtDeliveryCharges: {},
+        defaultLanguage: "en",
       };
 
-      // Act
-      await updateAppSettings(mockReq, mockRes);
+      Setting.getSingleton.mockResolvedValue(settings);
 
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-    });
+      await getPublicPricing(req, res);
 
-    test('should validate shipping cost', async () => {
-      // Arrange
-      mockReq.body = {
-        shippingCost: -10.00,
-      };
-
-      // Act
-      await updateAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-    });
-
-    test('should allow partial updates', async () => {
-      // Arrange
-      mockReq.body = {
-        storeName: 'Updated Name',
-      };
-
-      const updatedSettings = { ...mockSettings, ...mockReq.body };
-      Setting.findOneAndUpdate.mockResolvedValue(updatedSettings);
-
-      // Act
-      await updateAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(Setting.findOneAndUpdate).toHaveBeenCalledWith(
-        {},
-        expect.any(Object),
-        expect.any(Object)
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultDeliveryCharge: 100,
+        })
       );
     });
 
-    test('should handle maintenance mode toggle', async () => {
-      // Arrange
-      mockReq.body = {
-        maintenanceMode: true,
+    test("should return district delivery charges", async () => {
+      const districtCharges = {
+        Dhaka: 60,
+        Gazipur: 80,
+        Narayanganj: 70,
       };
 
-      const updatedSettings = { ...mockSettings, maintenanceMode: true };
-      Setting.findOneAndUpdate.mockResolvedValue(updatedSettings);
-
-      // Act
-      await updateAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalled();
-    });
-  });
-
-  // ==================== ERROR HANDLING TESTS ====================
-  describe('Error Handling', () => {
-    test('should handle database errors in get settings', async () => {
-      // Arrange
-      Setting.findOne.mockRejectedValue(new Error('Database error'));
-
-      // Act
-      await getAppSettings(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Database error',
+      Setting.getSingleton.mockResolvedValue({
+        vatRate: 0.15,
+        defaultDeliveryCharge: 100,
+        districtDeliveryCharges: districtCharges,
+        defaultLanguage: "en",
       });
+
+      await getPublicPricing(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          districtDeliveryCharges:
+            districtCharges,
+        })
+      );
     });
 
-    test('should handle database errors in update settings', async () => {
-      // Arrange
-      mockReq.body = { storeName: 'Updated' };
+    test("should return default language", async () => {
+      Setting.getSingleton.mockResolvedValue({
+        vatRate: 0.15,
+        defaultDeliveryCharge: 100,
+        districtDeliveryCharges: {},
+        defaultLanguage: "bn",
+      });
 
-      Setting.findOneAndUpdate.mockRejectedValue(new Error('Database error'));
+      await getPublicPricing(req, res);
 
-      // Act
-      await updateAppSettings(mockReq, mockRes);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultLanguage: "bn",
+        })
+      );
+    });
 
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Database error',
+    test("should handle database errors", async () => {
+      Setting.getSingleton.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await getPublicPricing(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Database error",
       });
     });
   });

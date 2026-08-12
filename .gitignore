@@ -5,7 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
-
+.env.test.local
 # Build outputs
 dist/
 build/
