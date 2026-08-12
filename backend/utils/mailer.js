@@ -25,6 +25,10 @@ if (isConfigured) {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_APP_PASSWORD,
     },
+    // Render's outbound networking doesn't support IPv6, but Node resolves
+    // smtp.gmail.com's IPv6 address first — the connection then hangs until
+    // it times out instead of falling back to IPv4. Forcing IPv4 skips that.
+    family: 4,
   });
 }
 
