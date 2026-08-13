@@ -1421,7 +1421,7 @@ export default function Admin() {
 
             {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
             {!bkashLoading && (() => {
-              const q = bkashSearch.trim().toLowerCase();
+              const q = bkashSearch.trim().toLowerCase().replace(/^#/, "");
               const filteredBkash = !q ? bkashSubmissions : bkashSubmissions.filter(o => {
                 const idMatch = (o._id || "").toString().toLowerCase().includes(q);
                 const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
