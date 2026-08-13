@@ -7,6 +7,7 @@ import {
   deleteCoupon,
   setCouponStatus,
   validateCoupon,
+  getActiveCoupons,
 } from "../controllers/couponController.js";
 import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.js";
 
@@ -25,6 +26,7 @@ export const customerCouponRouter = express.Router();
 // optionalAuth: logged-in customers get their per-user usage enforced;
 // guests can still validate a code (per-user limits just won't apply to them
 // unless they're checking out and pass a guestEmail).
+customerCouponRouter.get("/active", getActiveCoupons);
 customerCouponRouter.post("/validate", optionalAuth, validateCoupon);
 
 export default customerCouponRouter;
