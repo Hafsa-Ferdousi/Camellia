@@ -776,6 +776,12 @@ img { max-width: 100%; display: block; }
   align-items: start;
 }
 @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; gap: 28px; } }
+/* Only sticky on the two-column layout — on the single-column mobile
+   layout the gallery and info stack in normal flow, so a stuck image would
+   just overlap the description scrolling underneath it. */
+@media (min-width: 769px) {
+  .detail-gallery-sticky { position: sticky; top: 84px; align-self: start; }
+}
 @media (max-width: 480px) { .review-guest-fields { grid-template-columns: 1fr !important; } }
 
 /* ── Checkout ── */
