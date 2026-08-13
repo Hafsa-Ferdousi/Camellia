@@ -6,9 +6,10 @@ import {
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
   Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
-  RotateCcw, PackageCheck, Wallet, Menu, X,
+  RotateCcw, PackageCheck, Wallet, Menu, X, Bot, KeyRound,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import AdminAiAssistant from "../components/AdminAiAssistant";
 import { generateDescription } from "../api/admin";
 import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
 import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
@@ -20,6 +21,8 @@ import {
   getCustomers,
   getCustomerDetail,
   resetCustomerPassword,
+  getPasswordResetRequests,
+  dismissPasswordResetRequest,
   getAllOrders,
   updateOrderStatus,
   getAllProducts,
@@ -49,6 +52,7 @@ import {
 } from "../api/coupons";
 import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
 import client from "../api/client";
+import { getOrderDisplayId } from "../utils/orderId";
 
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
@@ -146,21 +150,26 @@ const styles_editBtnSmall = {
 
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
-const fmtDayLabel = (isoDate) => new Date(isoDate).toLocaleDateString("en-BD", { weekday: "short" });
+const fmtDayLabel = (isoDate, compact) =>
+  new Date(isoDate).toLocaleDateString("en-BD", compact ? { day: "numeric", month: "short" } : { weekday: "short" });
 
 const RevenueTrendChart = ({ data }) => {
   const max = Math.max(1, ...data.map(d => d.total));
+  // Month-length ranges (13-31 bars) can't fit a weekday label under every
+  // bar without overlapping — drop the per-bar label and rely on the title
+  // tooltip instead, same as any dense bar chart would.
+  const compact = data.length > 10;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 140, padding: "8px 4px 0" }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: compact ? 3 : 10, height: 140, padding: "8px 4px 0" }}>
       {data.map(d => (
-        <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div title={fmt(d.total)} style={{
-            width: "100%", maxWidth: 32,
+        <div key={d.date} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div title={`${fmtDayLabel(d.date, true)} — ${fmt(d.total)}`} style={{
+            width: "100%", maxWidth: compact ? 14 : 32,
             height: `${Math.max(4, (d.total / max) * 100)}px`,
             background: "var(--gold, #C9A24B)", borderRadius: "4px 4px 0 0",
             transition: "height 0.2s",
           }} />
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>
+          {!compact && <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>}
         </div>
       ))}
     </div>
@@ -270,6 +279,7 @@ const NOTIFICATION_TAB = {
   new_customer: "customers",
   order_status: "orders",
   payment: "orders",
+  password_reset_request: "passwordRequests",
 };
 
 export default function Admin() {
@@ -283,6 +293,8 @@ export default function Admin() {
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [revenueModalOpen, setRevenueModalOpen] = useState(false);
   const bellRef = useRef(null);
 
   const loadAlerts = useCallback(() => {
@@ -331,6 +343,7 @@ export default function Admin() {
 
   const [stats, setStats]       = useState(null);
   const [statsErr, setStatsErr] = useState("");
+  const [statsRange, setStatsRange] = useState("7d");
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
@@ -354,6 +367,13 @@ export default function Admin() {
   const [resetPwMsg, setResetPwMsg]           = useState("");
   const [resetPwOk, setResetPwOk]             = useState(false);
   const [resetPwSaving, setResetPwSaving]     = useState(false);
+  // Only offer the reset-password action when the customer detail modal was
+  // opened from a Password Request — not from the general Customers tab, so
+  // there's exactly one place an admin can reset a customer's password.
+  const [resetPwFromRequest, setResetPwFromRequest] = useState(false);
+  const [passwordRequests, setPasswordRequests] = useState([]);
+  const [passwordRequestsLoading, setPRL]     = useState(false);
+  const [dismissingRequestId, setDismissingRequestId] = useState(null);
   const [products, setProducts]       = useState([]);
   const [categories, setCategories]   = useState([]);
   const [prodLoading, setPL]          = useState(false);
@@ -428,6 +448,9 @@ export default function Admin() {
   const [bkashActErr, setBkashActErr] = useState("");
 
   // ── data loaders ────────────────────────────────────────────
+  // Always the fixed default window — the stat cards, the "Revenue — Last 7
+  // Days" chart, and "Recent Orders" must stay put regardless of whatever
+  // period the Revenue modal (below) is currently showing.
   const loadStats = useCallback(async () => {
     try {
       const r = await getAdminStats();
@@ -436,6 +459,31 @@ export default function Admin() {
       setStatsErr(t("couldNotLoadStats"));
     }
   }, []);
+
+  // Independent fetch for the Revenue modal's period selector, so switching
+  // it never perturbs the fixed 7-day data above.
+  const [periodStats, setPeriodStats] = useState(null);
+  // Opening the modal fires a fetch for whatever range is currently
+  // selected; picking a new range immediately fires another. Two requests
+  // can resolve out of order, so only ever commit the response that still
+  // matches the range selected *now* — otherwise a slow, stale response can
+  // land after a newer one and silently show the wrong period's numbers.
+  const statsRangeRef = useRef(statsRange);
+  useEffect(() => { statsRangeRef.current = statsRange; }, [statsRange]);
+
+  const loadPeriodStats = useCallback(async () => {
+    const requestedRange = statsRange;
+    try {
+      const r = await getAdminStats(requestedRange);
+      if (statsRangeRef.current === requestedRange) setPeriodStats(r.data);
+    } catch {
+      if (statsRangeRef.current === requestedRange) setPeriodStats(null);
+    }
+  }, [statsRange]);
+
+  useEffect(() => {
+    if (revenueModalOpen) loadPeriodStats();
+  }, [revenueModalOpen, loadPeriodStats]);
 
   const loadOrders = useCallback(async () => {
     setOL(true);
@@ -585,6 +633,14 @@ export default function Admin() {
     }
   };
 
+  // ── Password reset requests (customer forgot their security answer too) ──
+  const loadPasswordRequests = useCallback(async () => {
+    setPRL(true);
+    try { const r = await getPasswordResetRequests(); setPasswordRequests(r.data); }
+    catch { setPasswordRequests([]); }
+    finally { setPRL(false); }
+  }, []);
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -597,7 +653,8 @@ export default function Admin() {
     if (tab === "chats")      loadConversations();
     if (tab === "refunds")    loadRefunds();
     if (tab === "bkash")      loadBkash();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
+    if (tab === "passwordRequests") loadPasswordRequests();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash, loadPasswordRequests]);
 
   useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
   useEffect(() => { setMobileNavOpen(false); }, [tab]);
@@ -609,28 +666,48 @@ export default function Admin() {
   const openCustomerDetail = async (c) => {
     if (c.type === "guest") return;
     setCDL(true);
+    setResetPwFromRequest(false);
     setCustomerDetail({ user: { name: c.name, email: c.email }, orders: [] });
     try { const r = await getCustomerDetail(c._id); setCustomerDetail(r.data); }
     catch { setCustomerDetail(null); }
     finally { setCDL(false); }
   };
 
-  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); };
+  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); setResetPwFromRequest(false); };
 
   const handleResetCustomerPassword = async (userId) => {
     setResetPwSaving(true);
     setResetPwMsg("");
     try {
-      await resetCustomerPassword(userId, resetPwValue);
-      setResetPwMsg(t("passwordResetSuccess"));
+      const { data } = await resetCustomerPassword(userId, resetPwValue);
+      setResetPwMsg(data?.message || t("passwordResetSuccess"));
       setResetPwOk(true);
       setResetPwValue("");
+      // The backend auto-resolves any pending request for this user — drop
+      // it from the queue locally instead of waiting for a manual reload.
+      setPasswordRequests(prev => prev.filter(r => r.user?._id !== userId));
     } catch (err) {
       setResetPwMsg(err.response?.data?.message || t("couldNotResetPassword"));
       setResetPwOk(false);
     } finally {
       setResetPwSaving(false);
     }
+  };
+
+  const openCustomerDetailForReset = (request) => {
+    openCustomerDetail({ _id: request.user._id, name: request.user.name, email: request.user.email, type: "registered" });
+    setResetPwFromRequest(true);
+    setResetPwUserId(request.user._id);
+    setResetPwMsg("");
+  };
+
+  const handleDismissRequest = async (id) => {
+    setDismissingRequestId(id);
+    try {
+      await dismissPasswordResetRequest(id);
+      setPasswordRequests(prev => prev.filter(r => r._id !== id));
+    } catch { /* ignore */ }
+    finally { setDismissingRequestId(null); }
   };
 
   const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
@@ -1066,17 +1143,19 @@ export default function Admin() {
           { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
           { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
+          { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
           { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
           { id: "chats",      label: t("navChats"),       icon: MessageCircle },
+          { id: "aiAssistant", label: t("navAiAssistant"), icon: Bot, onClick: () => setAiAssistantOpen(true) },
           { id: "settings",   label: t("navSettings"),   icon: Settings },
         ].map(navItem => (
           <button
             key={navItem.id}
-            className={`admin-nav-btn${tab === navItem.id ? " active" : ""}`}
-            onClick={() => setTab(navItem.id)}
+            className={`admin-nav-btn${(navItem.onClick ? aiAssistantOpen : tab === navItem.id) ? " active" : ""}`}
+            onClick={() => { if (navItem.onClick) { navItem.onClick(); setMobileNavOpen(false); } else setTab(navItem.id); }}
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
             <navItem.icon size={15} /> {navItem.label}
@@ -1088,6 +1167,11 @@ export default function Admin() {
             {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
               <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                 {refunds.length}
+              </span>
+            )}
+            {navItem.id === "passwordRequests" && passwordRequests.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {passwordRequests.length}
               </span>
             )}
           </button>
@@ -1107,7 +1191,17 @@ export default function Admin() {
 
         {tab === "overview" && (
           <div>
-            <h2 style={s.pageTitle}>{t("overview")}</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <h2 style={{ ...s.pageTitle, marginBottom: 0 }}>{t("overview")}</h2>
+              <button
+                type="button"
+                className="btn btn-gold"
+                onClick={() => setRevenueModalOpen(true)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <DollarSign size={15} /> {t("revenueDetails")}
+              </button>
+            </div>
             {statsErr && <p style={s.err}>{statsErr}</p>}
             {!stats && !statsErr && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
             {stats && (
@@ -1151,7 +1245,7 @@ export default function Admin() {
                     <tbody>
                       {stats.recentOrders.map(o => (
                         <tr key={o._id} style={{ ...s.tr, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
-                          <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                          <td style={s.td}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
@@ -1209,7 +1303,7 @@ export default function Admin() {
               const filtered = orders.filter(o => {
                 if (orderStatusFilter !== "all" && o.status !== orderStatusFilter) return false;
                 if (!q) return true;
-                const idMatch = o._id.slice(-6).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
+                const idMatch = getOrderDisplayId(o).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
                 const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
                 const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
                 return idMatch || name.includes(q) || email.includes(q);
@@ -1231,7 +1325,7 @@ export default function Admin() {
                       <tbody>
                         {pageItems.map(o => (
                           <tr key={o._id} style={s.tr}>
-                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                             <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
                               <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}</div>
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
@@ -1321,7 +1415,7 @@ export default function Admin() {
                     {refunds.map(rf => (
                       <tr key={rf._id} style={s.tr}>
                         <td style={s.td}>
-                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
+                          <span style={s.mono}>#{rf.order ? getOrderDisplayId(rf.order) : "—"}</span>
                         </td>
                         <td style={s.td}>
                           <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
@@ -1537,6 +1631,62 @@ export default function Admin() {
                       ))}
                     {customers.length === 0 && (
                       <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noCustomersYet")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "passwordRequests" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("passwordRequestsTitle")}</h2>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>{t("passwordRequestsDesc")}</p>
+            {passwordRequestsLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!passwordRequestsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colCustomer"), t("colContact"), t("passwordRequestColMessage"), t("colDate"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {passwordRequests.map(r => (
+                      <tr key={r._id} style={s.tr}>
+                        <td style={s.td}>{r.user?.name || "—"}</td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{r.user?.email}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.user?.username}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 280 }}>
+                          {r.message
+                            ? <span style={{ fontSize: 12.5 }}>{r.message}</span>
+                            : <span style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic" }}>{t("passwordRequestNoMessage")}</span>}
+                        </td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(r.createdAt)}</span></td>
+                        <td style={s.td}>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button className="btn btn-gold" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => openCustomerDetailForReset(r)}>
+                              {t("resetThisCustomerPassword")}
+                            </button>
+                            <button
+                              className="btn btn-outline"
+                              style={{ padding: "6px 12px", fontSize: 12 }}
+                              disabled={dismissingRequestId === r._id}
+                              onClick={() => handleDismissRequest(r._id)}
+                            >
+                              {dismissingRequestId === r._id ? t("loading") : t("passwordRequestDismiss")}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {passwordRequests.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("passwordRequestsEmpty")}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -2024,7 +2174,7 @@ export default function Admin() {
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("orderHash")}{orderDetail._id.slice(-6).toUpperCase()}</h3>
+            <h3 style={s.modalTitle}>{t("orderHash")}{getOrderDisplayId(orderDetail)}</h3>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <StatusBadge status={orderDetail.status} />
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
@@ -2096,7 +2246,7 @@ export default function Admin() {
                 <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
                   {customerDetail.orders.map(o => (
                     <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
-                      <span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span>
+                      <span style={s.mono}>#{getOrderDisplayId(o)}</span>
                       <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
                       <span>{fmt(o.totalAmount)}</span>
                       <StatusBadge status={o.status} />
@@ -2107,39 +2257,40 @@ export default function Admin() {
                   )}
                 </div>
 
-                <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
-                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                  {t("resetPasswordHint")}
-                </p>
-                {resetPwUserId !== customerDetail.user._id ? (
-                  <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
-                    {t("resetThisCustomerPassword")}
-                  </button>
-                ) : (
-                  <div>
-                    {resetPwMsg && (
-                      <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
-                        {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                {resetPwFromRequest && (
+                  <>
+                    <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
+                    {resetPwUserId !== customerDetail.user._id ? (
+                      <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                        {t("resetThisCustomerPassword")}
+                      </button>
+                    ) : (
+                      <div>
+                        {resetPwMsg && (
+                          <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
+                            {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <input
+                            className="input"
+                            type="text"
+                            placeholder={t("newPasswordPlaceholder")}
+                            value={resetPwValue}
+                            onChange={e => setResetPwValue(e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            className="btn btn-gold"
+                            disabled={resetPwSaving || !resetPwValue}
+                            onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                          >
+                            {resetPwSaving ? t("saving") : t("confirm")}
+                          </button>
+                        </div>
                       </div>
                     )}
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <input
-                        className="input"
-                        type="text"
-                        placeholder={t("newPasswordPlaceholder")}
-                        value={resetPwValue}
-                        onChange={e => setResetPwValue(e.target.value)}
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        className="btn btn-gold"
-                        disabled={resetPwSaving || !resetPwValue}
-                        onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
-                      >
-                        {resetPwSaving ? t("saving") : t("confirm")}
-                      </button>
-                    </div>
-                  </div>
+                  </>
                 )}
               </>
             )}
@@ -2273,7 +2424,13 @@ export default function Admin() {
                 {t("stockQuantity")}
                 <input className="input" name="totalStock" type="number" min="0" value={form.totalStock} onChange={setF} placeholder="0" />
               </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+              {/* Plain div, not <label> — a <label> wrapping these thumbnails would
+                  implicitly associate with the first labelable descendant (the
+                  "remove" <button>, since buttons are labelable elements), so the
+                  browser would forward any click on a non-interactive thumbnail
+                  <img> to that button instead of the file input, silently
+                  deleting image 0 no matter which thumbnail was clicked. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("images")}
                 {form.images.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
@@ -2304,7 +2461,7 @@ export default function Admin() {
                   disabled={imageUploading}
                 />
                 {imageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
+              </div>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
                 {t("featuredOnHomepage")}
@@ -2363,7 +2520,11 @@ export default function Admin() {
                 {t("slug")}
                 <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
               </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+              {/* Plain div, not <label> — see the product-images field above
+                  for why: a <label> here would implicitly bind to the
+                  "Remove image" <button> (the first labelable descendant),
+                  forwarding any click on the thumbnail <img> to it. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("image")}
                 {catForm.image && (
                   <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
@@ -2391,7 +2552,7 @@ export default function Admin() {
                   disabled={catImageUploading}
                 />
                 {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
+              </div>
               {catModal === "add" && (
                 <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
                   <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
@@ -2527,7 +2688,7 @@ export default function Admin() {
             <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
 
             <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
-              {t("orderReference")}: <span style={s.mono}>#{(bkashDetail._id || "").toString().slice(-6).toUpperCase()}</span>
+              {t("orderReference")}: <span style={s.mono}>#{getOrderDisplayId(bkashDetail)}</span>
               {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
             </div>
 
@@ -2600,6 +2761,52 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {revenueModalOpen && (
+        <div style={s.overlay} onClick={() => setRevenueModalOpen(false)}>
+          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+              <h3 style={{ ...s.modalTitle, marginBottom: 0 }}>{t("revenueDetails")}</h3>
+              <select
+                className="input"
+                value={statsRange}
+                onChange={e => setStatsRange(e.target.value)}
+                style={{ width: "auto", fontSize: 12.5 }}
+              >
+                <option value="today">{t("rangeToday")}</option>
+                <option value="2d">{t("range2Days")}</option>
+                <option value="7d">{t("range7Days")}</option>
+                <option value="10d">{t("range10Days")}</option>
+                <option value="thisMonth">{t("rangeThisMonth")}</option>
+                <option value="lastMonth">{t("rangeLastMonth")}</option>
+              </select>
+            </div>
+
+            {!periodStats && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {periodStats && (
+              <>
+                <div style={{ display: "flex", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{fmt(periodStats.periodRevenue)}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("revenueInPeriod")}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{periodStats.periodOrderCount}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("ordersInPeriod")}</div>
+                  </div>
+                </div>
+                <RevenueTrendChart data={periodStats.revenueTrend} />
+              </>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <button className="btn btn-outline" onClick={() => setRevenueModalOpen(false)}>{t("close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AdminAiAssistant open={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} title={t("navAiAssistant")} />
     </div>
   );
 }
