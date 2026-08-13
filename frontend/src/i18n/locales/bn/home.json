@@ -31,5 +31,13 @@
   "readyToShop": "কেনাকাটার জন্য প্রস্তুত?",
   "exploreCollection": "সম্পূর্ণ কালেকশন দেখুন",
   "ctaSub": "আমাদের সকল হাতে তৈরি বিয়ের গহনা দেখুন — খুঁজুন, ক্যাটাগরি ও মূল্য অনুযায়ী ফিল্টার করুন, এবং আপনার পছন্দের পিসটি খুঁজে নিন।",
-  "browseAll": "সকল পণ্য দেখুন →"
+  "browseAll": "সকল পণ্য দেখুন →",
+  "copyCode": "কোড কপি করুন",
+  "couponPercentOff": "{{value}}% ছাড়",
+  "couponFixedOff": "{{value}} ছাড়",
+  "couponMinPurchase": "সর্বনিম্ন {{value}}",
+  "offersEyebrow": "স্বল্প সময়ের জন্য",
+  "offersTitle": "আপনার জন্য বিশেষ অফার",
+  "couponValidTill": "মেয়াদ শেষ {{value}}",
+  "couponDateRange": "{{start}} – {{end}}"
 }

@@ -555,6 +555,104 @@ img { max-width: 100%; display: block; }
   justify-content: center;
 }
 .hero-btn-outline:hover { border-color: var(--gold-light); color: var(--gold-light); }
+
+/* Live coupon card, floated in the hero's left dead space (the headline
+   block is centered and narrower than the section, leaving this column
+   empty on wide screens). Light parchment surface so it reads as an
+   accent against the hero photo/gradient rather than another loud
+   saturated-orange block. Hidden on mobile — no spare side column there,
+   Home.jsx's own coupon band under the hero covers small screens. */
+.hero-coupon-card {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .hero-coupon-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    position: absolute;
+    left: 150px;
+    top: 70px;
+    z-index: 2;
+    width: 340px;
+    max-height: calc(100% - 100px);
+    overflow-y: auto;
+    padding-left: 20px;
+    border-left: 3px solid rgba(244,196,48,0.55);
+    scrollbar-width: thin;
+  }
+  .hero-coupon-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .hero-coupon-entry--divided {
+    border-top: 1px solid rgba(244,196,48,0.25);
+    padding-top: 12px;
+  }
+  .hero-coupon-card-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gold-light);
+  }
+  .hero-coupon-card-label {
+    font-family: var(--font-display); font-style: italic;
+    font-size: 58px; font-weight: 700; color: var(--gold-light);
+    line-height: 1.1;
+    text-shadow: 0 0 28px rgba(244,196,48,0.5), 0 4px 18px rgba(0,0,0,0.35);
+  }
+  .hero-coupon-card-min { font-size: 17px; color: rgba(253,246,236,0.75); }
+  .hero-coupon-card-desc { font-size: 18px; color: rgba(253,246,236,0.8); }
+  .hero-coupon-card-code {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-body); font-weight: 700; letter-spacing: 0.07em;
+    color: #2A1206; background: var(--gold-light);
+    border: 1px solid var(--gold-light);
+    border-radius: 28px; padding: 12px 22px; font-size: 19px;
+    cursor: pointer; white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .hero-coupon-card-code:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(244,196,48,0.4); }
+  .hero-coupon-card-expiry { font-size: 14px; color: rgba(253,246,236,0.6); }
+
+  /* ── Size tiers ──
+     As more coupons stack up, everything scales down together (font
+     sizes, gaps, code-pill padding) so the block still fits without
+     scrolling or spilling past the hero, instead of just one huge entry
+     followed by tiny overflow text. */
+  .hero-coupon-card--compact { gap: 10px; }
+  .hero-coupon-card--compact .hero-coupon-entry { gap: 6px; }
+  .hero-coupon-card--compact .hero-coupon-card-eyebrow { font-size: 13px; }
+  .hero-coupon-card--compact .hero-coupon-card-label { font-size: 38px; }
+  .hero-coupon-card--compact .hero-coupon-card-min,
+  .hero-coupon-card--compact .hero-coupon-card-desc { font-size: 14px; }
+  .hero-coupon-card--compact .hero-coupon-card-code { font-size: 15px; padding: 9px 16px; }
+  .hero-coupon-card--compact .hero-coupon-card-expiry { font-size: 12px; }
+  .hero-coupon-card--compact .hero-coupon-entry--divided { padding-top: 10px; }
+
+  .hero-coupon-card--dense { gap: 8px; width: 300px; }
+  .hero-coupon-card--dense .hero-coupon-entry { gap: 4px; }
+  .hero-coupon-card--dense .hero-coupon-card-eyebrow { font-size: 12px; }
+  .hero-coupon-card--dense .hero-coupon-card-label { font-size: 26px; }
+  .hero-coupon-card--dense .hero-coupon-card-min,
+  .hero-coupon-card--dense .hero-coupon-card-desc { font-size: 12px; }
+  .hero-coupon-card--dense .hero-coupon-card-code { font-size: 13px; padding: 7px 13px; gap: 6px; }
+  .hero-coupon-card--dense .hero-coupon-card-expiry { font-size: 11px; }
+  .hero-coupon-card--dense .hero-coupon-entry--divided { padding-top: 8px; }
+
+  .hero-coupon-card--tight { gap: 6px; width: 270px; max-height: calc(100% - 60px); top: 24px; }
+  .hero-coupon-card--tight .hero-coupon-entry { gap: 2px; }
+  .hero-coupon-card--tight .hero-coupon-card-eyebrow { font-size: 11px; }
+  .hero-coupon-card--tight .hero-coupon-card-label { font-size: 19px; }
+  .hero-coupon-card--tight .hero-coupon-card-min,
+  .hero-coupon-card--tight .hero-coupon-card-desc { display: none; }
+  .hero-coupon-card--tight .hero-coupon-card-code { font-size: 11px; padding: 5px 10px; gap: 5px; }
+  .hero-coupon-card--tight .hero-coupon-card-expiry { font-size: 10px; }
+  .hero-coupon-card--tight .hero-coupon-entry--divided { padding-top: 6px; }
+}
 @media (max-width: 768px) {
   .hero { padding: 56px 24px 52px; }
   .hero h1 { font-size: 34px; }
