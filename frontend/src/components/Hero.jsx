@@ -1,7 +1,11 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Tag, Copy, Check } from "lucide-react";
+import { formatPrice } from "../utils/formatPrice";
 
-export default function Hero({ onSearch }) {
+const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
+
+export default function Hero({ onSearch, coupons, copiedCode, onCopyCoupon, language }) {
   const { t } = useTranslation(["home", "common"]);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -11,8 +15,68 @@ export default function Hero({ onSearch }) {
 
   const trustBadges = ["trustHandcrafted", "trustDelivery", "trustBridal", "trustBrides"];
 
+  const couponLabel = (c) =>
+    c.discountType === "percentage"
+      ? t("couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
+      : t("couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` });
+
+  const activeCoupons = coupons || [];
+  // More live coupons than fit comfortably at "hero" size — scale the
+  // whole block down in tiers instead of letting it overflow or forcing
+  // a scrollbar, so it still reads as one tidy block under the navbar.
+  const couponSizeTier =
+    activeCoupons.length <= 1 ? "" :
+    activeCoupons.length <= 2 ? "hero-coupon-card--compact" :
+    activeCoupons.length <= 4 ? "hero-coupon-card--dense" :
+    "hero-coupon-card--tight";
+
   return (
     <section className="hero">
+      {/* Live coupons — a clean, borderless accent tucked under the navbar
+          in the hero's otherwise-empty left column. No background fill; a
+          thin gold rule + light text keeps it reading as part of the hero.
+          Every currently-active coupon is listed here (not just the first)
+          so a customer never misses one admin has turned on. Desktop only;
+          mobile keeps the coupon band below the hero (see Home.jsx). Text
+          scales down in tiers as more coupons stack up (see couponSizeTier)
+          so several offers still fit without overflowing the hero. */}
+      {activeCoupons.length > 0 && (
+        <div className={`hero-coupon-card ${couponSizeTier}`}>
+          <span className="hero-coupon-card-eyebrow">
+            <Tag size={12} /> {t("offersEyebrow", { defaultValue: "Limited Time" })}
+          </span>
+          {activeCoupons.map((coupon, i) => (
+            <div key={coupon._id} className={`hero-coupon-entry${i > 0 ? " hero-coupon-entry--divided" : ""}`}>
+              <div className="hero-coupon-card-label">{couponLabel(coupon)}</div>
+              {coupon.minimumPurchase > 0 && (
+                <div className="hero-coupon-card-min">
+                  {t("couponMinPurchase", { value: `৳ ${formatPrice(coupon.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(coupon.minimumPurchase, language, 0)}` })}
+                </div>
+              )}
+              {coupon.title && <div className="hero-coupon-card-desc">{coupon.title}</div>}
+              <button
+                type="button"
+                className="hero-coupon-card-code"
+                onClick={() => onCopyCoupon?.(coupon.code)}
+                title={t("copyCode", { defaultValue: "Copy code" })}
+              >
+                {coupon.code}
+                {copiedCode === coupon.code ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+              {coupon.startDate && coupon.endDate && (
+                <div className="hero-coupon-card-expiry">
+                  {t("couponDateRange", {
+                    start: fmtDate(coupon.startDate),
+                    end: fmtDate(coupon.endDate),
+                    defaultValue: `${fmtDate(coupon.startDate)} – ${fmtDate(coupon.endDate)}`,
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="container" style={{ position: "relative" }}>
         <span className="hero-eyebrow">{t("heroEyebrow")}</span>
 
