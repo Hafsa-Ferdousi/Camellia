@@ -205,6 +205,19 @@ export async function sendVerificationOtpEmail(to, otp) {
   return sendMail({ to, subject, text });
 }
 
+// ── Password reset (admin-initiated) ────────────────────────────────────
+export async function sendPasswordResetByAdminEmail(to, { newPassword }) {
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const subject = "Your Camellia password has been reset";
+  const text =
+    `Hi,\n\n` +
+    `An administrator has reset your Camellia account password.\n\n` +
+    `Your new temporary password is: ${newPassword}\n\n` +
+    `Please log in and change this to a strong password of your own as soon as possible — go to Settings > Change Password once you're signed in.\n\n` +
+    `If you did not request this change, please contact us immediately.`;
+  return sendMail({ to, subject, text });
+}
+
 // ── Contact form reply ──────────────────────────────────────────────────
 export async function sendContactReplyEmail(to, { name, originalMessage, reply }) {
   if (!to) return { sent: false, reason: "no_recipient" };
@@ -219,4 +232,4 @@ export async function sendContactReplyEmail(to, { name, originalMessage, reply }
   return sendMail({ to, subject, text });
 }
 
-export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendOrderAutoCancelledEmail, sendVerificationOtpEmail, sendContactReplyEmail };
+export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendOrderAutoCancelledEmail, sendVerificationOtpEmail, sendPasswordResetByAdminEmail, sendContactReplyEmail };

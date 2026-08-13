@@ -7,6 +7,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { guestLookupOrder } from "../api/cart";
+import { getOrderDisplayId } from "../utils/orderId";
 
 export default function TrackOrder() {
   const { t } = useTranslation("orders");
@@ -180,8 +181,7 @@ export default function TrackOrder() {
             {orders.map((order) => {
               const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
               const items = order.items || [];
-              // ✅ Use guestOrderId if available, otherwise fallback to shortened _id
-              const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
+              const displayOrderId = getOrderDisplayId(order);
 
               return (
                 <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-light)" }}>

@@ -8,9 +8,11 @@ import {
   getMe,
   updateProfile,
   updateDefaultAddress,
+  changePassword,
   deleteAccount,
   getSecurityQuestion,
   resetPasswordWithAnswer,
+  requestAdminPasswordReset,
   setupTwoFactor,
   verifyTwoFactorSetup,
   disableTwoFactor,
@@ -31,6 +33,7 @@ router.post("/logout", logoutUser);
 router.get("/me", protect, getMe);
 router.patch("/me", protect, updateProfile);
 router.put("/me/address", protect, updateDefaultAddress);
+router.post("/me/change-password", protect, sensitiveActionLimiter, changePassword);
 router.delete("/me", protect, sensitiveActionLimiter, deleteAccount);
 
 // Email verification (OTP sent at registration)
@@ -44,6 +47,7 @@ router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 // Password reset — via the security question chosen at registration (no email service)
 router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);
 router.post("/forgot-password/reset", sensitiveActionLimiter, resetPasswordWithAnswer);
+router.post("/forgot-password/request-admin-reset", sensitiveActionLimiter, requestAdminPasswordReset);
 
 // 2FA management (requires being logged in)
 router.post("/2fa/setup", protect, setupTwoFactor);
