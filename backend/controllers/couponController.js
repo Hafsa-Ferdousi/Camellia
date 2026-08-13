@@ -184,6 +184,29 @@ export const setCouponStatus = async (req, res) => {
   }
 };
 
+// ── Customer: GET /api/coupons/active ───────────────────────────────────────
+// Public list of currently-usable coupons (active, within date window, and
+// under their total usage limit if one is set) so the storefront can show
+// them to customers instead of coupons only ever being visible in the admin
+// panel. Only exposes fields that are safe/useful to show publicly.
+export const getActiveCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+      $or: [{ usageLimit: null }, { $expr: { $lt: ["$usedCount", "$usageLimit"] } }],
+    })
+      .select("code title description discountType discountValue minimumPurchase maximumDiscount startDate endDate")
+      .sort({ createdAt: -1 });
+
+    res.json(coupons);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 // ── Customer: POST /api/coupons/validate ───────────────────────────────────
 // Body: { couponCode, cartTotal, items? } where items is optional
 // [{ product, category }] for restriction checks. req.user is set when a
