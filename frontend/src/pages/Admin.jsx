@@ -1312,7 +1312,7 @@ export default function Admin() {
                 <table style={s.table}>
                   <thead>
                     <tr>
-                      {[t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
+                      {[t("refundColId"), t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
                         <th key={h} style={s.th}>{h}</th>
                       ))}
                     </tr>
@@ -1321,15 +1321,44 @@ export default function Admin() {
                     {refunds.map(rf => (
                       <tr key={rf._id} style={s.tr}>
                         <td style={s.td}>
-                          <span style={s.mono}>#{(rf.order?.invoiceNumber || rf.order?.guestOrderId || rf.order?._id?.slice(-6) || "—").toString().slice(-8).toUpperCase()}</span>
+                          <span style={s.mono} title={rf._id}>
+                            #RF-{rf._id.slice(-8).toUpperCase()}
+                          </span>
                         </td>
                         <td style={s.td}>
-                          <div style={{ fontSize: 13 }}>{rf.user?.name || "—"}</div>
-                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email}</div>
+                          <span style={s.mono}>
+                            #{rf.order?.invoiceNumber || rf.order?.guestOrderId || (rf.order?._id ? rf.order._id.slice(-8).toUpperCase() : "—")}
+                          </span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{rf.user?.name || rf.guestInfo?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email || rf.guestInfo?.email}</div>
+                          {rf.isGuest && (
+                            <span style={{
+                              display: "inline-block", marginTop: 3, fontSize: 9, fontWeight: 700,
+                              padding: "1px 7px", borderRadius: 10, textTransform: "uppercase", letterSpacing: "0.04em",
+                              background: "var(--parchment)", color: "var(--muted)",
+                            }}>
+                              {t("guestBadge", { defaultValue: "Guest" })}
+                            </span>
+                          )}
                         </td>
                         <td style={{ ...s.td, maxWidth: 200 }}>
                           <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
+                          {rf.images?.length > 0 && (
+                            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                              {rf.images.map((url, i) => (
+                                <a key={i} href={url} target="_blank" rel="noreferrer" title={t("attachedPhotos")}>
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border)" }}
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td style={{ ...s.td, textTransform: "capitalize" }}>
                           {rf.requestType}
@@ -1387,7 +1416,7 @@ export default function Admin() {
                       </tr>
                     ))}
                     {refunds.length === 0 && (
-                      <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
+                      <tr><td colSpan={9} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
                     )}
                   </tbody>
                 </table>

@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Gift, Truck, Gem, Copy, Check, Tag } from "lucide-react";
+import { Gift, Truck, Gem, Copy, Check, Tag, Clock } from "lucide-react";
 import { getProducts, getCategories, getBestSellers } from "../api/products";
-import { getActiveCoupons } from "../api/coupons";
+import { getActiveCoupons, getUpcomingCoupons } from "../api/coupons";
 import { useLanguage } from "../context/LanguageContext";
 import { formatPrice } from "../utils/formatPrice";
-import Hero from "../components/Hero";
+import Hero, { CouponCountdown } from "../components/Hero";
 import ProductCard from "../components/ProductCard";
 import CategorySection from "../components/CategorySection";
 import Seo from "../components/Seo";
@@ -49,6 +49,7 @@ export default function Home() {
   const [loadingF,    setLoadingF]    = useState(true);
   const [loadingBS,   setLoadingBS]   = useState(true);
   const [coupons,     setCoupons]     = useState([]);
+  const [upcomingCoupons, setUpcomingCoupons] = useState([]);
   const [copiedCode,  setCopiedCode]  = useState("");
 
   useEffect(() => {
@@ -60,6 +61,12 @@ export default function Home() {
   // Surface any currently-usable ones here so shoppers actually see them.
   useEffect(() => {
     getActiveCoupons().then(r => setCoupons(r.data)).catch(() => setCoupons([]));
+  }, []);
+
+  // Coupons that are turned on but haven't started yet — teased on the
+  // homepage with a live countdown so customers know to come back.
+  useEffect(() => {
+    getUpcomingCoupons().then(r => setUpcomingCoupons(r.data)).catch(() => setUpcomingCoupons([]));
   }, []);
 
   const copyCoupon = (code) => {
@@ -234,6 +241,25 @@ export default function Home() {
         .coupon-chip-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
         .coupon-chip-expiry { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
+        /* ── Upcoming coupons (mobile) ──
+           Same band, a second row underneath — cooler/less saturated so it
+           reads as "not live yet", with a ticking countdown instead of a
+           copy-able code chip. */
+        .coupon-upcoming-head { text-align: center; margin: 22px 0 14px; }
+        .coupon-upcoming-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+          text-transform: uppercase; color: var(--muted);
+        }
+        .coupon-chip--upcoming { opacity: 0.92; }
+        .coupon-chip-countdown {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+          color: var(--maroon-dark); background: var(--gold-pale);
+          border: 1px solid rgba(244,196,48,0.55);
+          border-radius: 20px; padding: 6px 12px; margin-top: 6px;
+        }
+
         /* Desktop already shows the live coupon as a pill in the navbar
            (next to the logo/links) — no need to repeat it as a whole extra
            section further down the page. */
@@ -246,54 +272,86 @@ export default function Home() {
       <Hero
         onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)}
         coupons={coupons}
+        upcomingCoupons={upcomingCoupons}
         copiedCode={copiedCode}
         onCopyCoupon={copyCoupon}
         language={language}
       />
 
-      {/* ── Active coupons (shown as soon as admin activates one) ── */}
-      {coupons.length > 0 && (
+      {/* ── Active + upcoming coupons (shown as soon as admin activates one) ── */}
+      {(coupons.length > 0 || upcomingCoupons.length > 0) && (
         <section className="coupon-strip">
           <div className="container coupon-strip-inner" style={{ padding: "0 24px" }}>
-            <div className="coupon-strip-head">
-              <span className="coupon-strip-eyebrow">{t("home:offersEyebrow", { defaultValue: "Limited Time" })}</span>
-              <h2 className="coupon-strip-title">{t("home:offersTitle", { defaultValue: "Exclusive Offers For You" })}</h2>
-            </div>
-            <div className="coupon-row">
-              {coupons.map(c => (
-                <div key={c._id} className="coupon-chip">
-                  <button
-                    type="button"
-                    className="coupon-chip-code"
-                    onClick={() => copyCoupon(c.code)}
-                    title={t("home:copyCode", { defaultValue: "Copy code" })}
-                  >
-                    <Tag size={13} />
-                    {c.code}
-                    {copiedCode === c.code ? <Check size={13} /> : <Copy size={13} />}
-                  </button>
-                  <div className="coupon-chip-text">
-                    <div className="coupon-chip-title">
-                      {c.discountType === "percentage"
-                        ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
-                        : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
-                      {c.minimumPurchase > 0 &&
-                        ` · ${t("home:couponMinPurchase", { value: `৳ ${formatPrice(c.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(c.minimumPurchase, language, 0)}` })}`}
-                    </div>
-                    {c.title && <div className="coupon-chip-desc">{c.title}</div>}
-                    {c.startDate && c.endDate && (
-                      <div className="coupon-chip-expiry">
-                        {t("home:couponDateRange", {
-                          start: fmtDate(c.startDate),
-                          end: fmtDate(c.endDate),
-                          defaultValue: `${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`,
-                        })}
-                      </div>
-                    )}
-                  </div>
+            {coupons.length > 0 && (
+              <>
+                <div className="coupon-strip-head">
+                  <span className="coupon-strip-eyebrow">{t("home:offersEyebrow", { defaultValue: "Limited Time" })}</span>
+                  <h2 className="coupon-strip-title">{t("home:offersTitle", { defaultValue: "Exclusive Offers For You" })}</h2>
                 </div>
-              ))}
-            </div>
+                <div className="coupon-row">
+                  {coupons.map(c => (
+                    <div key={c._id} className="coupon-chip">
+                      <button
+                        type="button"
+                        className="coupon-chip-code"
+                        onClick={() => copyCoupon(c.code)}
+                        title={t("home:copyCode", { defaultValue: "Copy code" })}
+                      >
+                        <Tag size={13} />
+                        {c.code}
+                        {copiedCode === c.code ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                      <div className="coupon-chip-text">
+                        <div className="coupon-chip-title">
+                          {c.discountType === "percentage"
+                            ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                          {c.minimumPurchase > 0 &&
+                            ` · ${t("home:couponMinPurchase", { value: `৳ ${formatPrice(c.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(c.minimumPurchase, language, 0)}` })}`}
+                        </div>
+                        {c.title && <div className="coupon-chip-desc">{c.title}</div>}
+                        {c.startDate && c.endDate && (
+                          <div className="coupon-chip-expiry">
+                            {t("home:couponDateRange", {
+                              start: fmtDate(c.startDate),
+                              end: fmtDate(c.endDate),
+                              defaultValue: `${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`,
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {upcomingCoupons.length > 0 && (
+              <>
+                <div className="coupon-upcoming-head">
+                  <span className="coupon-upcoming-eyebrow">
+                    <Clock size={11} /> {t("home:upcomingEyebrow", { defaultValue: "Coming Soon" })}
+                  </span>
+                </div>
+                <div className="coupon-row">
+                  {upcomingCoupons.map(c => (
+                    <div key={c._id} className="coupon-chip coupon-chip--upcoming">
+                      <div className="coupon-chip-text">
+                        <div className="coupon-chip-title">
+                          {c.discountType === "percentage"
+                            ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                        </div>
+                        {c.title && <div className="coupon-chip-desc">{c.title}</div>}
+                        <div className="coupon-chip-countdown">
+                          <Clock size={11} /> <CouponCountdown target={c.startDate} t={(k, o) => t(`home:${k}`, o)} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
       )}

@@ -56,6 +56,18 @@ export default function OrderHistory() {
   const refundFor = (orderId, productId) =>
     refunds.find(r => (r.order?._id || r.order) === orderId && r.item?.product === productId);
 
+  // Returns are only accepted within 7 days of delivery (see
+  // refundController.js). deliveredAt is only set going forward — for
+  // orders delivered before this existed, fall back to updatedAt so
+  // eligibility still resolves to something sensible rather than crashing.
+  const RETURN_WINDOW_DAYS = 7;
+  const returnDaysLeft = (order) => {
+    const deliveredAt = order.deliveredAt || order.updatedAt;
+    if (!deliveredAt) return null;
+    const daysSince = (Date.now() - new Date(deliveredAt).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(RETURN_WINDOW_DAYS - daysSince));
+  };
+
   const filteredOrders = filterStatus === "all"
     ? orders
     : orders.filter(o => o.status === filterStatus);
@@ -210,6 +222,18 @@ export default function OrderHistory() {
                       {" · "}{order.items.length} {t(order.items.length === 1 ? "item_one" : "item_other")}
                     </p>
                   </div>
+
+                  {order.status === "delivered" && returnDaysLeft(order) > 0 && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      background: "var(--gold-pale)", color: "var(--maroon)",
+                      fontSize: 11, fontWeight: 600,
+                      padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap",
+                    }}>
+                      <RotateCcw size={11} /> {t("returnDaysLeft", { count: returnDaysLeft(order) })}
+                    </span>
+                  )}
+
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{
                       background: status.bg, color: status.color,
@@ -320,18 +344,27 @@ export default function OrderHistory() {
                                   }}>
                                     {t(`refundStatus_${existingRefund.status}`)}
                                   </span>
+                                ) : returnDaysLeft(order) > 0 ? (
+                                  <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setReturnTarget({ order, item }); }}
+                                      style={{
+                                        display: "inline-flex", alignItems: "center", gap: 4,
+                                        background: "none", border: "none", padding: 0, cursor: "pointer",
+                                        fontSize: 11, fontWeight: 600, color: "var(--maroon)",
+                                      }}
+                                    >
+                                      <RotateCcw size={11} /> {t("returnProduct")}
+                                    </button>
+                                    <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                                      · {t("returnDaysLeft", { count: returnDaysLeft(order) })}
+                                    </span>
+                                  </div>
                                 ) : (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setReturnTarget({ order, item }); }}
-                                    style={{
-                                      marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4,
-                                      background: "none", border: "none", padding: 0, cursor: "pointer",
-                                      fontSize: 11, fontWeight: 600, color: "var(--maroon)",
-                                    }}
-                                  >
-                                    <RotateCcw size={11} /> {t("returnProduct")}
-                                  </button>
+                                  <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
+                                    {t("returnWindowClosed")}
+                                  </span>
                                 )
                               )}
                             </div>

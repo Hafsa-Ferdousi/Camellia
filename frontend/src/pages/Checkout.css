@@ -431,6 +431,65 @@
   margin-bottom: 8px;
 }
 
+/* Quick-apply chips for every currently-active coupon — lets the customer
+   tap a code they already saw on the homepage/hero instead of re-typing
+   or hunting for it. Only one can ever be applied at once (this list
+   hides itself once appliedCoupon is set), matching the single-coupon
+   checkout rule. */
+.coupon-available-list {
+  margin-bottom: 12px;
+}
+
+.coupon-available-hint {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.coupon-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coupon-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-pale, #FCEFC7);
+  border: 1px solid rgba(244, 196, 48, 0.55);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--maroon-dark, #7A2D06);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.coupon-quick-chip-code {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.coupon-quick-chip-sep {
+  opacity: 0.5;
+}
+
+.coupon-quick-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.coupon-quick-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .coupon-input-row {
   display: flex;
   gap: 10px;
