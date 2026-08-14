@@ -1331,7 +1331,13 @@ export default function Admin() {
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
                             </td>
                             <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
-                            <td style={{ ...s.td, textAlign: "center" }}>{o.items?.length}</td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
+                              <div style={{ fontSize: 12, maxWidth: 220 }}>
+                                {o.items?.slice(0, 2).map(it => it.nameSnapshot || localized(it.product?.name, language)).join(", ")}
+                                {o.items?.length > 2 && ` +${o.items.length - 2}`}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.items?.length} {t("colItems")}</div>
+                            </td>
                             <td style={s.td}>{fmt(o.totalAmount)}</td>
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
@@ -1605,7 +1611,7 @@ export default function Admin() {
                   { id: "registered", label: t("registeredCount", { count: customers.filter(c => c.type === "registered" || c.type === "admin").length }) },
                   { id: "guest", label: t("guestCount", { count: customers.filter(c => c.type === "guest").length }) },
                 ].map(f => (
-                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--charcoal)" : "var(--border)", background: customerFilter === f.id ? "var(--charcoal)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
+                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--maroon)" : "var(--border)", background: customerFilter === f.id ? "var(--maroon)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
                 ))}
               </div>
             </div>
@@ -1861,13 +1867,13 @@ export default function Admin() {
                           <button
                             onClick={() => handleMoveCategory(c, "up")}
                             disabled={i === 0 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, background: "var(--maroon)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
                             title={t("moveUp")}
                           ><ArrowUp size={13} /></button>
                           <button
                             onClick={() => handleMoveCategory(c, "down")}
                             disabled={i === arr.length - 1 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, background: "var(--maroon)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
                             title={t("moveDown")}
                           ><ArrowDown size={13} /></button>
                         </td>
@@ -1933,7 +1939,7 @@ export default function Admin() {
                               <td style={s.td}><div style={{ fontWeight: 500, fontSize: 13 }}>{c.title}</div>{c.description && <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 220 }}>{c.description}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12.5 }}>{c.discountType === "percentage" ? t("percentOff", { value: c.discountValue }) : t("amountOff", { value: fmt(c.discountValue) })}{c.maximumDiscount != null && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("maxDiscountLabel", { amount: fmt(c.maximumDiscount) })}</div>}{c.minimumPurchase > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("minPurchaseLabel", { amount: fmt(c.minimumPurchase) })}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12 }}>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}{expired && <div style={{ color: "var(--red)", fontSize: 11, fontWeight: 600 }}>{t("expiredLabel")}</div>}{!expired && upcoming && <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>{t("upcomingLabel")}</div>}</td>
-                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--charcoal)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
+                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--maroon)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
                               <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => handleToggleCouponStatus(c)} style={{ ...s.editBtn, background: c.isActive ? "var(--green)" : "var(--muted)", marginRight: 0 }} title={t("clickToToggleTitle")}>{c.isActive ? t("colActive") : t("inactive")}</button></td>
                               <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCoupon(c)} style={s.editBtn}>{t("edit")}</button><button onClick={() => setCouponConfirmDelete(c)} style={s.delBtn}>{t("delete")}</button></td>
                             </tr>
@@ -1956,7 +1962,7 @@ export default function Admin() {
               <h2 style={s.pageTitle}>{t("messagesTitle")}</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {["all", "unread", "read", "replied"].map(f => (
-                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
+                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--maroon)" : "var(--border)", background: messageFilter === f ? "var(--maroon)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
                 ))}
               </div>
             </div>
@@ -1984,9 +1990,9 @@ export default function Admin() {
                             }}>{t(`msg${m.status.charAt(0).toUpperCase()}${m.status.slice(1)}`)}</span>
                           </td>
                           <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
+                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("markRead")}</button>}
                             {m.status !== "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--green)" }}>{t("reply")}</button>}
-                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("viewReply")}</button>}
+                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("viewReply")}</button>}
                             <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
                           </td>
                         </tr>
@@ -2039,7 +2045,7 @@ export default function Admin() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h2 style={s.pageTitle}>{t("notifications:title")}</h2>
               {alertsUnread > 0 && (
-                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--charcoal)" }}>
+                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--maroon)" }}>
                   {t("notifications:markAllRead")}
                 </button>
               )}
