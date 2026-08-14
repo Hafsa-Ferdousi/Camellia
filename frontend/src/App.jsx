@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -6,33 +7,45 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import ChatWidget from "./components/ChatWidget";
-import Home from "./pages/Home";
-import Products from "./pages/Products";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import Security from "./pages/Security";
-import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import OrderHistory from "./pages/OrderHistory";
-import TrackOrder from "./pages/TrackOrder";        // ✅ KEEP THIS ONE
-import Admin from "./pages/Admin";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Legal from "./pages/Legal";
-import WishlistPage from "./pages/Wishlist";
-import Settings from "./pages/Settings";
-import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
+// Home is the most common landing route, so it's imported eagerly — every
+// other page is code-split so a first-time visitor isn't downloading the
+// admin panel, checkout, and every other page before seeing anything.
+import Home from "./pages/Home";
+
+const Products         = lazy(() => import("./pages/Products"));
+const Login            = lazy(() => import("./pages/Login"));
+const Register          = lazy(() => import("./pages/Register"));
+const ForgotPassword    = lazy(() => import("./pages/ForgotPassword"));
+const VerifyEmail       = lazy(() => import("./pages/VerifyEmail"));
+const Security          = lazy(() => import("./pages/Security"));
+const ProductDetail     = lazy(() => import("./pages/ProductDetail"));
+const Cart              = lazy(() => import("./pages/Cart"));
+const Checkout          = lazy(() => import("./pages/Checkout"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const OrderHistory      = lazy(() => import("./pages/OrderHistory"));
+const TrackOrder        = lazy(() => import("./pages/TrackOrder"));
+const Admin             = lazy(() => import("./pages/Admin"));
+const About              = lazy(() => import("./pages/About"));
+const Contact            = lazy(() => import("./pages/Contact"));
+const Legal              = lazy(() => import("./pages/Legal"));
+const WishlistPage       = lazy(() => import("./pages/Wishlist"));
+const Settings           = lazy(() => import("./pages/Settings"));
+const Notifications      = lazy(() => import("./pages/Notifications"));
+
+function PageFallback() {
+  return <div style={{ minHeight: "60vh" }} />;
+}
 
 function SiteLayout() {
   return (
     <>
       <Navbar />
-      <main style={{ minHeight: "60vh" }}><Outlet /></main>
+      <main style={{ minHeight: "60vh" }}>
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
+      </main>
       <Footer />
       <ChatWidget />
     </>
@@ -47,7 +60,7 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <Routes>
-              <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute adminOnly><Suspense fallback={<PageFallback />}><Admin /></Suspense></ProtectedRoute>} />
               <Route element={<SiteLayout />}>
                 <Route path="/"                   element={<Home />} />
                 <Route path="/products"            element={<Products />} />
@@ -60,6 +73,7 @@ export default function App() {
                 <Route path="/cart"                element={<ProtectedRoute blockAdmin><Cart /></ProtectedRoute>} />
                 <Route path="/checkout"            element={<ProtectedRoute blockAdmin><Checkout /></ProtectedRoute>} />
                 <Route path="/order-confirmation"  element={<OrderConfirmation />} />
+                <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
                 <Route path="/orders"              element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
                 <Route path="/track-order"         element={<TrackOrder />} />
                 <Route path="/about"               element={<About />} />

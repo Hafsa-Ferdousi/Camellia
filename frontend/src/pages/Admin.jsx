@@ -5,11 +5,14 @@ import {
   Globe, DollarSign, Package, Users, Gem, AlertTriangle, Star, Tag,
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
-  Ticket, Mail, MessageCircle, Trash2, Bell,
+  Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
+  RotateCcw, PackageCheck, Wallet, Menu, X, Bot, KeyRound,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import AdminAiAssistant from "../components/AdminAiAssistant";
 import { generateDescription } from "../api/admin";
-import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
+import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { getCategoryIcon } from "../utils/categoryIcons";
@@ -18,6 +21,8 @@ import {
   getCustomers,
   getCustomerDetail,
   resetCustomerPassword,
+  getPasswordResetRequests,
+  dismissPasswordResetRequest,
   getAllOrders,
   updateOrderStatus,
   getAllProducts,
@@ -45,9 +50,10 @@ import {
   deleteCoupon as deleteCouponApi,
   setCouponStatus,
 } from "../api/coupons";
+import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
 import client from "../api/client";
+import { getOrderDisplayId } from "../utils/orderId";
 
-// ── helpers ──────────────────────────────────────────────────
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
   confirmed:  { bg: "#DBEAFE", color: "#1E40AF" },
@@ -75,23 +81,95 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const BKASH_STATUS_COLORS = {
+  awaiting_submission:  { bg: "#F3F4F6", color: "#4B5563" },
+  pending_verification: { bg: "#FEF9C3", color: "#854D0E" },
+  verified:              { bg: "#DCFCE7", color: "#166534" },
+  rejected:              { bg: "#FEE2E2", color: "#991B1B" },
+};
+const BKASH_STATUS_LABEL_KEYS = {
+  awaiting_submission: "bkashFilterAwaiting",
+  pending_verification: "bkashFilterPending",
+  verified: "bkashFilterVerified",
+  rejected: "bkashFilterRejected",
+};
+const BkashStatusBadge = ({ status }) => {
+  const { t } = useTranslation("admin");
+  const c = BKASH_STATUS_COLORS[status] || BKASH_STATUS_COLORS.awaiting_submission;
+  return (
+    <span style={{
+      background: c.bg, color: c.color,
+      padding: "3px 10px", borderRadius: 20,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.04em",
+      whiteSpace: "nowrap",
+    }}>
+      {t(BKASH_STATUS_LABEL_KEYS[status] || "bkashFilterAwaiting")}
+    </span>
+  );
+};
+
+// Private note for staff eyes only. Keeps its own draft state (initialized
+// once from the order's saved note) so typing isn't interrupted by the
+// orders list re-rendering; only saved back to the order on blur/Save.
+const AdminNoteInput = ({ order, saving, onSave }) => {
+  const { t } = useTranslation("admin");
+  const [draft, setDraft] = useState(order.payment?.adminNote || "");
+  const [dirty, setDirty] = useState(false);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <textarea
+        value={draft}
+        onChange={e => { setDraft(e.target.value); setDirty(true); }}
+        placeholder={t("adminNotePlaceholder")}
+        rows={2}
+        style={{
+          width: "100%", minWidth: 160, resize: "vertical",
+          padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4,
+          fontSize: 11.5, fontFamily: "var(--font-body)", background: "var(--cream)",
+          color: "var(--ink)", boxSizing: "border-box",
+        }}
+      />
+      {dirty && (
+        <button
+          onClick={() => { onSave(order, draft.trim()); setDirty(false); }}
+          disabled={saving}
+          style={{ ...styles_editBtnSmall, marginTop: 4 }}
+        >
+          {saving ? t("saving") : t("saveNote")}
+        </button>
+      )}
+    </div>
+  );
+};
+
+const styles_editBtnSmall = {
+  padding: "3px 10px", background: "var(--maroon)", color: "#fff", border: "none",
+  borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "var(--font-body)",
+};
+
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
-const fmtDayLabel = (isoDate) => new Date(isoDate).toLocaleDateString("en-BD", { weekday: "short" });
+const fmtDayLabel = (isoDate, compact) =>
+  new Date(isoDate).toLocaleDateString("en-BD", compact ? { day: "numeric", month: "short" } : { weekday: "short" });
 
 const RevenueTrendChart = ({ data }) => {
   const max = Math.max(1, ...data.map(d => d.total));
+  // Month-length ranges (13-31 bars) can't fit a weekday label under every
+  // bar without overlapping — drop the per-bar label and rely on the title
+  // tooltip instead, same as any dense bar chart would.
+  const compact = data.length > 10;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 140, padding: "8px 4px 0" }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: compact ? 3 : 10, height: 140, padding: "8px 4px 0" }}>
       {data.map(d => (
-        <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div title={fmt(d.total)} style={{
-            width: "100%", maxWidth: 32,
+        <div key={d.date} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div title={`${fmtDayLabel(d.date, true)} — ${fmt(d.total)}`} style={{
+            width: "100%", maxWidth: compact ? 14 : 32,
             height: `${Math.max(4, (d.total / max) * 100)}px`,
             background: "var(--gold, #C9A24B)", borderRadius: "4px 4px 0 0",
             transition: "height 0.2s",
           }} />
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>
+          {!compact && <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>}
         </div>
       ))}
     </div>
@@ -142,15 +220,50 @@ const Pagination = ({ page, totalPages, onChange }) => {
 };
 const pagBtnStyle = { padding: "6px 14px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", cursor: "pointer", fontSize: 12 };
 
-// ── blank product form ────────────────────────────────────────
+const CheckboxMultiSelect = ({ options, selected, onToggle, placeholder }) => {
+  const { t } = useTranslation("admin");
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filtered = q ? options.filter(o => o.label.toLowerCase().includes(q)) : options;
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 6, background: "var(--ivory)", overflow: "hidden" }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ width: "100%", padding: "7px 10px", border: "none", borderBottom: "1px solid var(--border)", fontSize: 12, boxSizing: "border-box", fontFamily: "var(--font-body)" }}
+      />
+      <div style={{ maxHeight: 150, overflowY: "auto", padding: 4 }}>
+        {filtered.length === 0 && <p style={{ fontSize: 12, color: "var(--muted)", padding: "6px 8px" }}>{t("noMatches")}</p>}
+        {filtered.map(o => (
+          <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", fontSize: 13, cursor: "pointer", borderRadius: 4 }}>
+            <input
+              type="checkbox"
+              checked={selected.includes(o.value)}
+              onChange={() => onToggle(o.value)}
+              style={{ width: 14, height: 14, accentColor: "var(--maroon)", flexShrink: 0 }}
+            />
+            {o.label}
+          </label>
+        ))}
+      </div>
+      {selected.length > 0 && (
+        <div style={{ padding: "5px 8px", fontSize: 11, color: "var(--muted)", borderTop: "1px solid var(--border)" }}>
+          {t("selectedCount", { count: selected.length })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BLANK_PRODUCT = {
   nameEn: "", nameBn: "",
   descEn: "", descBn: "",
   category: "", basePrice: "", totalStock: "",
-  images: [], isFeatured: false, isActive: true,
+  images: [], isFeatured: false, isBestSeller: false, isActive: true,
 };
 
-// ── blank category form ─────────────────────────────────────────
 const BLANK_CATEGORY = { nameEn: "", nameBn: "", slug: "", image: "", isFixed: false };
 const BLANK_COUPON = { code: "", title: "", description: "", discountType: "percentage", discountValue: "", minimumPurchase: "", maximumDiscount: "", usageLimit: "", perUserLimit: "", startDate: "", endDate: "", applicableProducts: [], applicableCategories: [], excludedProducts: [], isActive: true };
 
@@ -158,17 +271,17 @@ const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 const isCouponExpired = (c) => new Date(c.endDate) < new Date();
 const isCouponUpcoming = (c) => new Date(c.startDate) > new Date();
 const slugify = (str) => (str || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const isCloudinaryUploadUrl = (url) => typeof url === "string" && url.includes("/camellia/products/");
 
-// Which admin tab a notification's "view" click should jump to.
 const NOTIFICATION_TAB = {
   new_order: "orders",
   low_stock: "products",
   new_customer: "customers",
   order_status: "orders",
   payment: "orders",
+  password_reset_request: "passwordRequests",
 };
 
-// ═══════════════════════════════════════════════════════════════
 export default function Admin() {
   const { t } = useTranslation(["admin", "notifications"]);
   const { language, setLanguage } = useLanguage();
@@ -176,10 +289,12 @@ export default function Admin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
 
-  // ── admin alert bell ────────────────────────────────────────
   const [alerts, setAlerts]           = useState([]);
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [revenueModalOpen, setRevenueModalOpen] = useState(false);
   const bellRef = useRef(null);
 
   const loadAlerts = useCallback(() => {
@@ -219,21 +334,29 @@ export default function Admin() {
     try { await markAllAsRead(); } catch { /* best-effort */ }
   };
 
+  const handleAlertDelete = async (e, n) => {
+    e.stopPropagation();
+    setAlerts((list) => list.filter((x) => x._id !== n._id));
+    if (!n.read) setAlertsUnread((c) => Math.max(0, c - 1));
+    try { await deleteNotification(n._id); } catch { /* best-effort */ }
+  };
+
   const [stats, setStats]       = useState(null);
   const [statsErr, setStatsErr] = useState("");
+  const [statsRange, setStatsRange] = useState("7d");
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
+  const [noteSaving, setNoteSaving]   = useState(null);
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [orderPage, setOrderPage]     = useState(1);
-  const [orderDetail, setOrderDetail] = useState(null); // selected order for detail modal
+  const [orderDetail, setOrderDetail] = useState(null);
   const [exportFrom, setExportFrom]   = useState("");
   const [exportTo, setExportTo]       = useState("");
   const [exporting, setExporting]     = useState(false);
   const [exportErr, setExportErr]     = useState("");
 
-  // customers
   const [customers, setCustomers]         = useState([]);
   const [customersLoading, setCustL]      = useState(false);
   const [customerFilter, setCustomerFilter] = useState("all");
@@ -244,6 +367,13 @@ export default function Admin() {
   const [resetPwMsg, setResetPwMsg]           = useState("");
   const [resetPwOk, setResetPwOk]             = useState(false);
   const [resetPwSaving, setResetPwSaving]     = useState(false);
+  // Only offer the reset-password action when the customer detail modal was
+  // opened from a Password Request — not from the general Customers tab, so
+  // there's exactly one place an admin can reset a customer's password.
+  const [resetPwFromRequest, setResetPwFromRequest] = useState(false);
+  const [passwordRequests, setPasswordRequests] = useState([]);
+  const [passwordRequestsLoading, setPRL]     = useState(false);
+  const [dismissingRequestId, setDismissingRequestId] = useState(null);
   const [products, setProducts]       = useState([]);
   const [categories, setCategories]   = useState([]);
   const [prodLoading, setPL]          = useState(false);
@@ -261,7 +391,6 @@ export default function Admin() {
   const [lowStockIds, setLowStockIds]     = useState(new Set());
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
-  // settings
   const [settings, setSettings]           = useState(null);
   const [settingsLoading, setSTL]         = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -291,7 +420,6 @@ export default function Admin() {
   const [couponStatsTarget, setCouponStatsTarget] = useState(null);
   const [couponPage, setCouponPage]         = useState(1);
 
-  // ── MESSAGES state ──────────────────────────────────────────
   const [messages, setMessages]         = useState([]);
   const [messagesLoading, setML]        = useState(false);
   const [messageFilter, setMessageFilter] = useState("all");
@@ -299,13 +427,30 @@ export default function Admin() {
   const [replyText, setReplyText]       = useState("");
   const [replySending, setReplySending] = useState(false);
 
-  // ── CHATS (AI conversations) state ──────────────────────────
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConvL]  = useState(false);
   const [conversationDetail, setConversationDetail] = useState(null);
   const [conversationDetailLoading, setConvDL] = useState(false);
 
+  const [refunds, setRefunds]                 = useState([]);
+  const [refundsLoading, setRL]                = useState(false);
+  const [refundStatusFilter, setRefundStatusFilter] = useState("pending");
+  const [refundActionId, setRefundActionId]    = useState(null);
+
+  // ── bKash payment verification state ────────────────────────
+  const [bkashSubmissions, setBkashSubmissions] = useState([]);
+  const [bkashLoading, setBkashL] = useState(false);
+  const [bkashStatusFilter, setBkashStatusFilter] = useState("pending_verification");
+  const [bkashSearch, setBkashSearch] = useState("");
+  const [bkashDetail, setBkashDetail] = useState(null);
+  const [bkashRejectReason, setBkashRejectReason] = useState("");
+  const [bkashActing, setBkashActing] = useState(false);
+  const [bkashActErr, setBkashActErr] = useState("");
+
   // ── data loaders ────────────────────────────────────────────
+  // Always the fixed default window — the stat cards, the "Revenue — Last 7
+  // Days" chart, and "Recent Orders" must stay put regardless of whatever
+  // period the Revenue modal (below) is currently showing.
   const loadStats = useCallback(async () => {
     try {
       const r = await getAdminStats();
@@ -314,6 +459,31 @@ export default function Admin() {
       setStatsErr(t("couldNotLoadStats"));
     }
   }, []);
+
+  // Independent fetch for the Revenue modal's period selector, so switching
+  // it never perturbs the fixed 7-day data above.
+  const [periodStats, setPeriodStats] = useState(null);
+  // Opening the modal fires a fetch for whatever range is currently
+  // selected; picking a new range immediately fires another. Two requests
+  // can resolve out of order, so only ever commit the response that still
+  // matches the range selected *now* — otherwise a slow, stale response can
+  // land after a newer one and silently show the wrong period's numbers.
+  const statsRangeRef = useRef(statsRange);
+  useEffect(() => { statsRangeRef.current = statsRange; }, [statsRange]);
+
+  const loadPeriodStats = useCallback(async () => {
+    const requestedRange = statsRange;
+    try {
+      const r = await getAdminStats(requestedRange);
+      if (statsRangeRef.current === requestedRange) setPeriodStats(r.data);
+    } catch {
+      if (statsRangeRef.current === requestedRange) setPeriodStats(null);
+    }
+  }, [statsRange]);
+
+  useEffect(() => {
+    if (revenueModalOpen) loadPeriodStats();
+  }, [revenueModalOpen, loadPeriodStats]);
 
   const loadOrders = useCallback(async () => {
     setOL(true);
@@ -355,7 +525,6 @@ export default function Admin() {
     finally { setCoL(false); }
   }, []);
 
-  // ── MESSAGES loader ─────────────────────────────────────────
   const loadMessages = useCallback(async () => {
     setML(true);
     try { const r = await client.get("/contact"); setMessages(r.data); }
@@ -391,7 +560,6 @@ export default function Admin() {
     finally { setReplySending(false); }
   };
 
-  // ── CHATS loader ────────────────────────────────────────────
   const loadConversations = useCallback(async () => {
     setConvL(true);
     try { const r = await getAllConversations(); setConversations(r.data); }
@@ -414,6 +582,65 @@ export default function Admin() {
     } catch { /* ignore */ }
   };
 
+  const loadRefunds = useCallback(async (status = refundStatusFilter) => {
+    setRL(true);
+    try { const r = await getAllRefunds(status); setRefunds(r.data); }
+    catch { setRefunds([]); }
+    finally { setRL(false); }
+  }, [refundStatusFilter]);
+
+  const handleRefundStatusChange = async (refund, status) => {
+    let adminNote = "";
+    if (status === "rejected") {
+      adminNote = window.prompt(t("refundRejectPrompt")) || "";
+      if (adminNote === "" && !window.confirm(t("refundRejectConfirmNoReason"))) return;
+    }
+    setRefundActionId(refund._id);
+    try {
+      const r = await updateRefundStatusApi(refund._id, status, adminNote);
+      setRefunds(prev =>
+        refundStatusFilter === "all"
+          ? prev.map(x => x._id === refund._id ? r.data : x)
+          : prev.filter(x => x._id !== refund._id)
+      );
+    } catch { /* ignore */ }
+    finally { setRefundActionId(null); }
+  };
+
+  // ── bKash loader / handlers ─────────────────────────────────
+  const loadBkash = useCallback(async () => {
+    setBkashL(true);
+    try { const r = await getBkashSubmissions(bkashStatusFilter); setBkashSubmissions(r.data); }
+    catch { setBkashSubmissions([]); }
+    finally { setBkashL(false); }
+  }, [bkashStatusFilter]);
+
+  const openBkashDetail = (order) => { setBkashDetail(order); setBkashRejectReason(""); setBkashActErr(""); };
+  const closeBkashDetail = () => { setBkashDetail(null); setBkashRejectReason(""); setBkashActErr(""); };
+
+  const handleBkashDecision = async (approve) => {
+    if (!bkashDetail) return;
+    setBkashActing(true);
+    setBkashActErr("");
+    try {
+      await verifyBkashPaymentApi(bkashDetail._id, { approve, rejectionReason: bkashRejectReason });
+      setBkashSubmissions(prev => prev.filter(o => o._id !== bkashDetail._id));
+      closeBkashDetail();
+    } catch (err) {
+      setBkashActErr(err.response?.data?.message || t("bkashActionError"));
+    } finally {
+      setBkashActing(false);
+    }
+  };
+
+  // ── Password reset requests (customer forgot their security answer too) ──
+  const loadPasswordRequests = useCallback(async () => {
+    setPRL(true);
+    try { const r = await getPasswordResetRequests(); setPasswordRequests(r.data); }
+    catch { setPasswordRequests([]); }
+    finally { setPRL(false); }
+  }, []);
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -421,10 +648,16 @@ export default function Admin() {
     if (tab === "products")   loadProducts();
     if (tab === "categories") loadCategories();
     if (tab === "settings")   loadSettings();
-    if (tab === "coupons")    loadCoupons();
+    if (tab === "coupons")    { loadCoupons(); }
     if (tab === "messages")   loadMessages();
     if (tab === "chats")      loadConversations();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations]);
+    if (tab === "refunds")    loadRefunds();
+    if (tab === "bkash")      loadBkash();
+    if (tab === "passwordRequests") loadPasswordRequests();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash, loadPasswordRequests]);
+
+  useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
+  useEffect(() => { setMobileNavOpen(false); }, [tab]);
 
   useEffect(() => { setOrderPage(1); }, [orderSearch, orderStatusFilter]);
   useEffect(() => { setProductPage(1); }, [productSearch, showLowStockOnly]);
@@ -433,28 +666,48 @@ export default function Admin() {
   const openCustomerDetail = async (c) => {
     if (c.type === "guest") return;
     setCDL(true);
+    setResetPwFromRequest(false);
     setCustomerDetail({ user: { name: c.name, email: c.email }, orders: [] });
     try { const r = await getCustomerDetail(c._id); setCustomerDetail(r.data); }
     catch { setCustomerDetail(null); }
     finally { setCDL(false); }
   };
 
-  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); };
+  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); setResetPwFromRequest(false); };
 
   const handleResetCustomerPassword = async (userId) => {
     setResetPwSaving(true);
     setResetPwMsg("");
     try {
-      await resetCustomerPassword(userId, resetPwValue);
-      setResetPwMsg(t("passwordResetSuccess"));
+      const { data } = await resetCustomerPassword(userId, resetPwValue);
+      setResetPwMsg(data?.message || t("passwordResetSuccess"));
       setResetPwOk(true);
       setResetPwValue("");
+      // The backend auto-resolves any pending request for this user — drop
+      // it from the queue locally instead of waiting for a manual reload.
+      setPasswordRequests(prev => prev.filter(r => r.user?._id !== userId));
     } catch (err) {
       setResetPwMsg(err.response?.data?.message || t("couldNotResetPassword"));
       setResetPwOk(false);
     } finally {
       setResetPwSaving(false);
     }
+  };
+
+  const openCustomerDetailForReset = (request) => {
+    openCustomerDetail({ _id: request.user._id, name: request.user.name, email: request.user.email, type: "registered" });
+    setResetPwFromRequest(true);
+    setResetPwUserId(request.user._id);
+    setResetPwMsg("");
+  };
+
+  const handleDismissRequest = async (id) => {
+    setDismissingRequestId(id);
+    try {
+      await dismissPasswordResetRequest(id);
+      setPasswordRequests(prev => prev.filter(r => r._id !== id));
+    } catch { /* ignore */ }
+    finally { setDismissingRequestId(null); }
   };
 
   const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
@@ -488,7 +741,14 @@ export default function Admin() {
     } catch { /* keep old */ } finally { setSU(null); }
   };
 
-  // ── sales CSV export ─────────────────────────────────────────
+  const handleSaveAdminNote = async (order, noteText) => {
+    setNoteSaving(order._id);
+    try {
+      const r = await updateOrderStatus(order._id, order.status, noteText);
+      setOrders(prev => prev.map(o => o._id === order._id ? r.data : o));
+    } catch { /* keep old */ } finally { setNoteSaving(null); }
+  };
+
   const handleExportSales = async () => {
     setExportErr(""); setExporting(true);
     try {
@@ -512,7 +772,6 @@ export default function Admin() {
     }
   };
 
-  // ── product form helpers ─────────────────────────────────────
   const openAdd = () => {
     setForm({ ...BLANK_PRODUCT, category: categories[0]?._id || "" });
     setEditTarget(null);
@@ -530,9 +789,10 @@ export default function Admin() {
       category:   p.category?._id || p.category || "",
       basePrice:  p.basePrice,
       totalStock: p.totalStock ?? 0,
-      images:     p.images || [],
-      isFeatured: p.isFeatured || false,
-      isActive:   p.isActive !== false,
+      images:      p.images || [],
+      isFeatured:  p.isFeatured || false,
+      isBestSeller: p.isBestSeller || false,
+      isActive:    p.isActive !== false,
     });
     setEditTarget(p);
     setFormErr("");
@@ -549,7 +809,7 @@ export default function Admin() {
 
   const handleProductImageSelect = async (e) => {
     const files = Array.from(e.target.files || []);
-    e.target.value = ""; // allow re-selecting the same file later
+    e.target.value = "";
     if (!files.length) return;
     setFormErr(""); setImageUploading(true);
     try {
@@ -580,9 +840,10 @@ export default function Admin() {
     category:    form.category,
     basePrice:   Number(form.basePrice),
     totalStock:  Number(form.totalStock) || 0,
-    images:      form.images,
-    isFeatured:  form.isFeatured,
-    isActive:    form.isActive,
+    images:       form.images,
+    isFeatured:   form.isFeatured,
+    isBestSeller: form.isBestSeller,
+    isActive:     form.isActive,
   });
 
   const handleSaveProduct = async () => {
@@ -600,8 +861,6 @@ export default function Admin() {
         const r = await updateProduct(editTarget._id, buildPayload());
         setProducts(prev => prev.map(p => p._id === editTarget._id ? r.data : p));
       }
-      // Best-effort cleanup of images the admin removed in this session — a
-      // failed delete here shouldn't block the save that already succeeded.
       pendingDeleteImages.forEach(url => { deleteUploadedImage(url).catch(() => {}); });
       closeModal();
     } catch (err) {
@@ -617,7 +876,6 @@ export default function Admin() {
     setConfirmDelete(null);
   };
 
-  // ── category form helpers ───────────────────────────────────────
   const openAddCategory = () => {
     setCatForm(BLANK_CATEGORY);
     setCatEditTarget(null);
@@ -646,8 +904,6 @@ export default function Admin() {
     const { name, value, type, checked } = e.target;
     setCatForm(f => {
       const next = { ...f, [name]: type === "checkbox" ? checked : value };
-      // Auto-fill the slug from the English name while adding, unless the
-      // admin has already typed a slug of their own.
       if (name === "nameEn" && catModal === "add" && (!f.slug || f.slug === slugify(f.nameEn))) {
         next.slug = slugify(value);
       }
@@ -727,11 +983,11 @@ export default function Admin() {
     } finally { setCatReordering(null); }
   };
 
-  // ── guards ───────────────────────────────────────────────────
   const openAddCoupon = () => { setCouponForm(BLANK_COUPON); setCouponEditTarget(null); setCouponFormErr(""); setCouponModal("add"); };
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
   const setCouponF = (e) => { const { name, value, type, checked } = e.target; if (type === "select-multiple") { const values = Array.from(e.target.selectedOptions).map(o => o.value); setCouponForm(f => ({ ...f, [name]: values })); return; } setCouponForm(f => ({ ...f, [name]: type === "checkbox" ? checked : value })); };
+  const toggleCouponListField = (field, value) => setCouponForm(f => ({ ...f, [field]: f[field].includes(value) ? f[field].filter(v => v !== value) : [...f[field], value] }));
   const buildCouponPayload = () => ({ code: couponForm.code.trim().toUpperCase(), title: couponForm.title.trim(), description: couponForm.description.trim(), discountType: couponForm.discountType, discountValue: Number(couponForm.discountValue), minimumPurchase: couponForm.minimumPurchase === "" ? 0 : Number(couponForm.minimumPurchase), maximumDiscount: couponForm.maximumDiscount === "" ? null : Number(couponForm.maximumDiscount), usageLimit: couponForm.usageLimit === "" ? null : Number(couponForm.usageLimit), perUserLimit: couponForm.perUserLimit === "" ? null : Number(couponForm.perUserLimit), startDate: couponForm.startDate, endDate: couponForm.endDate, applicableProducts: couponForm.applicableProducts, applicableCategories: couponForm.applicableCategories, excludedProducts: couponForm.excludedProducts, isActive: couponForm.isActive });
 
   const handleSaveCoupon = async () => {
@@ -756,30 +1012,31 @@ export default function Admin() {
   if (authLoading) return <div style={s.center}>{t("loading")}</div>;
   if (!user || user.role !== "admin") return null;
 
-  // ════════════════════════════════════════════════════════════
   return (
     <div className="admin-layout">
-      {/* SIDEBAR */}
-      <aside className="admin-sidebar">
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <div>
-            <Link to="/" className="admin-sidebar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
-            <div className="admin-sidebar-role">{t("adminPanel")}</div>
-          </div>
+      <header className="admin-topbar">
+        <button
+          type="button"
+          className="admin-hamburger-btn"
+          onClick={() => setMobileNavOpen(o => !o)}
+          aria-label={t("adminPanel")}
+          aria-expanded={mobileNavOpen}
+        >
+          <Menu size={20} />
+        </button>
 
-          {/* ADMIN ALERT BELL */}
-          <div ref={bellRef} style={{ position: "relative", marginRight: 16 }}>
+        <Link to="/" className="navbar-logo admin-topbar-logo" style={{ textDecoration: "none" }}>Camellia</Link>
+        <span className="admin-topbar-role">{t("adminPanel")}</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          <div ref={bellRef} style={{ position: "relative" }}>
             <button
               type="button"
+              className="admin-topbar-icon-btn"
               onClick={() => setBellOpen((o) => !o)}
               aria-expanded={bellOpen}
               aria-label={t("notifications:adminAlerts")}
               title={t("notifications:adminAlerts")}
-              style={{
-                position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 32, height: 32, borderRadius: "50%", border: "1px solid rgba(244,196,48,0.3)",
-                background: "rgba(255,255,255,0.05)", color: "var(--nav-text, #E8D9C0)", cursor: "pointer",
-              }}
             >
               <Bell size={15} />
               {alertsUnread > 0 && (
@@ -795,7 +1052,7 @@ export default function Admin() {
             </button>
             {bellOpen && (
               <div style={{
-                position: "absolute", top: "calc(100% + 8px)", left: 0, width: 320,
+                position: "absolute", top: "calc(100% + 8px)", right: 0, width: 320,
                 background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 10,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.25)", overflow: "hidden", zIndex: 200,
               }}>
@@ -807,10 +1064,29 @@ export default function Admin() {
                       <div
                         key={n._id}
                         onClick={() => handleAlertClick(n)}
-                        style={{ padding: "10px 16px", fontSize: 13, cursor: "pointer", opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)" }}
+                        style={{
+                          padding: "10px 16px", fontSize: 13, cursor: "pointer",
+                          opacity: n.read ? 0.6 : 1, borderBottom: "1px solid var(--border)",
+                          display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0,
+                        }}
                       >
-                        <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)" }}>{n.title}</div>
-                        <div style={{ color: "var(--muted)", fontSize: 12 }}>{n.message}</div>
+                        <div style={{ flex: 1, minWidth: 0, whiteSpace: "normal" }}>
+                          <div style={{ fontWeight: 600, color: "var(--charcoal, #2A160F)", wordBreak: "break-word", whiteSpace: "normal" }}>{n.title}</div>
+                          <div style={{ color: "var(--muted)", fontSize: 12, wordBreak: "break-word", whiteSpace: "normal" }}>{n.message}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAlertDelete(e, n)}
+                          aria-label={t("notifications:delete")}
+                          title={t("notifications:delete")}
+                          style={{
+                            flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                            color: "var(--muted)", padding: 4, display: "flex",
+                            alignItems: "center", justifyContent: "center", borderRadius: 4,
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     ))
                   )}
@@ -832,22 +1108,59 @@ export default function Admin() {
               </div>
             )}
           </div>
+
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+          >
+            <Globe size={13} /> <span className="admin-topbar-btn-label">{language === "en" ? "বাংলা" : "English"}</span>
+          </button>
+          <button
+            type="button"
+            className="admin-topbar-btn"
+            onClick={async () => { await logout(); navigate("/"); }}
+          >
+            <LogOut size={13} /> <span className="admin-topbar-btn-label">{t("logout")}</span>
+          </button>
         </div>
+      </header>
+
+      {mobileNavOpen && <div className="admin-sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />}
+
+      <div className="admin-body">
+      <aside className={`admin-sidebar${mobileNavOpen ? " admin-sidebar-open" : ""}`}>
+        <button
+          type="button"
+          className="admin-sidebar-close-btn"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label={t("close")}
+        >
+          <X size={18} />
+        </button>
         {[
+          // Ordered by admin priority: dashboard first, then the order-
+          // fulfillment pipeline (orders → refunds → payment verification),
+          // then catalog/merchandising, then customer relations, then
+          // lower-frequency admin/config tasks last.
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
-          { id: "customers",  label: t("navCustomers"),  icon: Users },
+          { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
+          { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
           { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
+          { id: "customers",  label: t("navCustomers"),  icon: Users },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
           { id: "chats",      label: t("navChats"),       icon: MessageCircle },
+          { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
+          { id: "aiAssistant", label: t("navAiAssistant"), icon: Bot, onClick: () => setAiAssistantOpen(true) },
           { id: "settings",   label: t("navSettings"),   icon: Settings },
         ].map(navItem => (
           <button
             key={navItem.id}
-            className={`admin-nav-btn${tab === navItem.id ? " active" : ""}`}
-            onClick={() => setTab(navItem.id)}
+            className={`admin-nav-btn${(navItem.onClick ? aiAssistantOpen : tab === navItem.id) ? " active" : ""}`}
+            onClick={() => { if (navItem.onClick) { navItem.onClick(); setMobileNavOpen(false); } else setTab(navItem.id); }}
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
             <navItem.icon size={15} /> {navItem.label}
@@ -856,40 +1169,44 @@ export default function Admin() {
                 {messages.filter(m => m.status === "unread").length}
               </span>
             )}
+            {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {refunds.length}
+              </span>
+            )}
+            {navItem.id === "passwordRequests" && passwordRequests.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {passwordRequests.length}
+              </span>
+            )}
           </button>
         ))}
         <div style={{ marginTop: "auto", padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
           <button
-            className="admin-nav-btn"
-            onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-            style={{ opacity: 0.7, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <Globe size={13} /> {language === "en" ? "বাংলা" : "English"}
-          </button>
-          <button
-            className="admin-nav-btn"
-            onClick={() => navigate("/")}
-            style={{ opacity: 0.55, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <ArrowLeft size={13} /> {t("backToStore")}
-          </button>
-          <button
             className="admin-nav-btn admin-logout-btn"
-            onClick={async () => { await logout(); navigate("/"); }}
+            onClick={() => navigate("/")}
             style={{ fontSize: 12.5, display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            <LogOut size={13} /> {t("logout")}
+            <ArrowLeft size={13} /> {t("backToStore")}
           </button>
         </div>
       </aside>
 
-      {/* MAIN */}
       <main className="admin-main">
 
-        {/* ── OVERVIEW ── */}
         {tab === "overview" && (
           <div>
-            <h2 style={s.pageTitle}>{t("overview")}</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <h2 style={{ ...s.pageTitle, marginBottom: 0 }}>{t("overview")}</h2>
+              <button
+                type="button"
+                className="btn btn-gold"
+                onClick={() => setRevenueModalOpen(true)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <DollarSign size={15} /> {t("revenueDetails")}
+              </button>
+            </div>
             {statsErr && <p style={s.err}>{statsErr}</p>}
             {!stats && !statsErr && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
             {stats && (
@@ -920,7 +1237,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Recent orders */}
                 <h3 style={{ ...s.sectionTitle, marginTop: 32 }}>{t("recentOrders")}</h3>
                 <div style={s.tableWrap}>
                   <table style={s.table}>
@@ -934,11 +1250,16 @@ export default function Admin() {
                     <tbody>
                       {stats.recentOrders.map(o => (
                         <tr key={o._id} style={{ ...s.tr, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
-                          <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                          <td style={s.td}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
-                          <td style={s.td}><StatusBadge status={o.status} /></td>
+                          <td style={s.td}>
+                            <StatusBadge status={o.status} />
+                            {o.payment?.status === "paid" && o.payment?.paidAt && (
+                              <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 3 }}>{t("paidOn", { date: fmtDate(o.payment.paidAt) })}</div>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -949,7 +1270,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── ORDERS ── */}
         {tab === "orders" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -984,11 +1304,11 @@ export default function Admin() {
 
             {ordersLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
             {!ordersLoading && (() => {
-              const q = orderSearch.trim().toLowerCase();
+              const q = orderSearch.trim().toLowerCase().replace(/^#/, "");
               const filtered = orders.filter(o => {
                 if (orderStatusFilter !== "all" && o.status !== orderStatusFilter) return false;
                 if (!q) return true;
-                const idMatch = o._id.slice(-6).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
+                const idMatch = getOrderDisplayId(o).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
                 const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
                 const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
                 return idMatch || name.includes(q) || email.includes(q);
@@ -1010,23 +1330,48 @@ export default function Admin() {
                       <tbody>
                         {pageItems.map(o => (
                           <tr key={o._id} style={s.tr}>
-                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                             <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
                               <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}</div>
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
                             </td>
                             <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(o.createdAt)}</span></td>
-                            <td style={{ ...s.td, textAlign: "center" }}>{o.items?.length}</td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
+                              <div style={{ fontSize: 12, maxWidth: 220 }}>
+                                {o.items?.slice(0, 2).map(it => it.nameSnapshot || localized(it.product?.name, language)).join(", ")}
+                                {o.items?.length > 2 && ` +${o.items.length - 2}`}
+                              </div>
+                              <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.items?.length} {t("colItems")}</div>
+                            </td>
                             <td style={s.td}>{fmt(o.totalAmount)}</td>
                             <td style={s.td}>
                               <div style={{ fontSize: 12 }}>{o.payment?.method?.toUpperCase()}</div>
                               <div style={{ fontSize: 11, color: o.payment?.status === "paid" ? "var(--green)" : "var(--muted)" }}>{t(`orders:${o.payment?.status === "paid" ? "paid" : "unpaid"}`)}</div>
+                              {o.payment?.status === "paid" && o.payment?.paidAt && (
+                                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 1 }}>{t("paidOn", { date: fmtDate(o.payment.paidAt) })}</div>
+                              )}
+                              {o.payment?.method === "bkash" && (
+                                <div style={{ marginTop: 5 }}>
+                                  {o.payment?.bkash?.trxId && (
+                                    <div style={{ ...s.mono, fontSize: 11 }}>{o.payment.bkash.trxId}</div>
+                                  )}
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                                    <BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+                                    {o.payment?.bkash?.verificationStatus && o.payment.bkash.verificationStatus !== "awaiting_submission" && (
+                                      <button onClick={() => openBkashDetail(o)} style={{ ...s.editBtn, marginRight: 0, padding: "3px 9px" }}>
+                                        {o.payment.bkash.verificationStatus === "pending_verification" ? t("verifyAction") : t("viewDetails")}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </td>
                             <td style={s.td}><StatusBadge status={o.status} /></td>
                             <td style={s.td}>
                               <select value={o.status} disabled={statusUpdating === o._id} onChange={e => handleStatusChange(o._id, e.target.value)} style={s.select}>
                                 {ORDER_STATUSES.map(st => <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>)}
                               </select>
+                              <AdminNoteInput order={o} saving={noteSaving === o._id} onSave={handleSaveAdminNote} />
                             </td>
                           </tr>
                         ))}
@@ -1043,7 +1388,224 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CUSTOMERS ── */}
+        {tab === "refunds" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("refundsTitle")}</h2>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["pending", "approved", "processed", "rejected", "all"].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setRefundStatusFilter(f)}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer",
+                      fontSize: 12, fontWeight: 500, textTransform: "capitalize",
+                      borderColor: refundStatusFilter === f ? "var(--maroon)" : "var(--border)",
+                      background: refundStatusFilter === f ? "var(--maroon)" : "transparent",
+                      color: refundStatusFilter === f ? "#fff" : "var(--muted)",
+                    }}
+                  >
+                    {t(`refundFilter_${f}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {refundsLoading && <p style={{ color: "var(--muted)" }}>{t("loadingOrders")}</p>}
+            {!refundsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("refundColId"), t("colOrderId"), t("colCustomer"), t("refundColItem"), t("refundColType"), t("refundColReason"), t("colAmount"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refunds.map(rf => (
+                      <tr key={rf._id} style={s.tr}>
+                        <td style={s.td}>
+                          <span style={s.mono} title={rf._id}>
+                            #RF-{rf._id.slice(-8).toUpperCase()}
+                          </span>
+                        </td>
+                        <td style={s.td}>
+                          <span style={s.mono}>
+                            #{rf.order?.invoiceNumber || rf.order?.guestOrderId || (rf.order?._id ? rf.order._id.slice(-8).toUpperCase() : "—")}
+                          </span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{rf.user?.name || rf.guestInfo?.name || "—"}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{rf.user?.email || rf.guestInfo?.email}</div>
+                          {rf.isGuest && (
+                            <span style={{
+                              display: "inline-block", marginTop: 3, fontSize: 9, fontWeight: 700,
+                              padding: "1px 7px", borderRadius: 10, textTransform: "uppercase", letterSpacing: "0.04em",
+                              background: "var(--parchment)", color: "var(--muted)",
+                            }}>
+                              {t("guestBadge", { defaultValue: "Guest" })}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 200 }}>
+                          <div style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rf.item?.nameSnapshot}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("qtyLabel", { count: rf.item?.quantity })}</div>
+                          {rf.images?.length > 0 && (
+                            <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+                              {rf.images.map((url, i) => (
+                                <a key={i} href={url} target="_blank" rel="noreferrer" title={t("attachedPhotos")}>
+                                  <img
+                                    src={url}
+                                    alt=""
+                                    style={{ width: 30, height: 30, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border)" }}
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>
+                          {rf.requestType}
+                          {rf.requestType === "exchange" && rf.exchangeProduct?.nameSnapshot && (
+                            <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "none", marginTop: 2 }}>
+                              → {rf.exchangeProduct.nameSnapshot}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ ...s.td, textTransform: "capitalize" }}>{rf.reason?.replace(/_/g, " ")}</td>
+                        <td style={s.td}>{fmt(rf.refundAmount)}</td>
+                        <td style={s.td}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, textTransform: "capitalize",
+                            background: rf.status === "pending" ? "#FEF9C3" : rf.status === "approved" ? "#DBEAFE" : rf.status === "processed" ? "#DCFCE7" : "#FEE2E2",
+                            color: rf.status === "pending" ? "#854D0E" : rf.status === "approved" ? "#1E40AF" : rf.status === "processed" ? "#166534" : "#991B1B",
+                          }}>
+                            {rf.status}
+                          </span>
+                        </td>
+                        <td style={{ ...s.td, whiteSpace: "nowrap" }}>
+                          {rf.status === "pending" && (
+                            <>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "approved")}
+                                style={{ ...s.editBtn, background: "var(--green)" }}
+                              >
+                                {t("refundApprove")}
+                              </button>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                style={s.delBtn}
+                              >
+                                {t("refundReject")}
+                              </button>
+                            </>
+                          )}
+                          {rf.status === "approved" && (
+                            <button
+                              disabled={refundActionId === rf._id}
+                              onClick={() => handleRefundStatusChange(rf, "processed")}
+                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                            >
+                              <PackageCheck size={12} /> {t("refundProcess")}
+                            </button>
+                          )}
+                          {(rf.status === "processed" || rf.status === "rejected") && (
+                            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                              {rf.status === "processed" ? t("refundStockRestored") : (rf.adminNote || "—")}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {refunds.length === 0 && (
+                      <tr><td colSpan={9} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("refundsNone")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── bKASH MANUAL VERIFICATION ── */}
+        {tab === "bkash" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+              <h2 style={s.pageTitle}>{t("bkashTitle")}</h2>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <input
+                  className="input"
+                  placeholder={t("bkashSearchPlaceholder")}
+                  value={bkashSearch}
+                  onChange={e => setBkashSearch(e.target.value)}
+                  style={{ width: 240 }}
+                />
+                <select className="input" value={bkashStatusFilter} onChange={e => setBkashStatusFilter(e.target.value)} style={{ width: 200 }}>
+                  <option value="pending_verification">{t("bkashFilterPending")}</option>
+                  <option value="verified">{t("bkashFilterVerified")}</option>
+                  <option value="rejected">{t("bkashFilterRejected")}</option>
+                  <option value="awaiting_submission">{t("bkashFilterAwaiting")}</option>
+                  <option value="all">{t("bkashFilterAll")}</option>
+                </select>
+              </div>
+            </div>
+
+            {bkashLoading && <p style={{ color: "var(--muted)" }}>{t("loadingBkash")}</p>}
+            {!bkashLoading && (() => {
+              const q = bkashSearch.trim().toLowerCase().replace(/^#/, "");
+              const filteredBkash = !q ? bkashSubmissions : bkashSubmissions.filter(o => {
+                const idMatch = (o._id || "").toString().toLowerCase().includes(q);
+                const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
+                const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
+                const trxId = (o.payment?.bkash?.trxId || "").toLowerCase();
+                const senderNumber = (o.payment?.bkash?.senderNumber || "").toLowerCase();
+                return idMatch || name.includes(q) || email.includes(q) || trxId.includes(q) || senderNumber.includes(q);
+              });
+              return (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colOrderId"), t("colCustomer"), t("bkashColSenderNumber"), t("bkashColTrxId"), t("colFiledOn"), t("colStatus"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBkash.map(o => (
+                      <tr key={o._id} style={s.tr}>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <span style={s.mono}>#{(o._id || "").toString().slice(-6).toUpperCase()}</span>
+                        </td>
+                        <td style={{ ...s.td, cursor: "pointer" }} onClick={() => openBkashDetail(o)}>
+                          <div style={{ fontSize: 13 }}>
+                            {o.user?.name || o.guestInfo?.name || "—"}
+                            {o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestRequestBadge")}</span>}
+                          </div>
+                        </td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.senderNumber || "—"}</span></td>
+                        <td style={s.td}><span style={s.mono}>{o.payment?.bkash?.trxId || "—"}</span></td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{o.payment?.bkash?.submittedAt ? fmtDate(o.payment.bkash.submittedAt) : "—"}</span></td>
+                        <td style={s.td}><BkashStatusBadge status={o.payment?.bkash?.verificationStatus || "awaiting_submission"} /></td>
+                        <td style={s.td}>
+                          <button onClick={() => openBkashDetail(o)} style={s.editBtn}>{t("viewDetails")}</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredBkash.length === 0 && (
+                      <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noBkashFound")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              );
+            })()}
+          </div>
+        )}
+
         {tab === "customers" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
@@ -1054,7 +1616,7 @@ export default function Admin() {
                   { id: "registered", label: t("registeredCount", { count: customers.filter(c => c.type === "registered" || c.type === "admin").length }) },
                   { id: "guest", label: t("guestCount", { count: customers.filter(c => c.type === "guest").length }) },
                 ].map(f => (
-                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--charcoal)" : "var(--border)", background: customerFilter === f.id ? "var(--charcoal)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
+                  <button key={f.id} onClick={() => setCustomerFilter(f.id)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, borderColor: customerFilter === f.id ? "var(--maroon)" : "var(--border)", background: customerFilter === f.id ? "var(--maroon)" : "transparent", color: customerFilter === f.id ? "#fff" : "var(--muted)" }}>{f.label}</button>
                 ))}
               </div>
             </div>
@@ -1117,7 +1679,62 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── PRODUCTS ── */}
+        {tab === "passwordRequests" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("passwordRequestsTitle")}</h2>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>{t("passwordRequestsDesc")}</p>
+            {passwordRequestsLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!passwordRequestsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colCustomer"), t("colContact"), t("passwordRequestColMessage"), t("colDate"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {passwordRequests.map(r => (
+                      <tr key={r._id} style={s.tr}>
+                        <td style={s.td}>{r.user?.name || "—"}</td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{r.user?.email}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.user?.username}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 280 }}>
+                          {r.message
+                            ? <span style={{ fontSize: 12.5 }}>{r.message}</span>
+                            : <span style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic" }}>{t("passwordRequestNoMessage")}</span>}
+                        </td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(r.createdAt)}</span></td>
+                        <td style={s.td}>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button className="btn btn-gold" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => openCustomerDetailForReset(r)}>
+                              {t("resetThisCustomerPassword")}
+                            </button>
+                            <button
+                              className="btn btn-outline"
+                              style={{ padding: "6px 12px", fontSize: 12 }}
+                              disabled={dismissingRequestId === r._id}
+                              onClick={() => handleDismissRequest(r._id)}
+                            >
+                              {dismissingRequestId === r._id ? t("loading") : t("passwordRequestDismiss")}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {passwordRequests.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("passwordRequestsEmpty")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === "products" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1164,7 +1781,7 @@ export default function Admin() {
                     <table style={s.table}>
                       <thead>
                         <tr>
-                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colActive"),t("colActions")].map(h => (
+                          {[t("colImage"),t("colName"),t("colCategory"),t("colPrice"),t("colStock"),t("colFeatured"),t("colBestSeller"),t("colActive"),t("colActions")].map(h => (
                             <th key={h} style={s.th}>{h}</th>
                           ))}
                         </tr>
@@ -1179,10 +1796,9 @@ export default function Admin() {
                               }
                             </td>
                             <td style={s.td}>
-                              <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name?.en}</div>
-                              {p.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{p.name.bn}</div>}
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(p.name, language)}</div>
                             </td>
-                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name?.en || "—"}</td>
+                            <td style={{ ...s.td, fontSize: 12 }}>{p.category?.name ? localized(p.category.name, language) : "—"}</td>
                             <td style={s.td}>{fmt(p.basePrice)}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.totalStock > 0 ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 13 }}>
@@ -1195,6 +1811,7 @@ export default function Admin() {
                               )}
                             </td>
                             <td style={{ ...s.td, textAlign: "center" }}>{p.isFeatured ? <Star size={14} fill="var(--gold)" color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
+                            <td style={{ ...s.td, textAlign: "center" }}>{p.isBestSeller ? <TrendingUp size={14} color="var(--gold)" style={{ display: "inline-block" }} /> : "—"}</td>
                             <td style={{ ...s.td, textAlign: "center" }}>
                               <span style={{ color: p.isActive ? "var(--green)" : "var(--red)", fontWeight: 600, fontSize: 12 }}>
                                 {p.isActive ? t("yes") : t("no")}
@@ -1219,7 +1836,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CATEGORIES ── */}
         {tab === "categories" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
@@ -1249,21 +1865,20 @@ export default function Admin() {
                           }
                         </td>
                         <td style={s.td}>
-                          <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name?.en}</div>
-                          {c.name?.bn && <div style={{ fontSize: 11, color: "var(--muted)" }}>{c.name.bn}</div>}
+                          <div style={{ fontWeight: 500, fontSize: 13 }}>{localized(c.name, language)}</div>
                         </td>
                         <td style={{ ...s.td, fontSize: 12, fontFamily: "monospace", color: "var(--muted)" }}>{c.slug}</td>
                         <td style={{ ...s.td, whiteSpace: "nowrap" }}>
                           <button
                             onClick={() => handleMoveCategory(c, "up")}
                             disabled={i === 0 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, background: "var(--maroon)", opacity: i === 0 ? 0.35 : 1, marginRight: 4, display: "inline-flex", alignItems: "center" }}
                             title={t("moveUp")}
                           ><ArrowUp size={13} /></button>
                           <button
                             onClick={() => handleMoveCategory(c, "down")}
                             disabled={i === arr.length - 1 || catReordering}
-                            style={{ ...s.editBtn, background: "var(--charcoal)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
+                            style={{ ...s.editBtn, background: "var(--maroon)", opacity: i === arr.length - 1 ? 0.35 : 1, display: "inline-flex", alignItems: "center" }}
                             title={t("moveDown")}
                           ><ArrowDown size={13} /></button>
                         </td>
@@ -1291,7 +1906,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── COUPONS ── */}
         {tab === "coupons" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
@@ -1330,7 +1944,7 @@ export default function Admin() {
                               <td style={s.td}><div style={{ fontWeight: 500, fontSize: 13 }}>{c.title}</div>{c.description && <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 220 }}>{c.description}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12.5 }}>{c.discountType === "percentage" ? t("percentOff", { value: c.discountValue }) : t("amountOff", { value: fmt(c.discountValue) })}{c.maximumDiscount != null && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("maxDiscountLabel", { amount: fmt(c.maximumDiscount) })}</div>}{c.minimumPurchase > 0 && <div style={{ fontSize: 11, color: "var(--muted)" }}>{t("minPurchaseLabel", { amount: fmt(c.minimumPurchase) })}</div>}</td>
                               <td style={{ ...s.td, fontSize: 12 }}>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}{expired && <div style={{ color: "var(--red)", fontSize: 11, fontWeight: 600 }}>{t("expiredLabel")}</div>}{!expired && upcoming && <div style={{ color: "var(--muted)", fontSize: 11, fontWeight: 600 }}>{t("upcomingLabel")}</div>}</td>
-                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--charcoal)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
+                              <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => setCouponStatsTarget(c)} style={{ ...s.editBtn, background: "var(--maroon)" }} title={t("viewUsageStatsTitle")}>{c.usedCount}{c.usageLimit != null ? ` / ${c.usageLimit}` : ""}</button></td>
                               <td style={{ ...s.td, textAlign: "center" }}><button onClick={() => handleToggleCouponStatus(c)} style={{ ...s.editBtn, background: c.isActive ? "var(--green)" : "var(--muted)", marginRight: 0 }} title={t("clickToToggleTitle")}>{c.isActive ? t("colActive") : t("inactive")}</button></td>
                               <td style={{ ...s.td, whiteSpace: "nowrap" }}><button onClick={() => openEditCoupon(c)} style={s.editBtn}>{t("edit")}</button><button onClick={() => setCouponConfirmDelete(c)} style={s.delBtn}>{t("delete")}</button></td>
                             </tr>
@@ -1347,14 +1961,13 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── MESSAGES ── */}
         {tab === "messages" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
               <h2 style={s.pageTitle}>{t("messagesTitle")}</h2>
               <div style={{ display: "flex", gap: 8 }}>
                 {["all", "unread", "read", "replied"].map(f => (
-                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--charcoal)" : "var(--border)", background: messageFilter === f ? "var(--charcoal)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
+                  <button key={f} onClick={() => setMessageFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid", cursor: "pointer", fontSize: 12, fontWeight: 500, textTransform: "capitalize", borderColor: messageFilter === f ? "var(--maroon)" : "var(--border)", background: messageFilter === f ? "var(--maroon)" : "transparent", color: messageFilter === f ? "#fff" : "var(--muted)" }}>{t(`msg${f.charAt(0).toUpperCase()}${f.slice(1)}`)}</button>
                 ))}
               </div>
             </div>
@@ -1382,9 +1995,9 @@ export default function Admin() {
                             }}>{t(`msg${m.status.charAt(0).toUpperCase()}${m.status.slice(1)}`)}</span>
                           </td>
                           <td style={{ ...s.td, whiteSpace: "nowrap" }}>
-                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("markRead")}</button>}
+                            {m.status === "unread" && <button onClick={() => handleUpdateMessageStatus(m._id, "read")} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("markRead")}</button>}
                             {m.status !== "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--green)" }}>{t("reply")}</button>}
-                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--charcoal)" }}>{t("viewReply")}</button>}
+                            {m.status === "replied" && <button onClick={() => openReplyModal(m)} style={{ ...s.editBtn, background: "var(--maroon)" }}>{t("viewReply")}</button>}
                             <button onClick={() => handleDeleteMessage(m._id)} style={s.delBtn}>{t("delete")}</button>
                           </td>
                         </tr>
@@ -1399,7 +2012,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── CHATS ── */}
         {tab === "chats" && (
           <div>
             <h2 style={s.pageTitle}>{t("chatsTitle")}</h2>
@@ -1433,13 +2045,12 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── NOTIFICATIONS ── */}
         {tab === "notifications" && (
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h2 style={s.pageTitle}>{t("notifications:title")}</h2>
               {alertsUnread > 0 && (
-                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--charcoal)" }}>
+                <button type="button" onClick={handleAlertsMarkAllRead} style={{ ...s.editBtn, background: "var(--maroon)" }}>
                   {t("notifications:markAllRead")}
                 </button>
               )}
@@ -1453,11 +2064,26 @@ export default function Admin() {
                     key={n._id}
                     onClick={() => handleAlertClick(n)}
                     className="panel"
-                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1 }}
+                    style={{ padding: "14px 16px", cursor: "pointer", opacity: n.read ? 0.6 : 1, display: "flex", alignItems: "flex-start", gap: 10 }}
                   >
-                    <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
-                    <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: "var(--charcoal)" }}>{n.title}</p>
+                      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>{n.message}</p>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(n.createdAt)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAlertDelete(e, n)}
+                      aria-label={t("notifications:delete")}
+                      title={t("notifications:delete")}
+                      style={{
+                        flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                        color: "var(--muted)", padding: 4, display: "flex",
+                        alignItems: "center", justifyContent: "center", borderRadius: 4,
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1465,7 +2091,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── SETTINGS ── */}
         {tab === "settings" && (
           <div>
             <h2 style={s.pageTitle}>{t("settingsTitle")}</h2>
@@ -1542,6 +2167,38 @@ export default function Admin() {
                   </select>
                 </label>
 
+                <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>{t("bkashSectionTitle")}</h3>
+                <p style={{ fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 14 }}>
+                  {t("bkashSectionHint")}
+                </p>
+                <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <label style={s.label}>
+                      {t("bkashMerchantNumberLabel")}
+                      <input
+                        className="input"
+                        type="tel"
+                        placeholder="01XXXXXXXXX"
+                        value={settings.bkashMerchantNumber || ""}
+                        onChange={e => setSettings(s => ({ ...s, bkashMerchantNumber: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      />
+                    </label>
+                    <label style={s.label}>
+                      {t("bkashNumberTypeLabel")}
+                      <select
+                        className="input"
+                        value={settings.bkashNumberType || "personal"}
+                        onChange={e => setSettings(s => ({ ...s, bkashNumberType: e.target.value }))}
+                        style={{ maxWidth: 220 }}
+                      >
+                        <option value="personal">{t("bkashTypePersonalOpt")}</option>
+                        <option value="merchant">{t("bkashTypeMerchantOpt")}</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <button className="btn btn-gold" onClick={handleSaveSettings} disabled={settingsSaving}>
                     {settingsSaving ? t("saving") : t("saveSettings")}
@@ -1552,12 +2209,12 @@ export default function Admin() {
           </div>
         )}
       </main>
+      </div>
 
-      {/* ── ORDER DETAIL MODAL ── */}
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("orderHash")}{orderDetail._id.slice(-6).toUpperCase()}</h3>
+            <h3 style={s.modalTitle}>{t("orderHash")}{getOrderDisplayId(orderDetail)}</h3>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <StatusBadge status={orderDetail.status} />
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
@@ -1613,7 +2270,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CUSTOMER DETAIL MODAL ── */}
       {customerDetail && (
         <div style={s.overlay} onClick={closeCustomerDetail}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1630,7 +2286,7 @@ export default function Admin() {
                 <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
                   {customerDetail.orders.map(o => (
                     <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
-                      <span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span>
+                      <span style={s.mono}>#{getOrderDisplayId(o)}</span>
                       <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
                       <span>{fmt(o.totalAmount)}</span>
                       <StatusBadge status={o.status} />
@@ -1641,39 +2297,40 @@ export default function Admin() {
                   )}
                 </div>
 
-                <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
-                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                  {t("resetPasswordHint")}
-                </p>
-                {resetPwUserId !== customerDetail.user._id ? (
-                  <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
-                    {t("resetThisCustomerPassword")}
-                  </button>
-                ) : (
-                  <div>
-                    {resetPwMsg && (
-                      <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
-                        {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                {resetPwFromRequest && (
+                  <>
+                    <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
+                    {resetPwUserId !== customerDetail.user._id ? (
+                      <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                        {t("resetThisCustomerPassword")}
+                      </button>
+                    ) : (
+                      <div>
+                        {resetPwMsg && (
+                          <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
+                            {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <input
+                            className="input"
+                            type="text"
+                            placeholder={t("newPasswordPlaceholder")}
+                            value={resetPwValue}
+                            onChange={e => setResetPwValue(e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            className="btn btn-gold"
+                            disabled={resetPwSaving || !resetPwValue}
+                            onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                          >
+                            {resetPwSaving ? t("saving") : t("confirm")}
+                          </button>
+                        </div>
                       </div>
                     )}
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <input
-                        className="input"
-                        type="text"
-                        placeholder={t("newPasswordPlaceholder")}
-                        value={resetPwValue}
-                        onChange={e => setResetPwValue(e.target.value)}
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        className="btn btn-gold"
-                        disabled={resetPwSaving || !resetPwValue}
-                        onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
-                      >
-                        {resetPwSaving ? t("saving") : t("confirm")}
-                      </button>
-                    </div>
-                  </div>
+                  </>
                 )}
               </>
             )}
@@ -1685,7 +2342,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONVERSATION DETAIL MODAL ── */}
       {conversationDetail && (
         <div style={s.overlay} onClick={() => setConversationDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1724,7 +2380,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── PRODUCT MODAL ── */}
       {modal && (
         <div style={s.overlay} onClick={closeModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1749,7 +2404,6 @@ export default function Admin() {
                 <textarea className="input" name="descBn" value={form.descBn} onChange={setF} rows={2} placeholder="বাংলা বিবরণ…" style={{ resize: "vertical" }} />
               </label>
 
-              {/* ── AI Description Generator Button ── */}
               <div style={{ gridColumn: "1 / -1", marginTop: -8, marginBottom: 8 }}>
                 <button
                   type="button"
@@ -1810,7 +2464,13 @@ export default function Admin() {
                 {t("stockQuantity")}
                 <input className="input" name="totalStock" type="number" min="0" value={form.totalStock} onChange={setF} placeholder="0" />
               </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+              {/* Plain div, not <label> — a <label> wrapping these thumbnails would
+                  implicitly associate with the first labelable descendant (the
+                  "remove" <button>, since buttons are labelable elements), so the
+                  browser would forward any click on a non-interactive thumbnail
+                  <img> to that button instead of the file input, silently
+                  deleting image 0 no matter which thumbnail was clicked. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("images")}
                 {form.images.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
@@ -1841,10 +2501,14 @@ export default function Admin() {
                   disabled={imageUploading}
                 />
                 {imageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
+              </div>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
                 {t("featuredOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("bestSellingOnHomepage")}
               </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
@@ -1861,7 +2525,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE MODAL ── */}
       {confirmDelete && (
         <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -1879,7 +2542,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CATEGORY MODAL ── */}
       {catModal && (
         <div style={s.overlay} onClick={closeCatModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
@@ -1898,7 +2560,11 @@ export default function Admin() {
                 {t("slug")}
                 <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
               </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+              {/* Plain div, not <label> — see the product-images field above
+                  for why: a <label> here would implicitly bind to the
+                  "Remove image" <button> (the first labelable descendant),
+                  forwarding any click on the thumbnail <img> to it. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("image")}
                 {catForm.image && (
                   <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
@@ -1926,7 +2592,7 @@ export default function Admin() {
                   disabled={catImageUploading}
                 />
                 {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
+              </div>
               {catModal === "add" && (
                 <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
                   <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
@@ -1949,7 +2615,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE CATEGORY MODAL ── */}
       {catConfirmDelete && (
         <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -1967,7 +2632,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON MODAL ── */}
       {couponModal && (
         <div style={s.overlay} onClick={closeCouponModal}>
           <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
@@ -1985,9 +2649,36 @@ export default function Admin() {
               <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
               <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
               <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableCategoriesLabel")}
+                <span style={s.fieldHint}>{t("applicableCategoriesHint")}</span>
+                <CheckboxMultiSelect
+                  options={categories.map(c => ({ value: c._id, label: c.name?.en || c.name }))}
+                  selected={couponForm.applicableCategories}
+                  onToggle={(v) => toggleCouponListField("applicableCategories", v)}
+                  placeholder={t("searchCategoriesPlaceholder")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableProductsLabel")}
+                <span style={s.fieldHint}>{t("applicableProductsHint")}</span>
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.applicableProducts}
+                  onToggle={(v) => toggleCouponListField("applicableProducts", v)}
+                  placeholder={t("searchProductsPlaceholder")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("excludedProductsLabel")}
+                <span style={s.fieldHint}>{t("excludedProductsHint")}</span>
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.excludedProducts}
+                  onToggle={(v) => toggleCouponListField("excludedProducts", v)}
+                  placeholder={t("searchProductsPlaceholder")}
+                />
+              </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
@@ -1998,7 +2689,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── CONFIRM DELETE COUPON MODAL ── */}
       {couponConfirmDelete && (
         <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
           <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -2012,7 +2702,6 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── COUPON USAGE STATS MODAL ── */}
       {couponStatsTarget && (
         <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
           <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
@@ -2027,7 +2716,6 @@ export default function Admin() {
           </div>
         </div>
       )}
-      {/* ── MESSAGE REPLY MODAL ── */}
       {replyTarget && (
         <div style={s.overlay} onClick={closeReplyModal}>
           <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
@@ -2060,11 +2748,136 @@ export default function Admin() {
           </div>
         </div>
       )}
+
+      {bkashDetail && (
+        <div style={s.overlay} onClick={closeBkashDetail}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
+
+            <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
+              {t("orderReference")}: <span style={s.mono}>#{getOrderDisplayId(bkashDetail)}</span>
+              {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div style={s.modalSubTitle}>{t("colCustomer")}</div>
+                <div style={{ fontSize: 13 }}>{bkashDetail.user?.name || bkashDetail.guestInfo?.name || "—"}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{bkashDetail.user?.email || bkashDetail.guestInfo?.email || ""}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashAmount")}</div>
+                <div style={{ fontSize: 13 }}>{fmt(bkashDetail.payment?.amount || bkashDetail.totalAmount || 0)}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColSenderNumber")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.senderNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColTrxId")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.trxId || "—"}</div>
+              </div>
+            </div>
+
+            {bkashDetail.payment?.bkash?.screenshot && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("attachedPhotos")}</div>
+                <a href={bkashDetail.payment.bkash.screenshot} target="_blank" rel="noreferrer">
+                  <img
+                    src={bkashDetail.payment.bkash.screenshot}
+                    alt=""
+                    style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </a>
+              </div>
+            )}
+
+            {bkashDetail.payment?.bkash?.verificationStatus === "pending_verification" ? (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                {bkashActErr && <div style={s.formErr}>{bkashActErr}</div>}
+                <label style={s.label}>
+                  {t("bkashRejectionReasonLabel")}
+                  <textarea
+                    value={bkashRejectReason}
+                    onChange={e => setBkashRejectReason(e.target.value)}
+                    rows={2}
+                    placeholder={t("bkashRejectionReasonPlaceholder")}
+                    style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+                  />
+                </label>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                  <button className="btn btn-outline" onClick={closeBkashDetail}>{t("cancel")}</button>
+                  <button
+                    className="btn"
+                    style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
+                    disabled={bkashActing}
+                    onClick={() => handleBkashDecision(false)}
+                  >
+                    {t("bkashReject")}
+                  </button>
+                  <button className="btn" disabled={bkashActing} onClick={() => handleBkashDecision(true)}>
+                    {bkashActing ? t("bkashSaving") : t("bkashApprove")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {revenueModalOpen && (
+        <div style={s.overlay} onClick={() => setRevenueModalOpen(false)}>
+          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+              <h3 style={{ ...s.modalTitle, marginBottom: 0 }}>{t("revenueDetails")}</h3>
+              <select
+                className="input"
+                value={statsRange}
+                onChange={e => setStatsRange(e.target.value)}
+                style={{ width: "auto", fontSize: 12.5 }}
+              >
+                <option value="today">{t("rangeToday")}</option>
+                <option value="2d">{t("range2Days")}</option>
+                <option value="7d">{t("range7Days")}</option>
+                <option value="10d">{t("range10Days")}</option>
+                <option value="thisMonth">{t("rangeThisMonth")}</option>
+                <option value="lastMonth">{t("rangeLastMonth")}</option>
+              </select>
+            </div>
+
+            {!periodStats && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {periodStats && (
+              <>
+                <div style={{ display: "flex", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{fmt(periodStats.periodRevenue)}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("revenueInPeriod")}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{periodStats.periodOrderCount}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("ordersInPeriod")}</div>
+                  </div>
+                </div>
+                <RevenueTrendChart data={periodStats.revenueTrend} />
+              </>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <button className="btn btn-outline" onClick={() => setRevenueModalOpen(false)}>{t("close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AdminAiAssistant open={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} title={t("navAiAssistant")} />
     </div>
   );
 }
 
-// ── inline styles ─────────────────────────────────────────────
 const s = {
   center:       { display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--muted)" },
   pageTitle:    { fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--charcoal)", marginBottom: 24 },
@@ -2091,5 +2904,6 @@ const s = {
   chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
   formGrid:     { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" },
   label:        { display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5, color: "var(--muted)", marginBottom: 14, fontWeight: 500 },
+  fieldHint:    { fontSize: 11, color: "var(--faint)", fontWeight: 400, marginTop: -4 },
   formErr:      { background: "#FEE2E2", color: "var(--red)", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 },
 };

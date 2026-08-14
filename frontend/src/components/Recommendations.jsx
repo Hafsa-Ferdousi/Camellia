@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getRecommendations } from '../api/products';
 import { useLanguage } from '../context/LanguageContext';
 import { localized } from '../utils/localized';
+import { cldUrl, cldSrcSet } from '../utils/cloudinaryImage';
 
 const Recommendations = ({ productId }) => {
   const { t } = useTranslation('products');
@@ -34,19 +35,20 @@ const Recommendations = ({ productId }) => {
     return () => { cancelled = true; };
   }, [productId]);
 
-  if (loading) return <div style={{ padding: '20px 0', color: '#555' }}>{t('loading', { defaultValue: 'Loading…' })}</div>;
+  if (loading) return <div style={{ padding: '20px 0', color: 'var(--muted)' }}>{t('loading', { defaultValue: 'Loading…' })}</div>;
   if (error) return null;
   if (products.length === 0) return null;
 
   return (
-    <div style={{ marginTop: '40px', borderTop: '1px solid #e8e0d8', paddingTop: '30px' }}>
-      <h3 style={{ fontFamily: 'Georgia, serif', fontSize: '22px', marginBottom: '16px' }}>
+    <div style={{ marginTop: '48px', borderTop: '1px solid var(--border)', paddingTop: '36px', paddingBottom: '8px' }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontStyle: 'italic', textAlign: 'center', marginBottom: '28px' }}>
         {t('youMayAlsoLike')}
       </h3>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-        gap: '20px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 220px))',
+        justifyContent: 'center',
+        gap: '24px',
       }}>
         {products.map(product => {
           const name = localized(product.name, language) || t('productFallback');
@@ -55,7 +57,7 @@ const Recommendations = ({ productId }) => {
           return (
             <Link key={product._id} to={`/products/${product._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{
-                border: '1px solid #e8e0d8',
+                border: '1px solid var(--border)',
                 borderRadius: '8px',
                 padding: '12px',
                 transition: '0.2s',
@@ -63,16 +65,23 @@ const Recommendations = ({ productId }) => {
                 display: 'flex',
                 flexDirection: 'column',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c9a84c'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e8e0d8'}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--gold)'}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
               >
                 {image ? (
-                  <img src={image} alt={name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }} />
+                  <img
+                    src={cldUrl(image, 400)}
+                    srcSet={cldSrcSet(image, [200, 400])}
+                    sizes="(max-width: 480px) 50vw, 220px"
+                    alt={name}
+                    loading="lazy"
+                    style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
+                  />
                 ) : (
-                  <div style={{ width: '100%', height: '160px', background: '#f8f5f0', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#b8ab98', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('noImage')}</div>
+                  <div style={{ width: '100%', aspectRatio: '1 / 1', background: 'var(--parchment)', borderRadius: '4px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'var(--faint)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('noImage')}</div>
                 )}
                 <div style={{ fontWeight: '500', fontSize: '14px', marginBottom: '4px', flex: 1 }}>{name}</div>
-                <div style={{ fontWeight: '600', color: '#c9a84c', fontSize: '15px' }}>৳ {price.toLocaleString()}</div>
+                <div style={{ fontWeight: '600', color: 'var(--gold-text)', fontSize: '15px' }}>৳ {price.toLocaleString()}</div>
               </div>
             </Link>
           );

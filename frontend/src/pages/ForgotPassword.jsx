@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getSecurityQuestion, resetPasswordWithAnswer } from "../api/auth";
+import { getSecurityQuestion, resetPasswordWithAnswer, requestAdminPasswordReset } from "../api/auth";
 import PasswordField from "../components/PasswordField";
 import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
 import { isPasswordStrong } from "../utils/passwordRules";
+import Seo from "../components/Seo";
 
 export default function ForgotPassword() {
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
-  const [step, setStep] = useState("identify"); // identify | answer
+  const [step, setStep] = useState("identify"); // identify | answer | request | requested
   const [identifier, setIdentifier] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,20 +52,37 @@ export default function ForgotPassword() {
     }
   };
 
+  const handleRequestAdminReset = async (e) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      await requestAdminPasswordReset(identifier, requestMessage);
+      setStep("requested");
+    } catch (err) {
+      setError(err.response?.data?.message || t("couldNotSendRequest"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
+      <Seo title={t("resetYourPassword")} noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("resetYourPassword")}</p>
           <p style={{ fontSize: 13, color: "var(--muted)" }}>
-            {step === "identify" ? t("resetSubIdentify") : t("resetSubAnswer")}
+            {step === "identify" && t("resetSubIdentify")}
+            {step === "answer" && t("resetSubAnswer")}
+            {step === "request" && t("requestSub")}
+            {step === "requested" && t("requestSentBody")}
           </p>
         </div>
         <div className="divider-gold" style={{ justifyContent: "center", marginBottom: 28 }}>✦</div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
-        {step === "identify" ? (
+        {step === "identify" && (
           <form onSubmit={handleIdentify}>
             <label className="form-label">
               {t("emailOrUsername")}
@@ -73,7 +92,9 @@ export default function ForgotPassword() {
               {loading ? t("lookingUp") : t("continueBtn")}
             </button>
           </form>
-        ) : (
+        )}
+
+        {step === "answer" && (
           <form onSubmit={handleReset}>
             <label className="form-label">
               {question}
@@ -97,12 +118,52 @@ export default function ForgotPassword() {
             >
               {loading ? t("resetting") : t("resetPassword")}
             </button>
+            <button
+              type="button"
+              onClick={() => { setError(""); setStep("request"); }}
+              style={{ background: "none", border: "none", padding: 0, marginTop: 14, fontSize: 12.5, color: "var(--muted)", textDecoration: "underline", cursor: "pointer", display: "block", marginInline: "auto" }}
+            >
+              {t("forgotAnswerToo")}
+            </button>
           </form>
         )}
 
-        <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 20 }}>
-          <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("backToLoginArrow")}</Link>
-        </p>
+        {step === "request" && (
+          <form onSubmit={handleRequestAdminReset}>
+            <label className="form-label">
+              {t("requestMessageLabel")}
+              <textarea
+                className="input"
+                rows={3}
+                value={requestMessage}
+                onChange={e => setRequestMessage(e.target.value)}
+                placeholder={t("requestMessagePlaceholder")}
+                style={{ resize: "vertical" }}
+              />
+            </label>
+            <button className="btn" type="submit" disabled={loading} style={{ width: "100%", marginTop: 8, padding: 13, fontSize: 13 }}>
+              {loading ? t("sendingRequest") : t("requestHelpButton")}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setError(""); setStep("answer"); }}
+              style={{ background: "none", border: "none", padding: 0, marginTop: 14, fontSize: 12.5, color: "var(--muted)", textDecoration: "underline", cursor: "pointer", display: "block", marginInline: "auto" }}
+            >
+              {t("cancel")}
+            </button>
+          </form>
+        )}
+
+        {step !== "requested" && (
+          <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginTop: 20 }}>
+            <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("backToLoginArrow")}</Link>
+          </p>
+        )}
+        {step === "requested" && (
+          <p style={{ textAlign: "center", marginTop: 8 }}>
+            <Link to="/login" className="btn" style={{ display: "inline-block", padding: "10px 24px", fontSize: 13 }}>{t("backToLoginArrow")}</Link>
+          </p>
+        )}
       </div>
     </div>
   );

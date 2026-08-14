@@ -2,6 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Mail, MapPin, AlertCircle } from "lucide-react";
 import client from "../api/client";
+import Seo from "../components/Seo";
+import { FacebookIcon, InstagramIcon } from "../components/SocialIcons";
+
+const SOCIAL_LINKS = [
+  { name: "Facebook", href: "https://facebook.com", Icon: FacebookIcon, color: "#1877F2" },
+  { name: "Instagram", href: "https://instagram.com", Icon: InstagramIcon, gradient: true },
+];
 
 export default function Contact() {
   const { t } = useTranslation("pages");
@@ -30,6 +37,7 @@ export default function Contact() {
 
   return (
     <div className="container" style={{ padding: "48px 24px 64px", maxWidth: 860 }}>
+      <Seo title={t("contactUs")} description="Get in touch with Camellia for questions about orders, custom bridal jewelry, or wedding accessories." />
       <span className="eyebrow">{t("getInTouch")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 36, fontStyle: "italic", marginTop: 6 }}>
         {t("contactUs")}
@@ -54,18 +62,16 @@ export default function Contact() {
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 14 }}>{t("hours")}</p>
 
           <div style={{ display: "flex", gap: 14, marginTop: 24 }}>
-            {[
-              { name: "Facebook", href: "https://facebook.com" },
-              { name: "Instagram", href: "https://instagram.com" },
-            ].map((n) => (
+            {SOCIAL_LINKS.map(({ name, href, Icon, color, gradient }) => (
               <a
-                key={n.name}
-                href={n.href}
+                key={name}
+                href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ fontSize: 12, color: "var(--gold-text)", letterSpacing: "0.06em", textTransform: "uppercase" }}
+                aria-label={name}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color }}
               >
-                {n.name}
+                <Icon width={20} height={20} gradient={gradient} />
               </a>
             ))}
           </div>

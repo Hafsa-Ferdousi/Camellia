@@ -25,4 +25,11 @@ Thumbs.db
 *.pem
 
 # Admin-uploaded product/category images
-frontend/public/uploads/
+Productsfor412/
+
+# Product images now live on Cloudinary (see MIGRATION_HANDOFF.md)
+frontend/public/products/
+
+MIGRATION_HANDOFF.md
+backend/curatedProducts.json
+

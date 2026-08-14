@@ -2,6 +2,7 @@ import "./loadEnv.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -18,22 +19,44 @@ import uploadRoutes   from "./routes/uploadRoutes.js";
 import couponRoutes, { adminCouponRouter } from "./routes/couponRoutes.js";
 import contactRoutes  from "./routes/contactRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
+import refundRoutes    from "./routes/refundRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { apiLimiter } from "./middleware/rateLimiters.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import { sanitizeInputs } from "./middleware/sanitize.js";
+import { startAutoCancelScheduler } from "./utils/autoCancelUnpaidBkash.js";
 
 await connectDB();
 await ensureAdminUser();
+startAutoCancelScheduler();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+// Render sits behind a reverse proxy; without this express-rate-limit can't
+// tell distinct clients apart (and throws on the X-Forwarded-For mismatch).
+app.set("trust proxy", 1);
+
 app.use(helmet());
+app.use(compression());
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+// Also allow Vercel preview-deployment URLs (e.g. my-app-git-branch.vercel.app)
+// in addition to the production FRONTEND_URL, so preview builds can hit this API.
+const VERCEL_PREVIEW_SUFFIX = ".vercel.app";
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || origin === FRONTEND_URL || origin.endsWith(VERCEL_PREVIEW_SUFFIX)) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -56,8 +79,10 @@ app.use("/api/upload",        uploadRoutes);
 app.use("/api/coupons",       couponRoutes);
 app.use("/api/contact",       contactRoutes);
 app.use("/api/wishlist",      wishlistRoutes);
+app.use("/api/refunds",       refundRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews",       reviewRoutes);
+app.use("/api/payments",      paymentRoutes);
 app.use("/api/chat",          chatRoutes);
 
 app.use((err, req, res, next) => {

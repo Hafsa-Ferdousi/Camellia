@@ -1,7 +1,7 @@
 /* frontend/src/pages/Checkout.css */
 
 .checkout-page {
-  background: #f8f5f0;
+  background: var(--cream-dark);
   min-height: 100vh;
   padding: 40px 20px;
 }
@@ -9,51 +9,51 @@
 .checkout-container {
   max-width: 1200px;
   margin: 0 auto;
-  background: #ffffff;
+  background: var(--ivory);
   padding: 40px 50px;
   border-radius: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
 }
 
 .checkout-title {
-  font-family: 'Georgia', serif;
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
   letter-spacing: 1px;
   margin-bottom: 8px;
 }
 
 .checkout-subtitle {
-  color: #444;
+  color: var(--muted);
   font-size: 14px;
   margin-bottom: 30px;
 }
 
 .error-message {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: #FEF2F2;
+  color: var(--red);
   padding: 10px 15px;
   border-radius: 6px;
   margin-bottom: 15px;
-  border: 1px solid #ef9a9a;
+  border: 1px solid #FECACA;
   font-size: 14px;
 }
 
 /* Auth Section */
 .auth-section-top {
-  background: #f8f5f0;
+  background: var(--cream-dark);
   border-radius: 10px;
   padding: 20px 24px;
   margin-bottom: 30px;
-  border: 1px solid #e8e0d8;
+  border: 1px solid var(--border);
 }
 
 .auth-tabs {
   display: flex;
   gap: 0;
   margin-bottom: 16px;
-  border-bottom: 2px solid #e8e0d8;
+  border-bottom: 2px solid var(--border);
 }
 
 .auth-tab {
@@ -62,7 +62,7 @@
   border: none;
   font-size: 15px;
   font-weight: 600;
-  color: #555;
+  color: var(--muted);
   cursor: pointer;
   transition: all 0.3s;
   border-bottom: 3px solid transparent;
@@ -70,12 +70,12 @@
 }
 
 .auth-tab:hover {
-  color: #333;
+  color: var(--ink);
 }
 
 .auth-tab.active {
-  color: #c9a84c;
-  border-bottom-color: #c9a84c;
+  color: var(--gold-text);
+  border-bottom-color: var(--gold);
 }
 
 .auth-form-inline {
@@ -97,17 +97,17 @@
 .auth-field input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
-  background: #fff;
+  background: var(--ivory);
   transition: border-color 0.3s;
   box-sizing: border-box;
 }
 
 .auth-field input:focus {
   outline: none;
-  border-color: #c9a84c;
+  border-color: var(--gold);
 }
 
 .auth-btn-field {
@@ -117,7 +117,7 @@
 
 .auth-submit-btn {
   padding: 10px 28px;
-  background: #c9a84c;
+  background: var(--maroon);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -129,11 +129,11 @@
 }
 
 .auth-submit-btn:hover {
-  background: #b8953a;
+  background: var(--maroon-light);
 }
 
 .auth-submit-btn:disabled {
-  background: #ccc;
+  background: var(--border);
   cursor: not-allowed;
 }
 
@@ -143,7 +143,7 @@
   justify-content: center;
   gap: 12px;
   margin: 12px 0;
-  color: #777;
+  color: var(--faint);
   font-size: 13px;
 }
 
@@ -152,7 +152,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #ddd;
+  background: var(--border);
 }
 
 .auth-guest-option {
@@ -164,7 +164,7 @@
 .guest-link {
   background: none;
   border: none;
-  color: #c9a84c;
+  color: var(--gold-text);
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
@@ -174,8 +174,8 @@
 }
 
 .guest-link:hover {
-  color: #b8953a;
-  background: rgba(201, 168, 76, 0.1);
+  color: var(--maroon);
+  background: rgba(232, 163, 23, 0.1);
 }
 
 /* User Info Bar */
@@ -191,7 +191,7 @@
 }
 
 .user-info-bar:not(.guest-mode) {
-  background: #e8f5e9;
+  background: rgba(46, 125, 50, 0.12);
 }
 
 .user-info-bar.guest-mode {
@@ -204,7 +204,7 @@
 }
 
 .user-info-bar:not(.guest-mode) span {
-  color: #2e7d32;
+  color: var(--green);
 }
 
 .user-info-bar.guest-mode span {
@@ -222,7 +222,7 @@
 }
 
 .logout-btn {
-  color: #c62828;
+  color: var(--red);
 }
 
 .logout-btn:hover {
@@ -230,7 +230,7 @@
 }
 
 .login-link {
-  color: #c9a84c;
+  color: var(--gold-text);
   margin-right: 12px;
 }
 
@@ -251,13 +251,13 @@
 
 .guest-note-small {
   font-size: 12px;
-  color: #555;
+  color: var(--muted);
 }
 
 .field-hint {
   display: block;
   font-size: 12px;
-  color: #555;
+  color: var(--muted);
   margin-top: 2px;
 }
 
@@ -272,9 +272,9 @@
 .order-review-section h2 {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
   letter-spacing: 1px;
-  border-bottom: 2px solid #e8e0d8;
+  border-bottom: 2px solid var(--border);
   padding-bottom: 12px;
   margin-bottom: 20px;
 }
@@ -287,7 +287,7 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 4px;
 }
 
@@ -295,20 +295,20 @@
 .form-group select {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.3s;
-  background: #fafafa;
+  background: var(--ivory);
   box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #c9a84c;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+  border-color: var(--gold);
+  background: var(--ivory);
+  box-shadow: 0 0 0 3px rgba(232, 163, 23, 0.12);
 }
 
 .form-row {
@@ -321,13 +321,13 @@
 .payment-section {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 2px solid #e8e0d8;
+  border-top: 2px solid var(--border);
 }
 
 .payment-section h3 {
   font-size: 14px;
   font-weight: 700;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 12px;
 }
 
@@ -342,34 +342,34 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 2px solid #e8e0d8;
+  border: 2px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s;
-  background: #fafafa;
+  background: var(--ivory);
 }
 
 .payment-option:hover {
-  border-color: #c9a84c;
-  background: #fcf9f5;
+  border-color: var(--gold);
+  background: var(--cream);
 }
 
 .payment-option.selected {
-  border-color: #c9a84c;
-  background: #fcf9f5;
+  border-color: var(--gold);
+  background: var(--cream);
 }
 
 .payment-option input[type="radio"] {
   width: 16px;
   height: 16px;
-  accent-color: #c9a84c;
+  accent-color: var(--gold);
   margin: 0;
 }
 
 .payment-option span {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--ink);
 }
 
 /* Order Review */
@@ -381,7 +381,7 @@
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #f0ebe5;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .order-item:last-child {
@@ -395,25 +395,25 @@
 .order-item-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--charcoal);
 }
 
 .order-item-details {
   font-size: 12px;
-  color: #555;
+  color: var(--muted);
   margin-top: 2px;
 }
 
 .order-item-quantity {
   font-size: 12px;
-  color: #555;
+  color: var(--muted);
   margin-top: 2px;
 }
 
 .order-item-price {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--charcoal);
   padding-left: 20px;
   white-space: nowrap;
 }
@@ -427,8 +427,67 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--ink);
   margin-bottom: 8px;
+}
+
+/* Quick-apply chips for every currently-active coupon — lets the customer
+   tap a code they already saw on the homepage/hero instead of re-typing
+   or hunting for it. Only one can ever be applied at once (this list
+   hides itself once appliedCoupon is set), matching the single-coupon
+   checkout rule. */
+.coupon-available-list {
+  margin-bottom: 12px;
+}
+
+.coupon-available-hint {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.coupon-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coupon-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gold-pale, #FCEFC7);
+  border: 1px solid rgba(244, 196, 48, 0.55);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--maroon-dark, #7A2D06);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.coupon-quick-chip-code {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.coupon-quick-chip-sep {
+  opacity: 0.5;
+}
+
+.coupon-quick-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.coupon-quick-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .coupon-input-row {
@@ -439,10 +498,10 @@
 .coupon-input {
   flex: 1;
   padding: 10px 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
-  background: #fafafa;
+  background: var(--ivory);
   box-sizing: border-box;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -450,14 +509,14 @@
 
 .coupon-input:focus {
   outline: none;
-  border-color: #c9a84c;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+  border-color: var(--gold);
+  background: var(--ivory);
+  box-shadow: 0 0 0 3px rgba(232, 163, 23, 0.12);
 }
 
 .coupon-apply-btn {
   padding: 10px 20px;
-  background: #1a1a1a;
+  background: var(--charcoal);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -474,8 +533,8 @@
 }
 
 .coupon-apply-btn:hover:not(:disabled) {
-  background: #c9a84c;
-  color: #1a1a1a;
+  background: var(--gold);
+  color: var(--charcoal);
 }
 
 .coupon-apply-btn:disabled {
@@ -521,12 +580,12 @@
 .coupon-applied-check {
   font-size: 13px;
   font-weight: 700;
-  color: #2e7d32;
+  color: var(--green);
 }
 
 .coupon-applied-code {
   font-size: 12px;
-  color: #333;
+  color: var(--ink);
   font-family: monospace;
   letter-spacing: 0.5px;
 }
@@ -534,8 +593,8 @@
 .coupon-remove-btn {
   padding: 6px 14px;
   background: transparent;
-  color: #c0392b;
-  border: 1px solid #c0392b;
+  color: var(--red);
+  border: 1px solid var(--red);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -544,21 +603,21 @@
 }
 
 .coupon-remove-btn:hover {
-  background: #c0392b;
+  background: var(--red);
   color: #fff;
 }
 
 .coupon-error {
   margin-top: 8px;
   font-size: 12.5px;
-  color: #c0392b;
-  background: #fdecea;
+  color: var(--red);
+  background: #FEF2F2;
   padding: 8px 12px;
   border-radius: 6px;
 }
 
 .summary-row.discount-row {
-  color: #2e7d32;
+  color: var(--green);
   font-weight: 600;
 }
 
@@ -583,18 +642,18 @@
 }
 
 .checkout-toast-success {
-  background: #2e7d32;
+  background: var(--green);
   color: #fff;
 }
 
 .checkout-toast-error {
-  background: #c0392b;
+  background: var(--red);
   color: #fff;
 }
 
 /* Order Summary */
 .order-summary {
-  background: #f8f5f0;
+  background: var(--cream-dark);
   padding: 20px;
   border-radius: 8px;
   margin: 20px 0;
@@ -605,25 +664,25 @@
   justify-content: space-between;
   padding: 6px 0;
   font-size: 13px;
-  color: #333;
+  color: var(--ink);
 }
 
 .summary-row.total {
-  border-top: 2px solid #ddd;
+  border-top: 2px solid var(--border);
   padding-top: 12px;
   margin-top: 6px;
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--charcoal);
 }
 
 /* Place Order Button */
 .place-order-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #c9a84c, #f5d97e, #c9a84c);
+  background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--gold));
   background-size: 200% 200%;
-  color: #1a1a1a;
+  color: #2A1206;
   border: none;
   border-radius: 8px;
   font-size: 18px;
@@ -632,17 +691,17 @@
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.4);
+  box-shadow: 0 4px 20px rgba(232, 163, 23, 0.4);
   animation: shimmer 3s ease-in-out infinite;
 }
 
 .place-order-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(201, 168, 76, 0.6);
+  box-shadow: 0 8px 30px rgba(232, 163, 23, 0.6);
 }
 
 .place-order-btn:disabled {
-  background: #ccc !important;
+  background: var(--border) !important;
   animation: none;
   cursor: not-allowed;
   box-shadow: none;

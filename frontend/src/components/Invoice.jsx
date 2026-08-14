@@ -1,7 +1,7 @@
 // frontend/src/components/Invoice.jsx
 import React, { useRef } from 'react';
-import html2pdf from 'html2pdf.js';
 import { Download } from 'lucide-react';
+import { getOrderDisplayId } from '../utils/orderId';
 
 const GOLD = '#b8935a';
 const GOLD_DARK = '#8a6d3f';
@@ -14,11 +14,15 @@ const PANEL = '#faf7f2';
 const Invoice = ({ order }) => {
   const invoiceRef = useRef();
 
-  const downloadPDF = () => {
+  // html2pdf.js bundles jsPDF + html2canvas (~1MB) — dynamically imported
+  // here so it's only downloaded when a customer actually clicks this
+  // button, instead of on every visit to the order confirmation page.
+  const downloadPDF = async () => {
+    const { default: html2pdf } = await import('html2pdf.js');
     const element = invoiceRef.current;
     const opt = {
       margin: 0,
-      filename: `Invoice_${order.guestOrderId || order.invoiceNumber || order._id}.pdf`,
+      filename: `Invoice_${getOrderDisplayId(order)}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 3, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -72,9 +76,9 @@ const Invoice = ({ order }) => {
   const fullAddress =
     [customerAddress, customerCity, customerDistrict].filter(Boolean).join(', ') || 'N/A';
 
-  // Invoice meta
-  const displayId =
-    order?.guestOrderId || order?.invoiceNumber || order?._id?.slice(-8).toUpperCase() || 'N/A';
+  // Invoice meta — same Order ID shown on the confirmation page, order
+  // history, tracking, and the admin panel.
+  const displayId = getOrderDisplayId(order) || 'N/A';
   const invoiceDate = formatDate(order?.createdAt);
   const orderStatus = order?.status
     ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
@@ -265,7 +269,7 @@ const Invoice = ({ order }) => {
               <tr style={{ background: ACCENT_DARK }}>
                 <th
                   style={{
-                    textAlign: 'left',
+                    textAlign: 'center',
                     padding: '7px 10px',
                     fontSize: '8px',
                     textTransform: 'uppercase',
@@ -273,7 +277,6 @@ const Invoice = ({ order }) => {
                     color: '#fff',
                     fontWeight: 700,
                     width: '48px',
-                    textAlign: 'center',
                   }}
                 >
                   Qty

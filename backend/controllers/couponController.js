@@ -1,5 +1,6 @@
 import Coupon from "../models/Coupon.js";
 import { findAndValidateCoupon } from "../utils/couponEngine.js";
+import { sendError } from "../utils/errorResponse.js";
 
 const asArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 
@@ -72,7 +73,7 @@ export const createCoupon = async (req, res) => {
     res.status(201).json(coupon);
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: "A coupon with this code already exists." });
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -98,7 +99,7 @@ export const getCoupons = async (req, res) => {
 
     res.json(coupons);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -113,7 +114,7 @@ export const getCouponById = async (req, res) => {
     if (!coupon) return res.status(404).json({ message: "Coupon not found." });
     res.json(coupon);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -154,7 +155,7 @@ export const updateCoupon = async (req, res) => {
     res.json(coupon);
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: "A coupon with this code already exists." });
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -165,7 +166,7 @@ export const deleteCoupon = async (req, res) => {
     if (!coupon) return res.status(404).json({ message: "Coupon not found." });
     res.json({ message: "Coupon deleted." });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };
 
@@ -179,7 +180,50 @@ export const setCouponStatus = async (req, res) => {
     await coupon.save();
     res.json(coupon);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
+  }
+};
+
+// ── Customer: GET /api/coupons/active ───────────────────────────────────────
+// Public list of currently-usable coupons (active, within date window, and
+// under their total usage limit if one is set) so the storefront can show
+// them to customers instead of coupons only ever being visible in the admin
+// panel. Only exposes fields that are safe/useful to show publicly.
+export const getActiveCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+      $or: [{ usageLimit: null }, { $expr: { $lt: ["$usedCount", "$usageLimit"] } }],
+    })
+      .select("code title description discountType discountValue minimumPurchase maximumDiscount startDate endDate")
+      .sort({ createdAt: -1 });
+
+    res.json(coupons);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// ── Customer: GET /api/coupons/upcoming ─────────────────────────────────────
+// Coupons that are turned on but whose start date hasn't arrived yet, so the
+// storefront can tease them ahead of time with a "starts in Xh Ym" countdown
+// instead of customers only finding out once they're already live.
+export const getUpcomingCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $gt: now },
+    })
+      .select("code title description discountType discountValue minimumPurchase maximumDiscount startDate endDate")
+      .sort({ startDate: 1 });
+
+    res.json(coupons);
+  } catch (err) {
+    sendError(res, err);
   }
 };
 

@@ -392,7 +392,11 @@ const Checkout = () => {
       const order = user ? await submitLoggedInOrder() : await submitGuestOrder();
 
       clearCart();
-      navigate('/order-confirmation', { state: { order } });
+      const guestEmail = !user ? (order.guestInfo?.email || order.email) : null;
+      const confirmUrl = guestEmail
+        ? `/order-confirmation/${order._id}?email=${encodeURIComponent(guestEmail)}`
+        : `/order-confirmation/${order._id}`;
+      navigate(confirmUrl, { state: { order } });
     } catch (err) {
       setError(err.response?.data?.message || err.message || t('orderFailed'));
     } finally {
@@ -619,26 +623,32 @@ const Checkout = () => {
                     />
                     <span>bKash</span>
                   </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Bank Transfer' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Bank Transfer"
-                      checked={formData.paymentMethod === 'Bank Transfer'}
-                      onChange={handleChange}
-                    />
-                    <span>{t('bankTransfer')}</span>
-                  </label>
-                  <label className={`payment-option ${formData.paymentMethod === 'Nagad' ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="Nagad"
-                      checked={formData.paymentMethod === 'Nagad'}
-                      onChange={handleChange}
-                    />
-                    <span>Nagad</span>
-                  </label>
+                  {formData.paymentMethod === 'bKash' && (
+                    <div style={{
+                      gridColumn: '1 / -1', background: '#FFF7ED', border: '1px solid #FED7AA',
+                      borderRadius: 8, padding: '12px 16px', fontSize: 13, lineHeight: 1.6, color: '#7C2D12',
+                      display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap',
+                    }}>
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <strong>{t('bkashInstructionsTitle')}</strong>
+                        <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+                          <li>
+                            {t('bkashStep1')}{' '}
+                            {pricing.bkashMerchantNumber ? (
+                              <strong style={{ fontSize: 14 }}>{pricing.bkashMerchantNumber}</strong>
+                            ) : (
+                              <em>{t('bkashNumberUnavailable')}</em>
+                            )}
+                            {pricing.bkashNumberType && (
+                              <> ({pricing.bkashNumberType === 'merchant' ? t('bkashTypeMerchant') : t('bkashTypePersonal')})</>
+                            )}
+                          </li>
+                          <li>{t('bkashStep2')}</li>
+                          <li>{t('bkashStep3')}</li>
+                        </ol>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

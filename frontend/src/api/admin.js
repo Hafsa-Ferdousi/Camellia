@@ -1,13 +1,15 @@
 import client from "./client";
 
-export const getAdminStats  = ()          => client.get("/admin/stats");
+export const getAdminStats  = (range)     => client.get("/admin/stats", { params: range ? { range } : {} });
 export const getCustomers   = ()          => client.get("/admin/customers");
 export const getCustomerDetail = (userId) => client.get(`/admin/customers/${userId}`);
 export const resetCustomerPassword = (userId, newPassword) =>
   client.post(`/admin/customers/${userId}/reset-password`, { newPassword });
+export const getPasswordResetRequests = () => client.get("/admin/password-reset-requests");
+export const dismissPasswordResetRequest = (id) => client.patch(`/admin/password-reset-requests/${id}/dismiss`);
 export const getAllOrders    = ()          => client.get("/orders/all");
-export const updateOrderStatus = (id, status) =>
-  client.patch(`/orders/${id}/status`, { status });
+export const updateOrderStatus = (id, status, adminNote) =>
+  client.patch(`/orders/${id}/status`, adminNote === undefined ? { status } : { status, adminNote });
 
 export const getAdminSettings = ()        => client.get("/admin/settings");
 export const updateAdminSettings = (data) => client.put("/admin/settings", data);

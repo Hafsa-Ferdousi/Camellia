@@ -20,4 +20,3 @@ To streamline jewellery sales, inventory management, and order processing while 
 - Sadia Afrin Suchi
 - Khaleda Sultana Jamie
 
-

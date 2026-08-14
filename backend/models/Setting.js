@@ -12,6 +12,15 @@ const settingSchema = new mongoose.Schema(
     },
     lowStockThreshold: { type: Number, default: 10 },
     defaultLanguage: { type: String, enum: ["en", "bn"], default: "en" },
+    // The number customers are told to "Send Money" to at checkout — shown
+    // on the Checkout page and used by admins to cross-check submissions.
+    // Hardcoded so every teammate's local database defaults to the same
+    // number automatically (previously this was admin-configured per
+    // database, so each teammate's own DB needed it entered manually).
+    // Change this value here if the team's bKash number changes, then
+    // re-share this file — no per-database Admin setup needed anymore.
+    bkashMerchantNumber: { type: String, default: "01518986293" },
+    bkashNumberType: { type: String, enum: ["personal", "merchant"], default: "personal" },
   },
   { timestamps: true }
 );

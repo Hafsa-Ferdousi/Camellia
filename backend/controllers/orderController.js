@@ -9,6 +9,16 @@ import { findAndValidateCoupon, recordCouponUsage } from "../utils/couponEngine.
 import { sendOrderStatusEmail, sendPaymentConfirmedEmail } from "../utils/mailer.js";
 import User from "../models/User.js";
 
+// Strips the staff-only admin note before an order (or list of orders) goes
+// out to anyone other than an admin — the schema comment promises this is
+// "never shown to the customer," so it must not leak in the raw JSON either,
+// even though the UI never renders it.
+const hideAdminNote = (order) => {
+  if (order?.payment) order.payment.adminNote = null;
+  return order;
+};
+const hideAdminNoteList = (orders) => orders.map(hideAdminNote);
+
 // ===== GENERATE CUSTOMER‑FRIENDLY ORDER ID =====
 // Format: ORD-FirstName-PhoneLast3-RandomTime
 // Example: ORD-JOHN-789-42
@@ -168,7 +178,12 @@ export const checkout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(null, req.user), // ✅ Customer‑friendly ID
     });
@@ -287,7 +302,12 @@ export const guestCheckout = async (req, res) => {
       discountAmount,
       originalTotal,
       totalAmount,
-      payment: { method: paymentMethod, amount: totalAmount, status: "pending" },
+      payment: {
+        method: paymentMethod,
+        amount: totalAmount,
+        status: "pending",
+        bkash: { verificationStatus: paymentMethod === "bkash" ? "awaiting_submission" : "not_applicable" },
+      },
       invoiceNumber: generateInvoiceNumber(),
       guestOrderId: generateGuestOrderId(guestInfo, null), // ✅ Customer‑friendly ID
     });
@@ -360,7 +380,7 @@ export const guestLookupOrder = async (req, res) => {
       return res.status(404).json({ message: "No orders found for this email and phone." });
     }
 
-    res.json({ orders });
+    res.json({ orders: hideAdminNoteList(orders) });
   } catch (error) {
     console.error("Guest lookup error:", error);
     res.status(500).json({ message: "Failed to look up order. Please try again." });
@@ -370,12 +390,14 @@ export const guestLookupOrder = async (req, res) => {
 // ── GET /api/orders  (customer sees own, admin sees all) ───────────────────
 export const getOrders = async (req, res) => {
   try {
-    const filter = req.user.role === "admin" ? {} : { user: req.user._id };
+    const isAdmin = req.user.role === "admin";
+    const filter = isAdmin ? {} : { user: req.user._id };
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
       .populate("user", "name email phone")
-      .populate("items.product", "name images");
-    res.json(orders);
+      .populate("items.product", "name images")
+      .lean();
+    res.json(isAdmin ? orders : hideAdminNoteList(orders));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch orders." });
   }
@@ -392,7 +414,7 @@ export const getOrderById = async (req, res) => {
     if (req.user.role !== "admin" && (!order.user || order.user._id.toString() !== req.user._id.toString())) {
       return res.status(403).json({ message: "Not authorized to view this order" });
     }
-    res.json(order);
+    res.json(req.user.role === "admin" ? order : hideAdminNote(order));
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch order." });
   }
@@ -414,7 +436,23 @@ export const updateOrderStatus = async (req, res) => {
     const justMarkedPaid = req.body.status === "delivered" && order.payment.method === "cod" && order.payment.status !== "paid";
     if (justMarkedPaid) {
       order.payment.status = "paid";
+      order.payment.paidAt = new Date();
     }
+
+    // First time this order reaches "delivered" — stamp it so the 7-day
+    // return/refund window has a fixed anchor (see Order.js). Re-marking
+    // an order delivered later (e.g. a status correction) doesn't reset it.
+    if (req.body.status === "delivered" && !order.deliveredAt) {
+      order.deliveredAt = new Date();
+    }
+
+    // Optional — admin can attach/update a private note in the same
+    // request. Empty string clears it; omit the field entirely to leave
+    // the existing note untouched.
+    if (typeof req.body.adminNote === "string") {
+      order.payment.adminNote = req.body.adminNote.trim() || null;
+    }
+
     await order.save();
 
     // Best-effort notification — never blocks the response if email fails
@@ -461,6 +499,12 @@ export const updateOrderStatus = async (req, res) => {
         }).catch(() => {});
       }
     }
+
+    // Repopulate before returning, so the Admin panel keeps showing the
+    // customer's name/email/phone after a status update instead of just
+    // a raw user ID (only affects registered customers — guest orders
+    // already carry their name inline in guestInfo).
+    await order.populate("user", "name email phone");
 
     res.json(order);
   } catch (error) {

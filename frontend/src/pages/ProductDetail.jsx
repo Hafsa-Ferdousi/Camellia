@@ -10,9 +10,11 @@ import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import ImageGallery from "../components/ImageGallery";
+import Seo from "../components/Seo";
 import { addToWishlist, removeFromWishlist } from "../api/wishlist";
 import StarRating from "../components/StarRating";
 import Recommendations from '../components/Recommendations';
+import { cldUrl } from "../utils/cloudinaryImage";
 
 export default function ProductDetail() {
   const { t } = useTranslation("products");
@@ -36,6 +38,7 @@ export default function ProductDetail() {
   const [userComment, setUserComment] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewErr, setReviewErr] = useState("");
 
   // 👇 NEW STATES FOR GUEST REVIEW
   const [guestName, setGuestName] = useState("");
@@ -102,10 +105,11 @@ export default function ProductDetail() {
   // ===== SUBMIT REVIEW (NOW SUPPORTS GUESTS) =====
   const submitReview = async (e) => {
     e.preventDefault();
+    setReviewErr("");
 
     // Validate
     if (!userRating || !userComment.trim()) {
-      alert(t("selectRatingAlert"));
+      setReviewErr(t("selectRatingAlert"));
       return;
     }
 
@@ -118,7 +122,7 @@ export default function ProductDetail() {
     // If NOT logged in, send guest details
     if (!isLoggedIn) {
       if (!guestName.trim() || !guestEmail.trim()) {
-        alert(t("guestDetailsAlert"));
+        setReviewErr(t("guestDetailsAlert"));
         return;
       }
       payload.guestName = guestName.trim();
@@ -141,9 +145,8 @@ export default function ProductDetail() {
       setReviews(updated.data.reviews || []);
       setAverageRating(updated.data.averageRating || 0);
       setTotalReviews(updated.data.totalReviews || 0);
-      alert(t("reviewSubmittedAlert"));
     } catch (error) {
-      alert(error.response?.data?.message || t("reviewSubmitFailedAlert"));
+      setReviewErr(error.response?.data?.message || t("reviewSubmitFailedAlert"));
     } finally {
       setReviewLoading(false);
     }
@@ -173,8 +176,8 @@ export default function ProductDetail() {
   
   if (loading) {
     return (
-      <div className="container" style={{ padding: "48px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }}>
+      <div className="container" style={{ paddingTop: 48, paddingBottom: 48 }}>
+        <div className="detail-grid">
           <div style={{ aspectRatio: "1/1", background: "var(--parchment)", borderRadius: "var(--radius-lg)" }} />
           <div>
             {[120, 80, 200, 160].map((w, i) => (
@@ -192,8 +195,13 @@ export default function ProductDetail() {
   const price = product.basePrice;
   const outOfStock = (stock ?? 0) <= 0;
 
+  const productName = localized(product.name, language);
+  const productDescription = localized(product.description, language)?.slice(0, 160) || undefined;
+  const productImage = product.images?.[0] ? cldUrl(product.images[0], 800) : undefined;
+
   return (
-    <div className="container" style={{ padding: "28px 0 64px" }}>
+    <div className="container" style={{ paddingTop: 28, paddingBottom: 64 }}>
+      <Seo title={productName} description={productDescription} image={productImage} />
       {/* Breadcrumb */}
       <nav className="breadcrumb">
         <Link to="/">{t("home")}</Link>
@@ -205,8 +213,12 @@ export default function ProductDetail() {
       </nav>
 
       <div className="detail-grid">
-        {/* Gallery */}
-        <ImageGallery images={product.images || []} />
+        {/* Gallery — sticky so it follows the scroll instead of the shorter
+            image column ending early and leaving dead space beside the
+            taller info/reviews column next to it. */}
+        <div className="detail-gallery-sticky">
+          <ImageGallery images={product.images || []} />
+        </div>
 
         {/* Info */}
         <div>
@@ -259,13 +271,13 @@ export default function ProductDetail() {
           <div style={{ marginBottom: 24 }}>
             <p style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>{t("quantity")}</p>
             <div className="qty-stepper">
-              <button className="qty-btn" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
+              <button className="qty-btn" onClick={() => setQuantity((q) => Math.max(1, q - 1))} aria-label={t("decreaseQuantity", { defaultValue: "Decrease quantity" })}>
                 −
               </button>
               <span style={{ fontSize: 15, minWidth: 36, textAlign: "center", padding: "0 6px", fontWeight: 500 }}>
                 {quantity}
               </span>
-              <button className="qty-btn" onClick={() => setQuantity((q) => Math.min(stock, q + 1))} disabled={quantity >= stock}>
+              <button className="qty-btn" onClick={() => setQuantity((q) => Math.min(stock, q + 1))} disabled={quantity >= stock} aria-label={t("increaseQuantity", { defaultValue: "Increase quantity" })}>
                 +
               </button>
             </div>
@@ -324,7 +336,7 @@ export default function ProductDetail() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <StarRating rating={averageRating} totalReviews={totalReviews} />
-              <span style={{ fontSize: 14, color: "#555" }}>
+              <span style={{ fontSize: 14, color: "var(--muted)" }}>
                 {totalReviews > 0 ? t("averageRatingLabel", { rating: averageRating.toFixed(1) }) : t("noReviewsYetShort")}
               </span>
             </div>
@@ -334,10 +346,10 @@ export default function ProductDetail() {
               {reviewsError ? (
                 <p style={{ color: "var(--red)", fontSize: 14 }}>{t("reviewsLoadError")}</p>
               ) : reviews.length === 0 ? (
-                <p style={{ color: "#555", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
+                <p style={{ color: "var(--muted)", fontSize: 14 }}>{t("noReviewsBeFirst")}</p>
               ) : (
                 reviews.map((rev) => (
-                  <div key={rev._id} style={{ borderBottom: "1px solid #f0ebe5", padding: "14px 0" }}>
+                  <div key={rev._id} style={{ borderBottom: "1px solid var(--border)", padding: "14px 0" }}>
                     <div
                       style={{
                         display: "flex",
@@ -348,7 +360,7 @@ export default function ProductDetail() {
                       }}
                     >
                       <strong style={{ fontSize: 15 }}>{rev.userName}</strong>
-                      <span style={{ fontSize: 12, color: "#555" }}>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>
                         {new Date(rev.createdAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", {
                           day: "numeric",
                           month: "short",
@@ -357,23 +369,23 @@ export default function ProductDetail() {
                       </span>
                     </div>
                     <StarRating rating={rev.rating} />
-                    <p style={{ margin: "6px 0 0", color: "#555", fontSize: 14, lineHeight: 1.6 }}>{rev.comment}</p>
+                    <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: 14, lineHeight: 1.6 }}>{rev.comment}</p>
                   </div>
                 ))
               )}
             </div>
 
             {/* ===== WRITE A REVIEW FORM - ALWAYS VISIBLE ===== */}
-            <div style={{ background: "#f8f5f0", padding: "20px", borderRadius: "8px" }}>
+            <div style={{ background: "var(--cream-dark)", padding: "20px", borderRadius: "8px", border: "1px solid var(--border)" }}>
               <h4 style={{ marginBottom: 12, fontSize: 16 }}>{t("writeReview")}</h4>
 
               {reviewSubmitted ? (
-                <p style={{ color: "#2e7d32", display: "flex", alignItems: "center", gap: 6 }}><Check size={16} strokeWidth={2.5} /> {t("thankYouReview")}</p>
+                <p style={{ color: "var(--green)", display: "flex", alignItems: "center", gap: 6 }}><Check size={16} strokeWidth={2.5} /> {t("thankYouReview")}</p>
               ) : (
                 <form onSubmit={submitReview}>
                   {/* Show Name & Email fields ONLY for guests */}
                   {!isLoggedIn && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                    <div className="review-guest-fields" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
                       <div>
                         <label style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
                           {t("yourName")}
@@ -387,7 +399,7 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "8px 12px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: "14px",
                           }}
@@ -406,7 +418,7 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "8px 12px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: "14px",
                           }}
@@ -416,14 +428,14 @@ export default function ProductDetail() {
                   )}
 
                   {isLoggedIn && eligibility.checked && !eligibility.eligible && (
-                    <p style={{ color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>
+                    <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12 }}>
                       {eligibility.reason === "already_reviewed"
                         ? t("alreadyReviewed")
                         : t("notPurchased")}
                     </p>
                   )}
                   {!isLoggedIn && guestEmail.trim().includes("@") && eligibility.checked && !eligibility.eligible && (
-                    <p style={{ color: "#b91c1c", fontSize: 13, marginBottom: 12 }}>
+                    <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12 }}>
                       {eligibility.reason === "already_reviewed"
                         ? t("alreadyReviewedEmail")
                         : t("notPurchasedEmail")}
@@ -452,23 +464,29 @@ export default function ProductDetail() {
                           style={{
                             width: "100%",
                             padding: "10px 14px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--border)",
                             borderRadius: "6px",
                             fontSize: 14,
                             fontFamily: "inherit",
                             resize: "vertical",
-                            background: "#fff",
+                            background: "var(--ivory)",
                           }}
                         />
                       </div>
+
+                      {reviewErr && (
+                        <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12, padding: "10px 14px", background: "#FEF2F2", borderRadius: "var(--radius-sm)", border: "1px solid #FECACA" }}>
+                          {reviewErr}
+                        </p>
+                      )}
 
                       <button
                         type="submit"
                         disabled={reviewLoading}
                         style={{
                           padding: "10px 28px",
-                          background: "#c9a84c",
-                          color: "#fff",
+                          background: "var(--gold)",
+                          color: "#2A1206",
                           border: "none",
                           borderRadius: "6px",
                           fontSize: 14,
@@ -485,12 +503,11 @@ export default function ProductDetail() {
               )}
             </div>
           </div>
-
-          {/* ===== AI RECOMMENDATIONS ===== */}
-          <Recommendations productId={id} />
-
         </div>
       </div>
+
+      {/* ===== RECOMMENDATIONS — full page width, not squeezed into the info column ===== */}
+      <Recommendations productId={id} />
     </div>
   );
 }

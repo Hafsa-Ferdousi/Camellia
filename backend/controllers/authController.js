@@ -6,6 +6,8 @@ import User from "../models/User.js";
 import CartItem from "../models/CartItem.js";
 import Wishlist from "../models/Wishlist.js";
 import Review from "../models/Review.js";
+import PasswordResetRequest from "../models/PasswordResetRequest.js";
+import { sendError } from "../utils/errorResponse.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { validatePasswordStrength } from "../utils/validators.js";
 import { SECURITY_QUESTIONS, normalizeAnswer } from "../utils/securityQuestions.js";
@@ -102,7 +104,7 @@ export const registerUser = async (req, res) => {
       email,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -157,7 +159,7 @@ export const loginUser = async (req, res) => {
     const accessToken = await issueSession(user, req, res);
     res.json({ ...publicUser(user), token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -195,7 +197,7 @@ export const verifyTwoFactorLogin = async (req, res) => {
     const accessToken = await issueSession(user, req, res);
     res.json({ ...publicUser(user), token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -229,7 +231,7 @@ export const refreshAccessToken = async (req, res) => {
 
     res.json({ token: accessToken });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -244,7 +246,7 @@ export const logoutUser = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Logged out." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -282,7 +284,7 @@ export const getSecurityQuestion = async (req, res) => {
     const question = user ? user.securityQuestion : fakeQuestionFor(identifier);
     res.json({ question });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -319,13 +321,82 @@ export const resetPasswordWithAnswer = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Password reset successfully. Please log in with your new password." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
+  }
+};
+
+// Fallback for a customer who's forgotten their security answer too (the
+// "answer" step of resetPasswordWithAnswer above can't help them then) —
+// flags the account for an admin to reset manually. Same response whether
+// or not the identifier matches an account, so this can't be used to
+// enumerate accounts either.
+export const requestAdminPasswordReset = async (req, res) => {
+  try {
+    const { identifier, message } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ message: "Email or username is required." });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
+
+    if (user) {
+      const alreadyPending = await PasswordResetRequest.findOne({ user: user._id, status: "pending" });
+      if (!alreadyPending) {
+        await PasswordResetRequest.create({ user: user._id, message: message?.trim() || null });
+        notifyAdmins({
+          type: "password_reset_request",
+          title: "Password reset requested",
+          message: `${user.name} (${user.email}) can't access their account and has requested a manual password reset.`,
+        }).catch(() => {});
+      }
+    }
+
+    res.json({ message: "If that account exists, our team has been notified and will help you regain access soon." });
+  } catch (error) {
+    sendError(res, error);
   }
 };
 
 // ───────────────────────────────  Get profile  ───────────────────────────
 export const getMe = async (req, res) => {
   res.json(publicUser(req.user));
+};
+
+// ───────────────────────  Change password (self-service)  ─────────────────
+// Unlike resetPasswordWithAnswer (used when logged out), the caller here is
+// already authenticated, so the session making this request is left intact
+// — only every *other* session is signed out, in case a different device
+// is the one that's been compromised.
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required." });
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
+    }
+
+    const user = await User.findById(req.user._id).select("+password +refreshTokens");
+    const ok = await user.matchPassword(currentPassword);
+    if (!ok) return res.status(401).json({ message: "Current password is incorrect." });
+
+    user.password = newPassword; // re-hashed by the pre-save hook
+
+    const rawRefresh = req.cookies?.[REFRESH_COOKIE_NAME];
+    const currentTokenHash = rawRefresh ? hashToken(rawRefresh) : null;
+    user.refreshTokens = (user.refreshTokens || []).filter((t) => t.tokenHash === currentTokenHash);
+
+    await user.save();
+
+    res.json({ message: "Password changed successfully." });
+  } catch (error) {
+    sendError(res, error);
+  }
 };
 
 // ──────────────────────────  Update profile / settings  ───────────────────
@@ -347,7 +418,7 @@ export const updateProfile = async (req, res) => {
     await user.save({ validateBeforeSave: false });
     res.json(publicUser(user));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -373,7 +444,7 @@ export const updateDefaultAddress = async (req, res) => {
     await user.save({ validateBeforeSave: false });
     res.json(publicUser(user));
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -401,7 +472,7 @@ export const deleteAccount = async (req, res) => {
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
     res.json({ message: "Your account has been deleted." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -422,7 +493,7 @@ export const setupTwoFactor = async (req, res) => {
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url);
     res.json({ qrCodeDataUrl, secret: secret.base32 });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -449,7 +520,7 @@ export const verifyTwoFactorSetup = async (req, res) => {
 
     res.json({ message: "Two-factor authentication is now enabled." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -467,7 +538,7 @@ export const disableTwoFactor = async (req, res) => {
 
     res.json({ message: "Two-factor authentication disabled." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -506,7 +577,7 @@ export const verifyEmailOtp = async (req, res) => {
 
     res.json({ message: "Email verified. You can now log in." });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -530,6 +601,6 @@ export const resendEmailOtp = async (req, res) => {
     await sendVerificationOtpEmail(email, otp);
     return genericOk();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error);
   }
 };

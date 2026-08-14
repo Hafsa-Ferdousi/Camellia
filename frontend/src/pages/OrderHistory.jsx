@@ -2,14 +2,25 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Package, Gem, Check, Phone, Clock, Loader2 } from "lucide-react";
+import { Package, Gem, Check, Phone, Clock, Loader2, RotateCcw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
+import { getMyRefunds } from "../api/refunds";
+import { getOrderDisplayId } from "../utils/orderId";
+import RefundRequestModal from "../components/RefundRequestModal";
+import Seo from "../components/Seo";
 
-// Progress steps for order tracking
+const REFUND_STATUS_STYLE = {
+  pending:   { bg: "#FEF3C7", color: "#92400E" },
+  approved:  { bg: "#DBEAFE", color: "#1E40AF" },
+  rejected:  { bg: "#FEE2E2", color: "#991B1B" },
+  processed: { bg: "#D1FAE5", color: "#065F46" },
+};
+import BkashPaymentPanel from "../components/BkashPaymentPanel";
+
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
 
 export default function OrderHistory() {
@@ -17,9 +28,9 @@ export default function OrderHistory() {
   const { language } = useLanguage();
   const STATUS_STYLE = {
     pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
-    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
-    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
-    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    confirmed:  { bg: "#FCEFC7", color: "#8B6914", label: t("statusConfirmed") },
+    processing: { bg: "#F5DCC0", color: "#9A4A0F", label: t("statusProcessing") },
+    shipped:    { bg: "#E8D9C0", color: "#6B4226", label: t("statusShipped") },
     delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
     cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
   };
@@ -29,14 +40,34 @@ export default function OrderHistory() {
   const [error, setError] = useState("");
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [refunds, setRefunds] = useState([]);
+  const [returnTarget, setReturnTarget] = useState(null);
 
   useEffect(() => {
     if (authLoading) return;
-    getOrders()
-      .then(r => setOrders(r.data))
+    Promise.all([getOrders(), getMyRefunds().catch(() => ({ data: [] }))])
+      .then(([ordersRes, refundsRes]) => {
+        setOrders(ordersRes.data);
+        setRefunds(refundsRes.data);
+      })
       .catch(() => setError(t("loadOrdersError")))
       .finally(() => setLoading(false));
   }, [authLoading]);
+
+  const refundFor = (orderId, productId) =>
+    refunds.find(r => (r.order?._id || r.order) === orderId && r.item?.product === productId);
+
+  // Returns are only accepted within 7 days of delivery (see
+  // refundController.js). deliveredAt is only set going forward — for
+  // orders delivered before this existed, fall back to updatedAt so
+  // eligibility still resolves to something sensible rather than crashing.
+  const RETURN_WINDOW_DAYS = 7;
+  const returnDaysLeft = (order) => {
+    const deliveredAt = order.deliveredAt || order.updatedAt;
+    if (!deliveredAt) return null;
+    const daysSince = (Date.now() - new Date(deliveredAt).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(RETURN_WINDOW_DAYS - daysSince));
+  };
 
   const filteredOrders = filterStatus === "all"
     ? orders
@@ -57,6 +88,7 @@ export default function OrderHistory() {
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title="Order History" noindex />
 
       {/* Header */}
       <span className="eyebrow">{t("yourAccount")}</span>
@@ -128,8 +160,8 @@ export default function OrderHistory() {
                 padding: "6px 14px",
                 borderRadius: 20,
                 border: "1.5px solid",
-                borderColor: filterStatus === status ? "var(--charcoal)" : "var(--border)",
-                background: filterStatus === status ? "var(--charcoal)" : "transparent",
+                borderColor: filterStatus === status ? "var(--maroon)" : "var(--border)",
+                background: filterStatus === status ? "var(--maroon)" : "transparent",
                 color: filterStatus === status ? "#fff" : "var(--muted)",
                 fontSize: 12,
                 fontWeight: 500,
@@ -165,8 +197,7 @@ export default function OrderHistory() {
             const stepIndex = STATUS_STEPS.indexOf(order.status);
             const isPaid = order.payment?.status === 'paid';
 
-            // ✅ Friendly order ID: use guestOrderId if exists, else fallback to shortened _id
-            const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
+            const displayOrderId = getOrderDisplayId(order);
 
             return (
               <div key={order._id} className="panel" style={{ overflow: "hidden" }}>
@@ -191,6 +222,18 @@ export default function OrderHistory() {
                       {" · "}{order.items.length} {t(order.items.length === 1 ? "item_one" : "item_other")}
                     </p>
                   </div>
+
+                  {order.status === "delivered" && returnDaysLeft(order) > 0 && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      background: "var(--gold-pale)", color: "var(--maroon)",
+                      fontSize: 11, fontWeight: 600,
+                      padding: "4px 12px", borderRadius: 20, whiteSpace: "nowrap",
+                    }}>
+                      <RotateCcw size={11} /> {t("returnDaysLeft", { count: returnDaysLeft(order) })}
+                    </span>
+                  )}
+
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{
                       background: status.bg, color: status.color,
@@ -215,7 +258,7 @@ export default function OrderHistory() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                       {item.product?.images?.[0]
-                        ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        ? <img src={item.product.images[0]} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : <Gem size={18} style={{ opacity: 0.3 }} />}
                     </div>
                   ))}
@@ -234,7 +277,7 @@ export default function OrderHistory() {
                         <div key={step} style={{ textAlign: "center", flex: 1 }}>
                           <div style={{
                             width: 20, height: 20, borderRadius: "50%",
-                            background: i <= stepIndex ? "var(--charcoal)" : "var(--border)",
+                            background: i <= stepIndex ? "var(--maroon)" : "var(--border)",
                             margin: "0 auto 4px",
                             display: "flex", alignItems: "center", justifyContent: "center",
                           }}>
@@ -250,7 +293,7 @@ export default function OrderHistory() {
                     <div style={{ height: 2, background: "var(--border)", borderRadius: 1, marginTop: 4 }}>
                       <div style={{
                         height: "100%", borderRadius: 1,
-                        background: "var(--charcoal)",
+                        background: "var(--maroon)",
                         width: `${Math.max(0, (stepIndex / (STATUS_STEPS.length - 1)) * 100)}%`,
                         transition: "width 0.3s ease",
                       }} />
@@ -270,10 +313,13 @@ export default function OrderHistory() {
                       {t("items")}
                     </p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                      {order.items.map((item, i) => (
+                      {order.items.map((item, i) => {
+                        const productId = item.product?._id || item.product;
+                        const existingRefund = order.status === "delivered" ? refundFor(order._id, productId) : null;
+                        return (
                         <div key={i} style={{
                           display: "flex", justifyContent: "space-between",
-                          alignItems: "center", fontSize: 13,
+                          alignItems: "center", fontSize: 13, flexWrap: "wrap", gap: 8,
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
@@ -282,19 +328,53 @@ export default function OrderHistory() {
                               flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
                             }}>
                               {item.product?.images?.[0]
-                                ? <img src={item.product.images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                ? <img src={item.product.images[0]} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 : <Gem size={14} style={{ opacity: 0.3 }} />}
                             </div>
                             <div>
                               <div style={{ fontWeight: 500 }}>{item.nameSnapshot || localized(item.product?.name, language)}</div>
                               <div style={{ color: "var(--muted)", fontSize: 11 }}>{t("qtyLabel", { count: item.quantity })}</div>
+                              {order.status === "delivered" && (
+                                existingRefund ? (
+                                  <span style={{
+                                    display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                    padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                    background: REFUND_STATUS_STYLE[existingRefund.status]?.bg,
+                                    color: REFUND_STATUS_STYLE[existingRefund.status]?.color,
+                                  }}>
+                                    {t(`refundStatus_${existingRefund.status}`)}
+                                  </span>
+                                ) : returnDaysLeft(order) > 0 ? (
+                                  <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); setReturnTarget({ order, item }); }}
+                                      style={{
+                                        display: "inline-flex", alignItems: "center", gap: 4,
+                                        background: "none", border: "none", padding: 0, cursor: "pointer",
+                                        fontSize: 11, fontWeight: 600, color: "var(--maroon)",
+                                      }}
+                                    >
+                                      <RotateCcw size={11} /> {t("returnProduct")}
+                                    </button>
+                                    <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                                      · {t("returnDaysLeft", { count: returnDaysLeft(order) })}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
+                                    {t("returnWindowClosed")}
+                                  </span>
+                                )
+                              )}
                             </div>
                           </div>
                           <div style={{ fontWeight: 600, color: "var(--gold-text)" }}>
                             ৳ {formatPrice(item.price * item.quantity, language)}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Delivery Address */}
@@ -372,10 +452,31 @@ export default function OrderHistory() {
                     ৳ {formatPrice(order.totalAmount, language)}
                   </span>
                 </div>
+
+                {order.payment?.method === "bkash" && order.payment?.status !== "paid" && (
+                  <BkashPaymentPanel
+                    order={order}
+                    onUpdated={(payment) => {
+                      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, payment } : o));
+                    }}
+                  />
+                )}
               </div>
             );
           })}
         </div>
+      )}
+
+      {returnTarget && (
+        <RefundRequestModal
+          order={returnTarget.order}
+          item={returnTarget.item}
+          onClose={() => setReturnTarget(null)}
+          onSubmitted={(newRefund) => {
+            setRefunds(prev => [newRefund, ...prev]);
+            setReturnTarget(null);
+          }}
+        />
       )}
     </div>
   );

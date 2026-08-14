@@ -1,4 +1,5 @@
 import Setting from "../models/Setting.js";
+import { sendError } from "../utils/errorResponse.js";
 
 // GET /api/settings/pricing — public, read-only. Checkout needs the current
 // delivery charges and VAT rate to show an accurate estimate before
@@ -11,8 +12,10 @@ export const getPublicPricing = async (req, res) => {
       defaultDeliveryCharge: settings.defaultDeliveryCharge,
       districtDeliveryCharges: settings.districtDeliveryCharges,
       defaultLanguage: settings.defaultLanguage,
+      bkashMerchantNumber: settings.bkashMerchantNumber,
+      bkashNumberType: settings.bkashNumberType,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    sendError(res, err);
   }
 };

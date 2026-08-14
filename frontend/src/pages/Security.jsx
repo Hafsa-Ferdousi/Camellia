@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { setupTwoFactor, confirmTwoFactorSetup, disableTwoFactor } from "../api/auth";
+import Seo from "../components/Seo";
 
 export default function Security() {
   const { t } = useTranslation("auth");
@@ -79,6 +80,7 @@ export default function Security() {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "36px 24px 64px" }}>
+      <Seo title={t("security")} noindex />
       <span className="eyebrow">{t("yourAccount")}</span>
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontStyle: "italic", marginTop: 4 }}>
         {t("security")}
@@ -177,7 +179,7 @@ export default function Security() {
             type="button"
             className="btn"
             onClick={() => setShowDeleteConfirm(true)}
-            style={{ padding: "10px 20px", fontSize: 13, borderColor: "var(--red)", color: "var(--red)" }}
+            style={{ padding: "10px 20px", fontSize: 13, background: "transparent", borderColor: "var(--red)", color: "var(--red)" }}
           >
             {t("deleteAccount")}
           </button>

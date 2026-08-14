@@ -1,18 +1,79 @@
 // frontend/src/pages/OrderConfirmation.jsx
-import React, { useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, Printer, Package } from 'lucide-react';
+import { Check, Printer, Package, Loader2 } from 'lucide-react';
 import './OrderConfirmation.css';
 import Invoice from '../components/Invoice';
+import BkashPaymentPanel from '../components/BkashPaymentPanel';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { getOrderById, guestLookupOrder } from '../api/cart';
+import { getOrderDisplayId } from '../utils/orderId';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
   const { language } = useLanguage();
   const { state } = useLocation();
-  const order = state?.order;
+  const { orderId } = useParams();
+  const { user, loading: authLoading } = useAuth();
+  const [order, setOrder] = useState(state?.order || null);
+  const [emailInput, setEmailInput] = useState('');
+  const [lookupError, setLookupError] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  // Guests reloading a bookmarked /order-confirmation/:orderId link need to
+  // re-prove ownership with the email used at checkout (no account = no
+  // session to check against). Registered users skip this — getOrderById
+  // is ownership-checked server-side against their login.
+  const [needsGuestEmail, setNeedsGuestEmail] = useState(false);
   const receiptRef = useRef(null);
+
+  // If we only have an :orderId (page was reloaded/bookmarked, no nav
+  // state), fetch the order fresh from the server.
+  useEffect(() => {
+    if (order || !orderId || authLoading) return;
+
+    if (user) {
+      getOrderById(orderId)
+        .then(({ data }) => setOrder(data))
+        .catch(() => setLookupError(t('noOrderFound')));
+      return;
+    }
+
+    // Guest: try the email carried over in the URL first (from the
+    // "View Full Details" link on /track-order); otherwise ask for it.
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = params.get('email');
+    if (urlEmail) {
+      lookupGuestOrder(orderId, urlEmail);
+    } else {
+      setNeedsGuestEmail(true);
+    }
+  }, [orderId, user, authLoading]);
+
+  const lookupGuestOrder = async (id, email) => {
+    setLookupLoading(true);
+    setLookupError('');
+    try {
+      const { data } = await guestLookupOrder({ orderId: id, email });
+      if (data.orders?.length > 0) {
+        setOrder(data.orders[0]);
+        setNeedsGuestEmail(false);
+      } else {
+        setLookupError(t('noOrderForIdEmail'));
+      }
+    } catch (err) {
+      setLookupError(err.response?.data?.message || t('noOrderForIdEmail'));
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleGuestEmailSubmit = (e) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+    lookupGuestOrder(orderId, emailInput.trim());
+  };
 
   // Backend stores payment.method as a short code (cod | bkash | nagad | bank)
   const PAYMENT_LABELS = { cod: t('paymentCod'), bkash: t('paymentBkash'), nagad: t('paymentNagad'), bank: t('paymentBank') };
@@ -24,13 +85,57 @@ export default function OrderConfirmation() {
     : t('notAvailable');
   const customerEmail = order ? (order.user?.email || order.guestInfo?.email || order.email || '') : '';
 
-  // ✅ Get the best display ID: guestOrderId > invoiceNumber > _id (fallback)
-  const displayOrderId = order?.guestOrderId || order?.invoiceNumber || order?._id?.slice(-8).toUpperCase() || t('notAvailable');
-  const displayInvoiceNumber = order?.invoiceNumber || order?._id?.slice(-8).toUpperCase() || t('notAvailable');
+  // The Order ID is the backend-assigned guestOrderId — the single source of
+  // truth shown everywhere (confirmation, history, tracking, admin). The
+  // invoice number is a separate accounting field, shown alongside it.
+  const displayOrderId = getOrderDisplayId(order) || t('notAvailable');
+  const displayInvoiceNumber = order?.invoiceNumber || t('notAvailable');
+
+  // Guest reloaded a bookmarked link with no email in the URL — ask for it
+  // before fetching, rather than silently failing.
+  if (!order && needsGuestEmail) {
+    return (
+      <div className="container" style={{ paddingTop: 60, paddingBottom: 60, textAlign: "center" }}>
+        <h2 style={{ fontFamily: "Georgia, serif", fontSize: 26, margin: "12px 0 16px" }}>
+          {t('confirmEmailTitle')}
+        </h2>
+        <p style={{ color: "#555", marginBottom: 24 }}>
+          {t('confirmEmailSub')}
+        </p>
+        <form onSubmit={handleGuestEmailSubmit} style={{ maxWidth: 340, margin: "0 auto" }}>
+          <input
+            type="email"
+            required
+            autoFocus
+            value={emailInput}
+            onChange={(e) => setEmailInput(e.target.value)}
+            placeholder={t('emailPlaceholderExample')}
+            style={{
+              width: "100%", padding: "10px 14px", border: "1px solid var(--border)",
+              borderRadius: 6, fontSize: 14, marginBottom: 12, boxSizing: "border-box",
+            }}
+          />
+          {lookupError && <p style={{ color: "var(--red)", fontSize: 13, marginBottom: 12 }}>{lookupError}</p>}
+          <button type="submit" className="btn btn-gold" disabled={lookupLoading} style={{ width: "100%" }}>
+            {lookupLoading ? t('searching') : t('findMyOrder')}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (!order && (lookupLoading || (orderId && !lookupError && !authLoading))) {
+    return (
+      <div style={{ padding: "80px 0", textAlign: "center", color: "var(--muted)" }}>
+        <Loader2 size={32} strokeWidth={1.5} className="spin" style={{ marginBottom: 12 }} />
+        <div>{t('searching')}</div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
-      <div className="container" style={{ padding: "60px 0", textAlign: "center" }}>
+      <div className="container" style={{ paddingTop: 60, paddingBottom: 60, textAlign: "center" }}>
         <h2 style={{ fontFamily: "Georgia, serif", fontSize: 30, margin: "12px 0 16px" }}>
           {t('noOrderFound')}
         </h2>
@@ -81,6 +186,16 @@ export default function OrderConfirmation() {
             {t('placedOn', { date: placedDate, time: placedTime })}
           </p>
         </div>
+
+        {order.payment?.method === 'bkash' && (
+          <div className="bkash-payment-section" style={{ padding: '0 4px' }}>
+            <BkashPaymentPanel
+              order={order}
+              guestEmail={!order.user ? (order.guestInfo?.email || order.email) : undefined}
+              onUpdated={(payment) => setOrder((prev) => ({ ...prev, payment }))}
+            />
+          </div>
+        )}
 
         <div className="receipt-body">
           <div className="receipt-section">

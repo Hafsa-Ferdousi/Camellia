@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Search, ShoppingCart, Menu, X, User, Gem, Globe, Bell } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, Gem, Globe, Bell, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { formatPrice } from "../utils/formatPrice";
 import { searchProducts } from "../api/products";
-import { getNotifications, markAsRead, markAllAsRead } from "../api/notifications";
+import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -21,19 +21,16 @@ export default function Navbar() {
   const close = () => setOpen(false);
   const handleLogout = () => { logout(); navigate("/"); close(); };
 
-  // ✅ SMART SEARCH STATE
   const [suggestions, setSuggestions] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Account menu
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef(null);
   const closeAccount = () => setAccountOpen(false);
 
-  // Notification bell (customers only)
   const isCustomer = !!user && user.role !== "admin";
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -67,7 +64,13 @@ export default function Navbar() {
     try { await markAllAsRead(); } catch { /* best-effort */ }
   };
 
-  // Click outside closes dropdowns
+  const handleDeleteNotification = async (e, n) => {
+    e.stopPropagation();
+    setNotifications((list) => list.filter((x) => x._id !== n._id));
+    if (!n.read) setUnreadCount((c) => Math.max(0, c - 1));
+    try { await deleteNotification(n._id); } catch { /* best-effort */ }
+  };
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -84,7 +87,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ SMART SEARCH: Debounced fetch (Products + Categories)
   useEffect(() => {
     const trimmed = q.trim();
     if (trimmed.length < 1) {
@@ -101,7 +103,6 @@ export default function Navbar() {
     };
   }, [q]);
 
-  // ✅ SMART SEARCH: Fetch products AND categories
   const fetchSuggestions = async (query, signal) => {
     setLoading(true);
     try {
@@ -110,7 +111,6 @@ export default function Navbar() {
       setCategorySuggestions(data.categories || []);
       setShowSuggestions((data.products?.length || 0) > 0 || (data.categories?.length || 0) > 0);
     } catch (err) {
-      // A newer keystroke aborted this request — its own fetch will update state instead.
       if (err.code === "ERR_CANCELED") return;
       console.error("Search error:", err);
       setSuggestions([]);
@@ -180,10 +180,6 @@ export default function Navbar() {
             {navLink("/contact", t("nav:contact"))}
           </nav>
 
-          {/* 🔍 SMART SEARCH BAR — a light, high-contrast bar with an
-              attached gold button, the Amazon/Daraz pattern where search
-              is the one control styled to stand out from a dark header
-              instead of blending into it. */}
           <div ref={wrapperRef} className="navbar-search-wrapper" style={{ flex: "1 1 320px", maxWidth: 460, minWidth: 140, position: "relative" }}>
             <form
               className="navbar-search-form"
@@ -203,22 +199,21 @@ export default function Navbar() {
                 value={q}
                 onChange={e => setQ(e.target.value)}
                 onFocus={() => q.trim().length >= 1 && setShowSuggestions(true)}
-                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#2A160F", fontSize: 14, padding: "9px 4px" }}
+                style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "var(--charcoal)", fontSize: 14, padding: "9px 4px" }}
               />
               <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 6, color: "#2A1206", display: "inline-flex", alignItems: "center", padding: "9px 14px", cursor: "pointer", flexShrink: 0 }}>
                 <Search size={16} strokeWidth={2.5} />
               </button>
             </form>
 
-            {/* ✅ SMART SEARCH DROPDOWN */}
             {showSuggestions && (
               <div style={{
                 position: "absolute",
                 top: "calc(100% + 4px)",
                 left: 0,
                 right: 0,
-                background: "#fff",
-                border: "1px solid #ddd",
+                background: "var(--ivory)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
                 maxHeight: "320px",
                 overflowY: "auto",
@@ -226,10 +221,9 @@ export default function Navbar() {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
               }}>
                 {loading ? (
-                  <div style={{ padding: "12px", textAlign: "center", color: "#555" }}>{t("common:loading")}</div>
+                  <div style={{ padding: "12px", textAlign: "center", color: "var(--muted)" }}>{t("common:loading")}</div>
                 ) : (
                   <>
-                    {/* PRODUCT SUGGESTIONS */}
                     {suggestions.map((product) => {
                       const name = (language === "bn" ? product.name?.bn : product.name?.en) || t("common:productFallback");
                       const image = product.images?.[0];
@@ -243,20 +237,20 @@ export default function Navbar() {
                             display: "flex",
                             alignItems: "center",
                             gap: "12px",
-                            borderBottom: "1px solid #f0f0f0",
+                            borderBottom: "1px solid var(--border-light)",
                             transition: "background 0.15s",
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cream-dark)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--ivory)")}
                         >
                           {image ? (
-                            <img src={image} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4 }} />
+                            <img src={image} alt="" loading="lazy" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4 }} />
                           ) : (
-                            <span style={{ color: "#c9a84c", display: "inline-flex" }}><Gem size={20} strokeWidth={1.5} /></span>
+                            <span style={{ color: "var(--gold-text)", display: "inline-flex" }}><Gem size={20} strokeWidth={1.5} /></span>
                           )}
                           <div>
                             <div style={{ fontWeight: 500, fontSize: 14 }}>{name}</div>
-                            <div style={{ fontSize: 12, color: "#c9a84c" }}>
+                            <div style={{ fontSize: 12, color: "var(--gold-text)" }}>
                               ৳ {formatPrice(product.basePrice, language)}
                             </div>
                           </div>
@@ -264,17 +258,16 @@ export default function Navbar() {
                       );
                     })}
 
-                    {/* ✅ CATEGORY SUGGESTIONS */}
                     {categorySuggestions.length > 0 && (
                       <div>
                         <div style={{
                           padding: "6px 14px",
                           fontSize: "10px",
                           fontWeight: 600,
-                          color: "#555",
+                          color: "var(--muted)",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
-                          borderTop: "1px solid #f0f0f0",
+                          borderTop: "1px solid var(--border-light)",
                         }}>
                           {t("common:categories")}
                         </div>
@@ -295,11 +288,11 @@ export default function Navbar() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "10px",
-                                borderBottom: "1px solid #f0f0f0",
+                                borderBottom: "1px solid var(--border-light)",
                                 transition: "background 0.15s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cream-dark)")}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--ivory)")}
                             >
                               <span style={{ fontSize: "16px" }}>📂</span>
                               <span style={{ fontWeight: 500, fontSize: "14px" }}>{name}</span>
@@ -309,7 +302,6 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    {/* ✅ VIEW ALL RESULTS LINK */}
                     {(suggestions.length > 0 || categorySuggestions.length > 0) && (
                       <div
                         onClick={() => {
@@ -321,14 +313,14 @@ export default function Navbar() {
                           padding: "10px 14px",
                           cursor: "pointer",
                           textAlign: "center",
-                          color: "#c9a84c",
+                          color: "var(--gold-text)",
                           fontWeight: 600,
                           fontSize: "13px",
-                          borderTop: "1px solid #f0f0f0",
+                          borderTop: "1px solid var(--border-light)",
                           transition: "background 0.15s",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f8f5f0")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--cream-dark)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "var(--ivory)")}
                       >
                         {t("common:viewAllResults", { query: q })}
                       </div>
@@ -340,9 +332,6 @@ export default function Navbar() {
           </div>
 
           <div className="navbar-actions">
-            {/* ✅ Language switcher — standalone icon button next to cart/account,
-                the placement commercial sites (Amazon, Daraz) use rather than
-                burying it inside the account menu. */}
             <button
               type="button"
               className="navbar-lang-btn"
@@ -393,7 +382,7 @@ export default function Navbar() {
                   )}
                 </button>
                 {bellOpen && (
-                  <div className="navbar-account-dropdown" style={{ width: 300 }}>
+                  <div className="navbar-account-dropdown" style={{ width: 300, boxSizing: "border-box" }}>
                     {notifications.length === 0 ? (
                       <p style={{ padding: "10px 14px", fontSize: 13, color: "rgba(232,217,192,0.65)" }}>{t("notifications:empty")}</p>
                     ) : (
@@ -401,10 +390,29 @@ export default function Navbar() {
                         <div
                           key={n._id}
                           onClick={() => handleBellItemClick(n)}
-                          style={{ padding: "8px 14px", fontSize: 13, cursor: n.read ? "default" : "pointer", opacity: n.read ? 0.65 : 1, borderBottom: "1px solid rgba(244,196,48,0.15)" }}
+                          style={{
+                            padding: "8px 14px", fontSize: 13, cursor: n.read ? "default" : "pointer",
+                            opacity: n.read ? 0.65 : 1, borderBottom: "1px solid rgba(244,196,48,0.15)",
+                            display: "flex", alignItems: "flex-start", gap: 8, minWidth: 0,
+                          }}
                         >
-                          <div style={{ fontWeight: 600, color: "var(--nav-text)" }}>{n.title}</div>
-                          <div style={{ color: "rgba(232,217,192,0.65)", fontSize: 12 }}>{n.message}</div>
+                          <div style={{ flex: 1, minWidth: 0, whiteSpace: "normal" }}>
+                            <div style={{ fontWeight: 600, color: "var(--nav-text)", wordBreak: "break-word", whiteSpace: "normal" }}>{n.title}</div>
+                            <div style={{ color: "rgba(232,217,192,0.65)", fontSize: 12, wordBreak: "break-word", whiteSpace: "normal" }}>{n.message}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteNotification(e, n)}
+                            aria-label={t("notifications:delete")}
+                            title={t("notifications:delete")}
+                            style={{
+                              flexShrink: 0, width: "auto", background: "none", border: "none", cursor: "pointer",
+                              color: "rgba(232,217,192,0.85)", padding: 4, display: "flex",
+                              alignItems: "center", justifyContent: "center", borderRadius: 4,
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       ))
                     )}
@@ -484,7 +492,7 @@ export default function Navbar() {
               placeholder={t("common:search")}
               value={q}
               onChange={e => setQ(e.target.value)}
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#2A160F", fontSize: 14, padding: "9px 4px" }}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "var(--charcoal)", fontSize: 14, padding: "9px 4px" }}
             />
             <button type="submit" style={{ background: "var(--gold)", border: "none", borderRadius: 6, color: "#2A1206", display: "inline-flex", alignItems: "center", padding: "9px 12px", cursor: "pointer" }}>
               <Search size={15} strokeWidth={2.5} />

@@ -2,19 +2,32 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Phone } from "lucide-react";
+import { Phone, RotateCcw } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
+import { guestLookupOrder } from "../api/cart";
+import { getGuestRefunds } from "../api/refunds";
+import RefundRequestModal from "../components/RefundRequestModal";
+import { getOrderDisplayId } from "../utils/orderId";
+
+const REFUND_STATUS_STYLE = {
+  pending:   { bg: "#FEF3C7", color: "#92400E" },
+  approved:  { bg: "#DBEAFE", color: "#1E40AF" },
+  rejected:  { bg: "#FEE2E2", color: "#991B1B" },
+  processed: { bg: "#D1FAE5", color: "#065F46" },
+};
+
+const RETURN_WINDOW_DAYS = 7;
 
 export default function TrackOrder() {
   const { t } = useTranslation("orders");
   const { language } = useLanguage();
   const STATUS_STYLE = {
     pending:    { bg: "#FEF3C7", color: "#92400E", label: t("statusPending") },
-    confirmed:  { bg: "#DBEAFE", color: "#1E40AF", label: t("statusConfirmed") },
-    processing: { bg: "#E0E7FF", color: "#3730A3", label: t("statusProcessing") },
-    shipped:    { bg: "#CFFAFE", color: "#155E75", label: t("statusShipped") },
+    confirmed:  { bg: "#FCEFC7", color: "#8B6914", label: t("statusConfirmed") },
+    processing: { bg: "#F5DCC0", color: "#9A4A0F", label: t("statusProcessing") },
+    shipped:    { bg: "#E8D9C0", color: "#6B4226", label: t("statusShipped") },
     delivered:  { bg: "#D1FAE5", color: "#065F46", label: t("statusDelivered") },
     cancelled:  { bg: "#FEE2E2", color: "#991B1B", label: t("statusCancelled") },
   };
@@ -25,11 +38,24 @@ export default function TrackOrder() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refunds, setRefunds] = useState([]);
+  const [returnTarget, setReturnTarget] = useState(null);
+
+  const refundFor = (orderIdVal, productId) =>
+    refunds.find(r => (r.order?._id || r.order) === orderIdVal && r.item?.product === productId);
+
+  const returnDaysLeft = (order) => {
+    const deliveredAt = order.deliveredAt || order.updatedAt;
+    if (!deliveredAt) return null;
+    const daysSince = (Date.now() - new Date(deliveredAt).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(RETURN_WINDOW_DAYS - daysSince));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setOrders(null);
+    setRefunds([]);
     setLoading(true);
 
     // Validate
@@ -50,27 +76,20 @@ export default function TrackOrder() {
     if (phone.trim()) payload.phone = phone.trim();
 
     try {
-      // Use fetch directly (bypasses Axios, sends phone number correctly)
-      const response = await fetch('/api/orders/guest-lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || t("orderNotFoundError"));
-      }
-
-      const data = await response.json();
+      const { data } = await guestLookupOrder(payload);
 
       if (data.orders && data.orders.length > 0) {
         setOrders(data.orders);
+        // Best-effort — return/refund status badges are a nice-to-have, so
+        // a failure here shouldn't block showing the orders themselves.
+        getGuestRefunds(data.orders.map(o => o._id), email.trim())
+          .then(({ data: rf }) => setRefunds(rf))
+          .catch(() => setRefunds([]));
       } else {
         setError(t("noOrderForIdEmail"));
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(err.response?.data?.message || t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -86,11 +105,11 @@ export default function TrackOrder() {
           <p style={{ fontSize: 13, color: "var(--muted)" }}>
             {t("trackSub")}
           </p>
-          <p style={{ fontSize: 12, color: "#c9a84c", marginTop: 4 }}>
+          <p style={{ fontSize: 12, color: "var(--gold-text)", marginTop: 4 }}>
             {t("trackHint")}
           </p>
         </div>
-        <div style={{ textAlign: "center", marginBottom: 28, color: "#C9A84C" }}>✦</div>
+        <div style={{ textAlign: "center", marginBottom: 28, color: "var(--gold)" }}>✦</div>
 
         {error && <div style={styles.errorBox}>{error}</div>}
 
@@ -109,11 +128,11 @@ export default function TrackOrder() {
                 style={{
                   width: "100%",
                   padding: "10px 14px",
-                  border: "1px solid #ddd",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 14,
                   marginTop: 0,
-                  background: "#FAFAFA",
+                  background: "var(--ivory)",
                   boxSizing: "border-box",
                 }}
               />
@@ -131,11 +150,11 @@ export default function TrackOrder() {
                 style={{
                   width: "100%",
                   padding: "10px 14px",
-                  border: "1px solid #ddd",
+                  border: "1px solid var(--border)",
                   borderRadius: 6,
                   fontSize: 14,
                   marginTop: 0,
-                  background: "#FAFAFA",
+                  background: "var(--ivory)",
                   boxSizing: "border-box",
                 }}
               />
@@ -143,7 +162,7 @@ export default function TrackOrder() {
           </div>
 
           <label className="form-label" style={{ display: 'block', fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
-            {t("emailAddress")} <span style={{ color: '#c62828' }}>*</span>
+            {t("emailAddress")} <span style={{ color: 'var(--red)' }}>*</span>
           </label>
           <input
             className="input"
@@ -155,25 +174,25 @@ export default function TrackOrder() {
             style={{
               width: "100%",
               padding: "10px 14px",
-              border: "1px solid #ddd",
+              border: "1px solid var(--border)",
               borderRadius: 6,
               fontSize: 14,
               marginTop: 0,
-              background: "#FAFAFA",
+              background: "var(--ivory)",
               boxSizing: "border-box",
             }}
           />
 
-          <button 
-            className="btn" 
-            type="submit" 
-            disabled={loading} 
-            style={{ 
-              width: "100%", 
-              marginTop: 16, 
-              padding: 13, 
+          <button
+            className="btn"
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 16,
+              padding: 13,
               fontSize: 13,
-              background: "#c9a84c",
+              background: "var(--maroon)",
               color: "#fff",
               border: "none",
               borderRadius: 6,
@@ -191,11 +210,10 @@ export default function TrackOrder() {
             {orders.map((order) => {
               const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
               const items = order.items || [];
-              // ✅ Use guestOrderId if available, otherwise fallback to shortened _id
-              const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
+              const displayOrderId = getOrderDisplayId(order);
 
               return (
-                <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid #eee" }}>
+                <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-light)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
                       <p style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>
@@ -215,12 +233,52 @@ export default function TrackOrder() {
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    {items.map((item, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                        <span>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</span>
-                        <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
-                      </div>
-                    ))}
+                    {items.map((item, i) => {
+                      const productId = item.product?._id || item.product;
+                      const existingRefund = order.status === "delivered" ? refundFor(order._id, productId) : null;
+                      const daysLeft = returnDaysLeft(order);
+                      return (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 13, flexWrap: "wrap", gap: 8 }}>
+                          <div>
+                            <div>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</div>
+                            {order.status === "delivered" && (
+                              existingRefund ? (
+                                <span style={{
+                                  display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                  padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                  background: REFUND_STATUS_STYLE[existingRefund.status]?.bg,
+                                  color: REFUND_STATUS_STYLE[existingRefund.status]?.color,
+                                }}>
+                                  {t(`refundStatus_${existingRefund.status}`)}
+                                </span>
+                              ) : daysLeft > 0 ? (
+                                <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setReturnTarget({ order, item })}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 4,
+                                      background: "none", border: "none", padding: 0, cursor: "pointer",
+                                      fontSize: 11, fontWeight: 600, color: "var(--maroon)",
+                                    }}
+                                  >
+                                    <RotateCcw size={11} /> {t("returnProduct")}
+                                  </button>
+                                  <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                                    · {t("returnDaysLeft", { count: daysLeft })}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
+                                  {t("returnWindowClosed")}
+                                </span>
+                              )
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div style={{ background: "var(--parchment)", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
@@ -244,7 +302,7 @@ export default function TrackOrder() {
 
                   <div style={{ marginTop: 12 }}>
                     <Link 
-                      to="/order-confirmation" 
+                      to={`/order-confirmation/${order._id}?email=${encodeURIComponent(email.trim())}`}
                       state={{ order }} 
                       style={{ color: "var(--gold-text)", fontWeight: 600, fontSize: 14 }}
                     >
@@ -261,6 +319,19 @@ export default function TrackOrder() {
           {t("haveAccount")} <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("logIn")}</Link> {t("seeAllOrders")}
         </p>
       </div>
+
+      {returnTarget && (
+        <RefundRequestModal
+          order={returnTarget.order}
+          item={returnTarget.item}
+          guestEmail={email.trim()}
+          onClose={() => setReturnTarget(null)}
+          onSubmitted={(refund) => {
+            setRefunds(prev => [...prev, refund]);
+            setReturnTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -272,20 +343,20 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     padding: "48px 16px",
-    background: "#F8F5F0",
+    background: "var(--cream-dark)",
   },
   card: {
     width: "100%",
     maxWidth: 480,
-    background: "#FFFFFF",
-    border: "1px solid #E8E0D8",
+    background: "var(--ivory)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: "40px 36px",
     boxShadow: "0 4px 30px rgba(0,0,0,0.08)",
   },
   errorBox: {
     background: "#FEF2F2",
-    color: "#C62828",
+    color: "var(--red)",
     padding: "10px 14px",
     borderRadius: 6,
     marginBottom: 16,

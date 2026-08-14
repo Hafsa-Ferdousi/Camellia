@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import PasswordField from "../components/PasswordField";
+import Seo from "../components/Seo";
 
 export default function Login() {
   const { t } = useTranslation("auth");
@@ -67,6 +68,7 @@ export default function Login() {
   if (tempToken) {
     return (
       <div style={styles.page}>
+        <Seo title={t("twoFactorTitle")} noindex />
         <div style={styles.card}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
             <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("twoFactorTitle")}</p>
@@ -113,6 +115,7 @@ export default function Login() {
 
   return (
     <div style={styles.page}>
+      <Seo title="Log In" noindex />
       <div style={styles.card}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <p style={{ fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--maroon)", marginBottom: 4 }}>{t("welcomeBack")}</p>

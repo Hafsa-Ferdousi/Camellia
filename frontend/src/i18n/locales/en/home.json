@@ -31,5 +31,18 @@
   "readyToShop": "Ready to Shop?",
   "exploreCollection": "Explore the Full Collection",
   "ctaSub": "Browse all our handcrafted bridal jewellery — search, filter by category and price, and find your perfect piece.",
-  "browseAll": "Browse All Products →"
+  "browseAll": "Browse All Products →",
+  "copyCode": "Copy code",
+  "couponPercentOff": "{{value}}% off",
+  "couponFixedOff": "{{value}} off",
+  "couponMinPurchase": "Minimum {{value}}",
+  "offersEyebrow": "Limited Time",
+  "offersTitle": "Exclusive Offers For You",
+  "couponValidTill": "Valid till {{value}}",
+  "couponDateRange": "{{start}} – {{end}}",
+  "upcomingEyebrow": "Coming Soon",
+  "startsInDays": "Starts in {{days}}d {{hours}}h",
+  "startsInHours": "Starts in {{hours}}h {{minutes}}m",
+  "startsInMinutes": "Starts in {{minutes}}m",
+  "startingSoon": "Starting any moment"
 }

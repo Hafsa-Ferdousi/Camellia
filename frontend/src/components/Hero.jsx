@@ -1,5 +1,29 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
+// Ticks down to `target` and renders as "Starts in Xd Yh" / "Xh Ym" / "Xm",
+// re-rendering on a 30s interval — fine-grained enough for an "hours
+// remaining" countdown without re-rendering every second. Exported so the
+// mobile coupon band in Home.jsx can reuse the same countdown.
+export function CouponCountdown({ target, t }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const diffMs = new Date(target).getTime() - now;
+  if (diffMs <= 0) return <span>{t("startingSoon", { defaultValue: "Starting any moment" })}</span>;
+
+  const totalMinutes = Math.ceil(diffMs / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 0) return <span>{t("startsInDays", { days, hours, defaultValue: `Starts in ${days}d ${hours}h` })}</span>;
+  if (hours > 0) return <span>{t("startsInHours", { hours, minutes, defaultValue: `Starts in ${hours}h ${minutes}m` })}</span>;
+  return <span>{t("startsInMinutes", { minutes, defaultValue: `Starts in ${minutes}m` })}</span>;
+}
 
 export default function Hero({ onSearch }) {
   const { t } = useTranslation(["home", "common"]);

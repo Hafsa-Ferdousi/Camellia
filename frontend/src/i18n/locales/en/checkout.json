@@ -70,5 +70,14 @@
   "guestNoteSmall": "Save your Order ID from the confirmation page — you can look up your order anytime at",
   "trackOrder": "Track Order",
   "noAccountNeeded": ", no account needed.",
-  "orderFailed": "Order failed. Please try again."
+  "orderFailed": "Order failed. Please try again.",
+
+  "bkashInstructionsTitle": "How to pay with bKash",
+  "bkashStep1": "Open your bKash app and use \"Send Money\" to:",
+  "bkashStep2": "Complete the payment for the total shown below.",
+  "bkashStep3": "After placing your order, you'll be asked to enter your bKash number and Transaction ID so we can confirm your payment.",
+  "bkashNumberUnavailable": "our bKash number (shown after checkout)",
+  "bkashTypePersonal": "Personal",
+  "bkashTypeMerchant": "Merchant",
+  "bkashScanHint": "Scan with your phone's Camera app (not the bKash app) to copy this number"
 }
