@@ -2,11 +2,22 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Phone } from "lucide-react";
+import { Phone, RotateCcw } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { guestLookupOrder } from "../api/cart";
+import { getGuestRefunds } from "../api/refunds";
+import RefundRequestModal from "../components/RefundRequestModal";
+
+const REFUND_STATUS_STYLE = {
+  pending:   { bg: "#FEF3C7", color: "#92400E" },
+  approved:  { bg: "#DBEAFE", color: "#1E40AF" },
+  rejected:  { bg: "#FEE2E2", color: "#991B1B" },
+  processed: { bg: "#D1FAE5", color: "#065F46" },
+};
+
+const RETURN_WINDOW_DAYS = 7;
 
 export default function TrackOrder() {
   const { t } = useTranslation("orders");
@@ -26,11 +37,24 @@ export default function TrackOrder() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refunds, setRefunds] = useState([]);
+  const [returnTarget, setReturnTarget] = useState(null);
+
+  const refundFor = (orderIdVal, productId) =>
+    refunds.find(r => (r.order?._id || r.order) === orderIdVal && r.item?.product === productId);
+
+  const returnDaysLeft = (order) => {
+    const deliveredAt = order.deliveredAt || order.updatedAt;
+    if (!deliveredAt) return null;
+    const daysSince = (Date.now() - new Date(deliveredAt).getTime()) / 86400000;
+    return Math.max(0, Math.ceil(RETURN_WINDOW_DAYS - daysSince));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setOrders(null);
+    setRefunds([]);
     setLoading(true);
 
     // Validate
@@ -55,6 +79,11 @@ export default function TrackOrder() {
 
       if (data.orders && data.orders.length > 0) {
         setOrders(data.orders);
+        // Best-effort — return/refund status badges are a nice-to-have, so
+        // a failure here shouldn't block showing the orders themselves.
+        getGuestRefunds(data.orders.map(o => o._id), email.trim())
+          .then(({ data: rf }) => setRefunds(rf))
+          .catch(() => setRefunds([]));
       } else {
         setError(t("noOrderForIdEmail"));
       }
@@ -204,12 +233,52 @@ export default function TrackOrder() {
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    {items.map((item, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                        <span>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</span>
-                        <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
-                      </div>
-                    ))}
+                    {items.map((item, i) => {
+                      const productId = item.product?._id || item.product;
+                      const existingRefund = order.status === "delivered" ? refundFor(order._id, productId) : null;
+                      const daysLeft = returnDaysLeft(order);
+                      return (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 13, flexWrap: "wrap", gap: 8 }}>
+                          <div>
+                            <div>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</div>
+                            {order.status === "delivered" && (
+                              existingRefund ? (
+                                <span style={{
+                                  display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                  padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                  background: REFUND_STATUS_STYLE[existingRefund.status]?.bg,
+                                  color: REFUND_STATUS_STYLE[existingRefund.status]?.color,
+                                }}>
+                                  {t(`refundStatus_${existingRefund.status}`)}
+                                </span>
+                              ) : daysLeft > 0 ? (
+                                <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setReturnTarget({ order, item })}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 4,
+                                      background: "none", border: "none", padding: 0, cursor: "pointer",
+                                      fontSize: 11, fontWeight: 600, color: "var(--maroon)",
+                                    }}
+                                  >
+                                    <RotateCcw size={11} /> {t("returnProduct")}
+                                  </button>
+                                  <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                                    · {t("returnDaysLeft", { count: daysLeft })}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
+                                  {t("returnWindowClosed")}
+                                </span>
+                              )
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div style={{ background: "var(--parchment)", borderRadius: "var(--radius-sm)", padding: "12px 16px", fontSize: 13, marginBottom: 16 }}>
@@ -250,6 +319,19 @@ export default function TrackOrder() {
           {t("haveAccount")} <Link to="/login" style={{ color: "var(--maroon)", fontWeight: 600 }}>{t("logIn")}</Link> {t("seeAllOrders")}
         </p>
       </div>
+
+      {returnTarget && (
+        <RefundRequestModal
+          order={returnTarget.order}
+          item={returnTarget.item}
+          guestEmail={email.trim()}
+          onClose={() => setReturnTarget(null)}
+          onSubmitted={(refund) => {
+            setRefunds(prev => [...prev, refund]);
+            setReturnTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
