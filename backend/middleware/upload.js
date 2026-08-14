@@ -5,6 +5,9 @@ import path from "path";
 // by uploadRoutes.js — nothing is written to local disk, so this works the
 // same whether backend and frontend are deployed together or separately.
 export const CLOUDINARY_UPLOAD_FOLDER = "camellia/products";
+// Customer-submitted proof photos for return/refund requests — kept in
+// their own folder, separate from admin-managed product images.
+export const CLOUDINARY_REFUND_FOLDER = "camellia/refunds";
 
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];

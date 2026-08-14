@@ -8,6 +8,7 @@ import {
   setCouponStatus,
   validateCoupon,
   getActiveCoupons,
+  getUpcomingCoupons,
 } from "../controllers/couponController.js";
 import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.js";
 
@@ -27,6 +28,7 @@ export const customerCouponRouter = express.Router();
 // guests can still validate a code (per-user limits just won't apply to them
 // unless they're checking out and pass a guestEmail).
 customerCouponRouter.get("/active", getActiveCoupons);
+customerCouponRouter.get("/upcoming", getUpcomingCoupons);
 customerCouponRouter.post("/validate", optionalAuth, validateCoupon);
 
 export default customerCouponRouter;
