@@ -9,6 +9,10 @@ export const validateCoupon = (couponCode, cartTotal, items, guestEmail) =>
 // storefront (e.g. Home page) so customers can see & copy live codes.
 export const getActiveCoupons = () => client.get("/coupons/active");
 
+// Coupons that are on but haven't started yet, so the storefront can tease
+// them with a "starts in..." countdown ahead of time.
+export const getUpcomingCoupons = () => client.get("/coupons/upcoming");
+
 // ── Admin ───────────────────────────────────────────────────────────────
 export const getAllCoupons = (params) => client.get("/admin/coupons", { params });
 export const getCouponById  = (id)     => client.get(`/admin/coupons/${id}`);
