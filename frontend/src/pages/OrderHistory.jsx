@@ -334,8 +334,12 @@ export default function OrderHistory() {
                             <div>
                               <div style={{ fontWeight: 500 }}>{item.nameSnapshot || localized(item.product?.name, language)}</div>
                               <div style={{ color: "var(--muted)", fontSize: 11 }}>{t("qtyLabel", { count: item.quantity })}</div>
+                              {/* A rejected request doesn't block re-requesting (the
+                                  backend explicitly allows resubmission after a
+                                  rejection) — only a still-open (pending/approved) or
+                                  already-processed request should hide the button. */}
                               {order.status === "delivered" && (
-                                existingRefund ? (
+                                existingRefund && existingRefund.status !== "rejected" ? (
                                   <span style={{
                                     display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
                                     padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
@@ -346,6 +350,16 @@ export default function OrderHistory() {
                                   </span>
                                 ) : returnDaysLeft(order) > 0 ? (
                                   <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                                    {existingRefund && (
+                                      <span style={{
+                                        display: "inline-block", fontSize: 10, fontWeight: 600,
+                                        padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                        background: REFUND_STATUS_STYLE.rejected.bg,
+                                        color: REFUND_STATUS_STYLE.rejected.color,
+                                      }}>
+                                        {t("refundStatus_rejected")}
+                                      </span>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={(e) => { e.stopPropagation(); setReturnTarget({ order, item }); }}
@@ -361,11 +375,25 @@ export default function OrderHistory() {
                                       · {t("returnDaysLeft", { count: returnDaysLeft(order) })}
                                     </span>
                                   </div>
+                                ) : existingRefund ? (
+                                  <span style={{
+                                    display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                    padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                    background: REFUND_STATUS_STYLE.rejected.bg,
+                                    color: REFUND_STATUS_STYLE.rejected.color,
+                                  }}>
+                                    {t("refundStatus_rejected")}
+                                  </span>
                                 ) : (
                                   <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
                                     {t("returnWindowClosed")}
                                   </span>
                                 )
+                              )}
+                              {existingRefund?.status === "rejected" && existingRefund.adminNote && (
+                                <div style={{ marginTop: 3, fontSize: 10, color: "var(--muted)", fontStyle: "italic" }}>
+                                  {t("adminNoteLabel")}: {existingRefund.adminNote}
+                                </div>
                               )}
                             </div>
                           </div>

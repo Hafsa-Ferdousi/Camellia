@@ -1432,7 +1432,7 @@ export default function Admin() {
                         </td>
                         <td style={s.td}>
                           <span style={s.mono}>
-                            #{rf.order?.invoiceNumber || rf.order?.guestOrderId || (rf.order?._id ? rf.order._id.slice(-8).toUpperCase() : "—")}
+                            #{rf.order ? getOrderDisplayId(rf.order) : "—"}
                           </span>
                         </td>
                         <td style={s.td}>
@@ -1504,13 +1504,22 @@ export default function Admin() {
                             </>
                           )}
                           {rf.status === "approved" && (
-                            <button
-                              disabled={refundActionId === rf._id}
-                              onClick={() => handleRefundStatusChange(rf, "processed")}
-                              style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
-                            >
-                              <PackageCheck size={12} /> {t("refundProcess")}
-                            </button>
+                            <>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "processed")}
+                                style={{ ...s.editBtn, background: "var(--maroon)", display: "inline-flex", alignItems: "center", gap: 4 }}
+                              >
+                                <PackageCheck size={12} /> {t("refundProcess")}
+                              </button>
+                              <button
+                                disabled={refundActionId === rf._id}
+                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                style={s.delBtn}
+                              >
+                                {t("refundReject")}
+                              </button>
+                            </>
                           )}
                           {(rf.status === "processed" || rf.status === "rejected") && (
                             <span style={{ fontSize: 12, color: "var(--muted)" }}>
