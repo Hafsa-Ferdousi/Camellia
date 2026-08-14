@@ -160,5 +160,15 @@
   "type_exchange_desc": "Swap this for a different product of your choice.",
   "exchangeForLabel": "Which product would you like instead?",
   "exchangeSearchPlaceholder": "Search for a product…",
-  "exchangeProductRequired": "Please choose a product to exchange for."
+  "exchangeProductRequired": "Please choose a product to exchange for.",
+  "returnDaysLeft": "{{count}} day left to return",
+  "returnDaysLeft_plural": "{{count}} days left to return",
+  "returnWindowClosed": "Return window closed",
+  "returnWindowNote": "Returns are accepted within 7 days of delivery.",
+  "returnPhotosLabel": "Photos of the product",
+  "returnPhotosHint": "Add at least 1 photo (up to 5) so we can verify your request — e.g. the damage, wrong item, or packaging.",
+  "returnPhotosRequired": "Please attach at least one photo of the product.",
+  "returnPhotoUploadError": "Couldn't upload that photo. Please try again.",
+  "addPhoto": "Add photo",
+  "uploadingPhoto": "Uploading…"
 }

@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { X, RotateCcw, Gem } from "lucide-react";
-import { requestRefund } from "../api/refunds";
+import { X, RotateCcw, Gem, Camera, Loader2 } from "lucide-react";
+import { requestRefund, requestGuestRefund, uploadRefundImage } from "../api/refunds";
 import { searchProducts } from "../api/products";
 import { useLanguage } from "../context/LanguageContext";
 
 const REASONS = ["damaged", "wrong_item", "not_as_described", "changed_mind", "size_issue", "other"];
 const REQUEST_TYPES = ["refund", "replacement", "exchange"];
+const MAX_PHOTOS = 5;
 
-export default function RefundRequestModal({ order, item, onClose, onSubmitted }) {
+// `guestEmail` is only passed from Track Order (no logged-in user) — its
+// presence switches submission to the /refunds/guest endpoint, verified by
+// order + email instead of a JWT.
+export default function RefundRequestModal({ order, item, guestEmail, onClose, onSubmitted }) {
   const { t } = useTranslation("orders");
   const { language } = useLanguage();
   const [requestType, setRequestType] = useState("refund");
@@ -17,6 +21,12 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  // Proof photos — each entry uploads to Cloudinary as soon as it's picked
+  // (rather than on submit) so the customer sees per-photo progress/errors
+  // and the final submit only ever sends URLs, never raw files.
+  const [photos, setPhotos] = useState([]); // [{ url, uploading, error }]
+  const photoInputRef = useRef(null);
 
   const [exchangeQuery, setExchangeQuery] = useState("");
   const [exchangeResults, setExchangeResults] = useState([]);
@@ -52,6 +62,26 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
     return () => { clearTimeout(timer); controller.abort(); };
   }, [exchangeQuery, requestType]);
 
+  const handlePhotoSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-picking the same file later
+    const room = MAX_PHOTOS - photos.length;
+    for (const file of files.slice(0, room)) {
+      const localId = `${Date.now()}-${Math.random()}`;
+      setPhotos((prev) => [...prev, { localId, url: null, previewUrl: URL.createObjectURL(file), uploading: true, error: false }]);
+      try {
+        const { data } = await uploadRefundImage(file);
+        setPhotos((prev) => prev.map((p) => (p.localId === localId ? { ...p, url: data.url, uploading: false } : p)));
+      } catch {
+        setPhotos((prev) => prev.map((p) => (p.localId === localId ? { ...p, uploading: false, error: true } : p)));
+      }
+    }
+  };
+
+  const removePhoto = (localId) => {
+    setPhotos((prev) => prev.filter((p) => p.localId !== localId));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -61,9 +91,19 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
       return;
     }
 
+    const uploadedUrls = photos.filter((p) => p.url && !p.error).map((p) => p.url);
+    if (uploadedUrls.length === 0) {
+      setError(t("returnPhotosRequired"));
+      return;
+    }
+    if (photos.some((p) => p.uploading)) {
+      setError(t("uploadingPhoto"));
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const res = await requestRefund({
+      const payload = {
         orderId: order._id,
         productId: item.product?._id || item.product,
         quantity: Number(quantity),
@@ -71,7 +111,11 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
         reason,
         details,
         exchangeProductId: requestType === "exchange" ? selectedExchangeProduct._id : undefined,
-      });
+        images: uploadedUrls,
+      };
+      const res = guestEmail
+        ? await requestGuestRefund({ ...payload, email: guestEmail })
+        : await requestRefund(payload);
       onSubmitted(res.data);
     } catch (err) {
       setError(err.response?.data?.message || t("refundSubmitError"));
@@ -112,7 +156,8 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
             {t("requestReturnTitle")}
           </h2>
         </div>
-        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>{item.nameSnapshot}</p>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 4 }}>{item.nameSnapshot}</p>
+        <p style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 20 }}>{t("returnWindowNote")}</p>
 
         {error && (
           <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "var(--radius-sm)", padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--red)" }}>
@@ -244,6 +289,66 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
             </>
           )}
 
+          <label style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
+            {t("returnPhotosLabel")}
+          </label>
+          <p style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5 }}>
+            {t("returnPhotosHint")}
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+            {photos.map((p) => (
+              <div key={p.localId} style={{ position: "relative", width: 64, height: 64, borderRadius: "var(--radius-sm)", overflow: "hidden", border: "1px solid var(--border)" }}>
+                <img src={p.previewUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: p.uploading ? 0.5 : 1 }} />
+                {p.uploading && (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Loader2 size={16} className="spin" style={{ animation: "refund-spin 0.8s linear infinite", color: "var(--maroon)" }} />
+                  </div>
+                )}
+                {p.error && (
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(220,38,38,0.65)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#fff", textAlign: "center", padding: 2 }}>
+                    {t("returnPhotoUploadError")}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removePhoto(p.localId)}
+                  aria-label={t("close")}
+                  style={{
+                    position: "absolute", top: 2, right: 2, width: 16, height: 16, borderRadius: "50%",
+                    background: "rgba(0,0,0,0.55)", border: "none", color: "#fff", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                  }}
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                style={{
+                  width: 64, height: 64, borderRadius: "var(--radius-sm)",
+                  border: "1.5px dashed var(--border)", background: "transparent",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  gap: 3, cursor: "pointer", color: "var(--muted)",
+                }}
+              >
+                <Camera size={16} />
+                <span style={{ fontSize: 9, fontWeight: 500 }}>{t("addPhoto")}</span>
+              </button>
+            )}
+          </div>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePhotoSelect}
+            style={{ display: "none" }}
+          />
+          <style>{"@keyframes refund-spin { to { transform: rotate(360deg); } }"}</style>
+
           <label htmlFor="refund-details" style={{ display: "block", fontSize: 12.5, fontWeight: 500, color: "var(--muted)", marginBottom: 6 }}>
             {t("detailsLabel")}
           </label>
@@ -257,7 +362,12 @@ export default function RefundRequestModal({ order, item, onClose, onSubmitted }
             style={{ width: "100%", marginBottom: 20, resize: "vertical", fontFamily: "var(--font-body)" }}
           />
 
-          <button type="submit" className="btn" disabled={submitting} style={{ width: "100%" }}>
+          <button
+            type="submit"
+            className="btn"
+            disabled={submitting || photos.some((p) => p.uploading) || photos.filter((p) => p.url && !p.error).length === 0}
+            style={{ width: "100%" }}
+          >
             {submitting ? t("submitting") : t("submitRequest")}
           </button>
         </form>

@@ -72,6 +72,11 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
+    // Set once, the first time status transitions to "delivered" (see
+    // updateOrderStatus). Anchors the 7-day return/refund eligibility
+    // window — using this instead of updatedAt means a later, unrelated
+    // edit (e.g. an admin note) can never accidentally extend or shift it.
+    deliveredAt: { type: Date, default: null },
     subtotal: { type: Number, required: true },
     vat: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 60 },

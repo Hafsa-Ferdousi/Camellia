@@ -5,23 +5,91 @@ import Notification from "../models/Notification.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 
 const REASONS = ["damaged", "wrong_item", "not_as_described", "changed_mind", "size_issue", "other"];
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Shared by the logged-in and guest creation endpoints: validates the
+// request body + the order's eligibility (delivered, within the 7-day
+// window, item exists, quantity in range, exchange target valid), then
+// builds (but does not save) the Refund document. Throws { status, message }
+// on any validation failure so both callers can respond the same way.
+const buildRefundDoc = async (order, body, submitter) => {
+  const { productId, quantity, requestType = "refund", reason, details = "", exchangeProductId, images = [] } = body;
+
+  if (!productId || !reason) {
+    throw { status: 400, message: "productId and reason are required." };
+  }
+  if (!REASONS.includes(reason)) {
+    throw { status: 400, message: "Invalid reason." };
+  }
+  if (!["refund", "replacement", "exchange"].includes(requestType)) {
+    throw { status: 400, message: "Invalid request type." };
+  }
+  if (requestType === "exchange" && !exchangeProductId) {
+    throw { status: 400, message: "Please choose which product you'd like to exchange for." };
+  }
+  if (!Array.isArray(images) || images.length === 0) {
+    throw { status: 400, message: "Please attach at least one photo of the product so we can verify your request." };
+  }
+  if (images.length > 5 || images.some((u) => typeof u !== "string" || !u)) {
+    throw { status: 400, message: "Please attach up to 5 valid photos." };
+  }
+
+  if (order.status !== "delivered") {
+    throw { status: 400, message: "Only delivered orders are eligible for a return or exchange." };
+  }
+
+  // Returns are only accepted within 7 days of delivery. Orders delivered
+  // before this feature shipped have no deliveredAt on record — fall back
+  // to the order's own updatedAt so they aren't permanently blocked, but
+  // any order delivered from now on is timed off the real delivery date.
+  const deliveredAt = order.deliveredAt || order.updatedAt;
+  const daysSinceDelivery = (Date.now() - new Date(deliveredAt).getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSinceDelivery > 7) {
+    throw { status: 400, message: "The 7-day return window for this order has passed." };
+  }
+
+  const item = order.items.find((i) => i.product && i.product.toString() === productId);
+  if (!item) throw { status: 404, message: "That product is not part of this order." };
+
+  const qty = Number(quantity) || item.quantity;
+  if (qty < 1 || qty > item.quantity) {
+    throw { status: 400, message: `Quantity must be between 1 and ${item.quantity}.` };
+  }
+
+  let exchangeProduct;
+  if (requestType === "exchange") {
+    const targetProduct = await Product.findById(exchangeProductId);
+    if (!targetProduct || !targetProduct.isActive) {
+      throw { status: 404, message: "The product you selected for exchange is not available." };
+    }
+    exchangeProduct = {
+      product: targetProduct._id,
+      nameSnapshot: targetProduct.name?.en || targetProduct.name || "",
+    };
+  }
+
+  return {
+    order: order._id,
+    ...submitter,
+    item: {
+      product: item.product,
+      nameSnapshot: item.nameSnapshot,
+      quantity: qty,
+      price: item.price,
+    },
+    requestType,
+    reason,
+    details,
+    images,
+    refundAmount: Math.round(item.price * qty * 100) / 100,
+    ...(exchangeProduct ? { exchangeProduct } : {}),
+  };
+};
 
 export const createRefundRequest = async (req, res) => {
   try {
-    const { orderId, productId, quantity, requestType = "refund", reason, details = "", exchangeProductId } = req.body;
-
-    if (!orderId || !productId || !reason) {
-      return res.status(400).json({ message: "orderId, productId, and reason are required." });
-    }
-    if (!REASONS.includes(reason)) {
-      return res.status(400).json({ message: "Invalid reason." });
-    }
-    if (!["refund", "replacement", "exchange"].includes(requestType)) {
-      return res.status(400).json({ message: "Invalid request type." });
-    }
-    if (requestType === "exchange" && !exchangeProductId) {
-      return res.status(400).json({ message: "Please choose which product you'd like to exchange for." });
-    }
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ message: "orderId is required." });
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: "Order not found." });
@@ -30,50 +98,13 @@ export const createRefundRequest = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to request a return on this order." });
     }
 
-    if (order.status !== "delivered") {
-      return res.status(400).json({ message: "Only delivered orders are eligible for a return or exchange." });
-    }
-
-    const item = order.items.find((i) => i.product && i.product.toString() === productId);
-    if (!item) return res.status(404).json({ message: "That product is not part of this order." });
-
-    const qty = Number(quantity) || item.quantity;
-    if (qty < 1 || qty > item.quantity) {
-      return res.status(400).json({ message: `Quantity must be between 1 and ${item.quantity}.` });
-    }
-
-    let exchangeProduct;
-    if (requestType === "exchange") {
-      const targetProduct = await Product.findById(exchangeProductId);
-      if (!targetProduct || !targetProduct.isActive) {
-        return res.status(404).json({ message: "The product you selected for exchange is not available." });
-      }
-      exchangeProduct = {
-        product: targetProduct._id,
-        nameSnapshot: targetProduct.name?.en || targetProduct.name || "",
-      };
-    }
-
-    const refund = await Refund.create({
-      order: order._id,
-      user: req.user._id,
-      item: {
-        product: item.product,
-        nameSnapshot: item.nameSnapshot,
-        quantity: qty,
-        price: item.price,
-      },
-      requestType,
-      reason,
-      details,
-      refundAmount: Math.round(item.price * qty * 100) / 100,
-      ...(exchangeProduct ? { exchangeProduct } : {}),
-    });
+    const doc = await buildRefundDoc(order, req.body, { user: req.user._id });
+    const refund = await Refund.create(doc);
 
     notifyAdmins({
       type: "refund",
       title: "New return request",
-      message: `${req.user.name} requested a ${requestType} for ${item.nameSnapshot} (order ${order.invoiceNumber}).`,
+      message: `${req.user.name} requested a ${doc.requestType} for ${doc.item.nameSnapshot} (order ${order.invoiceNumber}).`,
       order: order._id,
     }).catch(() => {});
 
@@ -82,6 +113,55 @@ export const createRefundRequest = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ message: "A return request is already open for this item." });
     }
+    if (error.status) return res.status(error.status).json({ message: error.message });
+    res.status(500).json({ message: "Failed to submit return request." });
+  }
+};
+
+// ── POST /api/refunds/guest  (public — no account required) ────────────────
+// Same eligibility rules as the logged-in flow, but the order is looked up
+// by orderId (Mongo _id or friendly ORD- guestOrderId) + a matching guest
+// email instead of a JWT — mirrors guestLookupOrder's own verification.
+export const createGuestRefundRequest = async (req, res) => {
+  try {
+    const { orderId, email } = req.body;
+    if (!orderId || !email) {
+      return res.status(400).json({ message: "orderId and email are required." });
+    }
+
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(orderId);
+    const query = {
+      isGuest: true,
+      "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
+      ...(isObjectId ? { _id: orderId } : { guestOrderId: orderId }),
+    };
+
+    const order = await Order.findOne(query);
+    if (!order) return res.status(404).json({ message: "Order not found for this email." });
+
+    const doc = await buildRefundDoc(order, req.body, {
+      isGuest: true,
+      guestInfo: {
+        name: order.guestInfo?.name || "",
+        email: order.guestInfo?.email || "",
+        phone: order.guestInfo?.phone || "",
+      },
+    });
+    const refund = await Refund.create(doc);
+
+    notifyAdmins({
+      type: "refund",
+      title: "New return request",
+      message: `${order.guestInfo?.name || "A guest"} requested a ${doc.requestType} for ${doc.item.nameSnapshot} (order ${order.invoiceNumber}).`,
+      order: order._id,
+    }).catch(() => {});
+
+    res.status(201).json(refund);
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "A return request is already open for this item." });
+    }
+    if (error.status) return res.status(error.status).json({ message: error.message });
     res.status(500).json({ message: "Failed to submit return request." });
   }
 };
@@ -94,6 +174,31 @@ export const getMyRefunds = async (req, res) => {
     res.json(refunds);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch your return requests." });
+  }
+};
+
+// ── POST /api/refunds/guest-lookup  (public — no account required) ─────────
+// Return-request status for a guest's order(s), verified the same way as
+// guestLookupOrder — so the Track Order page can show "Return Rejected" /
+// "Return Requested" badges without an account.
+export const getGuestRefunds = async (req, res) => {
+  try {
+    const { orderIds, email } = req.body;
+    if (!Array.isArray(orderIds) || orderIds.length === 0 || !email) {
+      return res.status(400).json({ message: "orderIds and email are required." });
+    }
+
+    const validOrders = await Order.find({
+      _id: { $in: orderIds },
+      isGuest: true,
+      "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
+    }).select("_id");
+
+    const refunds = await Refund.find({ order: { $in: validOrders.map((o) => o._id) } })
+      .select("order item.product status requestType");
+    res.json(refunds);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch return requests." });
   }
 };
 

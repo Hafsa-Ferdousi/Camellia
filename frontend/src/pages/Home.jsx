@@ -2,12 +2,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Gift, Truck, Gem } from "lucide-react";
+import { Gift, Truck, Gem, Copy, Check, Tag, Clock } from "lucide-react";
 import { getProducts, getCategories, getBestSellers } from "../api/products";
-import Hero from "../components/Hero";
+import { getActiveCoupons, getUpcomingCoupons } from "../api/coupons";
+import { useLanguage } from "../context/LanguageContext";
+import { formatPrice } from "../utils/formatPrice";
+import Hero, { CouponCountdown } from "../components/Hero";
 import ProductCard from "../components/ProductCard";
 import CategorySection from "../components/CategorySection";
 import Seo from "../components/Seo";
+
+const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
 
 const TESTIMONIALS = [
   { name: "Nusrat A.", role: "Bride, Chattogram", quote: "The kalira set was even more beautiful in person. Delivery was fast and the packaging felt like a gift in itself.", stars: 5 },
@@ -34,6 +39,7 @@ function SkeletonCard() {
 
 export default function Home() {
   const { t } = useTranslation(["home", "products"]);
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [featured,    setFeatured]    = useState([]);
@@ -42,10 +48,32 @@ export default function Home() {
   const [catError,    setCatError]    = useState(false);
   const [loadingF,    setLoadingF]    = useState(true);
   const [loadingBS,   setLoadingBS]   = useState(true);
+  const [coupons,     setCoupons]     = useState([]);
+  const [upcomingCoupons, setUpcomingCoupons] = useState([]);
+  const [copiedCode,  setCopiedCode]  = useState("");
 
   useEffect(() => {
     getCategories().then(r => setCategories(r.data)).catch(() => setCatError(true));
   }, []);
+
+  // Coupons the admin has activated are otherwise invisible to customers
+  // (previously the only place a code appeared was the admin panel itself).
+  // Surface any currently-usable ones here so shoppers actually see them.
+  useEffect(() => {
+    getActiveCoupons().then(r => setCoupons(r.data)).catch(() => setCoupons([]));
+  }, []);
+
+  // Coupons that are turned on but haven't started yet — teased on the
+  // homepage with a live countdown so customers know to come back.
+  useEffect(() => {
+    getUpcomingCoupons().then(r => setUpcomingCoupons(r.data)).catch(() => setUpcomingCoupons([]));
+  }, []);
+
+  const copyCoupon = (code) => {
+    navigator.clipboard?.writeText(code).catch(() => {});
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(""), 1800);
+  };
 
   // If we arrived here from the navbar's "Categories" link on another page,
   // scroll to that section once it exists. It only renders after the
@@ -162,10 +190,171 @@ export default function Home() {
                       radial-gradient(ellipse at 75% 70%, rgba(244,196,48,0.12) 0%, transparent 55%);
         }
         .cta-banner > * { position: relative; }
+
+        /* ── Active coupons banner ──
+           Now shown as a compact pill in the navbar on desktop (next to the
+           logo/links), so this section is mobile-only — a light band, tinted
+           to match the page background instead of a loud saturated orange,
+           directly below the hero. */
+        .coupon-strip {
+          position: relative; overflow: hidden;
+          background: linear-gradient(120deg, var(--cream-dark) 0%, var(--gold-pale) 50%, var(--cream-dark) 100%);
+          padding: 26px 0;
+          border-top: 1px solid var(--border);
+          border-bottom: 1px solid var(--border);
+        }
+        .coupon-strip > * { position: relative; }
+        .coupon-strip-head {
+          text-align: center; margin-bottom: 18px;
+        }
+        .coupon-strip-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+          text-transform: uppercase; color: var(--gold-text);
+        }
+        .coupon-strip-title {
+          font-family: var(--font-display); font-style: italic;
+          font-size: 26px; color: var(--maroon-dark); margin-top: 8px;
+        }
+        .coupon-row {
+          display: flex; gap: 16px; flex-wrap: wrap; align-items: stretch; justify-content: center;
+        }
+        .coupon-chip {
+          display: flex; align-items: center; gap: 14px;
+          background: #FDF6EC; border: 1px solid rgba(232,97,0,0.3);
+          border-radius: var(--radius-lg); padding: 14px 20px;
+          min-width: 260px; max-width: 340px; flex: 1 1 280px;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.16);
+          transition: transform 0.15s ease;
+        }
+        .coupon-chip:hover { transform: translateY(-2px); }
+        .coupon-chip-code {
+          display: flex; align-items: center; gap: 6px;
+          font-family: var(--font-body); font-weight: 700; letter-spacing: 0.04em;
+          color: var(--maroon-dark); background: var(--gold-pale);
+          border: 1px solid rgba(244,196,48,0.55);
+          border-radius: 20px; padding: 7px 13px; font-size: 13px;
+          cursor: pointer; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .coupon-chip-text { min-width: 0; }
+        .coupon-chip-title { font-size: 14px; font-weight: 700; color: var(--maroon-dark); }
+        .coupon-chip-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .coupon-chip-expiry { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+        /* ── Upcoming coupons (mobile) ──
+           Same band, a second row underneath — cooler/less saturated so it
+           reads as "not live yet", with a ticking countdown instead of a
+           copy-able code chip. */
+        .coupon-upcoming-head { text-align: center; margin: 22px 0 14px; }
+        .coupon-upcoming-eyebrow {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+          text-transform: uppercase; color: var(--muted);
+        }
+        .coupon-chip--upcoming { opacity: 0.92; }
+        .coupon-chip-countdown {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+          color: var(--maroon-dark); background: var(--gold-pale);
+          border: 1px solid rgba(244,196,48,0.55);
+          border-radius: 20px; padding: 6px 12px; margin-top: 6px;
+        }
+
+        /* Desktop already shows the live coupon as a pill in the navbar
+           (next to the logo/links) — no need to repeat it as a whole extra
+           section further down the page. */
+        @media (min-width: 1024px) {
+          .coupon-strip { display: none; }
+        }
       `}</style>
 
       {/* ── Hero ── */}
-      <Hero onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)} />
+      <Hero
+        onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)}
+        coupons={coupons}
+        upcomingCoupons={upcomingCoupons}
+        copiedCode={copiedCode}
+        onCopyCoupon={copyCoupon}
+        language={language}
+      />
+
+      {/* ── Active + upcoming coupons (shown as soon as admin activates one) ── */}
+      {(coupons.length > 0 || upcomingCoupons.length > 0) && (
+        <section className="coupon-strip">
+          <div className="container coupon-strip-inner" style={{ padding: "0 24px" }}>
+            {coupons.length > 0 && (
+              <>
+                <div className="coupon-strip-head">
+                  <span className="coupon-strip-eyebrow">{t("home:offersEyebrow", { defaultValue: "Limited Time" })}</span>
+                  <h2 className="coupon-strip-title">{t("home:offersTitle", { defaultValue: "Exclusive Offers For You" })}</h2>
+                </div>
+                <div className="coupon-row">
+                  {coupons.map(c => (
+                    <div key={c._id} className="coupon-chip">
+                      <button
+                        type="button"
+                        className="coupon-chip-code"
+                        onClick={() => copyCoupon(c.code)}
+                        title={t("home:copyCode", { defaultValue: "Copy code" })}
+                      >
+                        <Tag size={13} />
+                        {c.code}
+                        {copiedCode === c.code ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                      <div className="coupon-chip-text">
+                        <div className="coupon-chip-title">
+                          {c.discountType === "percentage"
+                            ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                          {c.minimumPurchase > 0 &&
+                            ` · ${t("home:couponMinPurchase", { value: `৳ ${formatPrice(c.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(c.minimumPurchase, language, 0)}` })}`}
+                        </div>
+                        {c.title && <div className="coupon-chip-desc">{c.title}</div>}
+                        {c.startDate && c.endDate && (
+                          <div className="coupon-chip-expiry">
+                            {t("home:couponDateRange", {
+                              start: fmtDate(c.startDate),
+                              end: fmtDate(c.endDate),
+                              defaultValue: `${fmtDate(c.startDate)} – ${fmtDate(c.endDate)}`,
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {upcomingCoupons.length > 0 && (
+              <>
+                <div className="coupon-upcoming-head">
+                  <span className="coupon-upcoming-eyebrow">
+                    <Clock size={11} /> {t("home:upcomingEyebrow", { defaultValue: "Coming Soon" })}
+                  </span>
+                </div>
+                <div className="coupon-row">
+                  {upcomingCoupons.map(c => (
+                    <div key={c._id} className="coupon-chip coupon-chip--upcoming">
+                      <div className="coupon-chip-text">
+                        <div className="coupon-chip-title">
+                          {c.discountType === "percentage"
+                            ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                        </div>
+                        {c.title && <div className="coupon-chip-desc">{c.title}</div>}
+                        <div className="coupon-chip-countdown">
+                          <Clock size={11} /> <CouponCountdown target={c.startDate} t={(k, o) => t(`home:${k}`, o)} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── Category tiles ── */}
       <CategorySection categories={categories} error={catError} onSelect={goToCategory} />
