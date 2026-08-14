@@ -2,6 +2,12 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getCategories } from "../api/products";
+import { FacebookIcon, InstagramIcon } from "./SocialIcons";
+
+const SOCIAL_LINKS = [
+  { name: "Facebook", href: "https://facebook.com/camelliabyanandi", Icon: FacebookIcon },
+  { name: "Instagram", href: "https://instagram.com/camelliabyanandi", Icon: InstagramIcon },
+];
 
 const SHOP_LINKS = [
   { slug: "kalira",              key: "categoryKalira" },
@@ -37,12 +43,16 @@ export default function Footer() {
               {t("footer:desc2")}
             </p>
             <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
-              {[
-                { name: "Facebook", href: "https://facebook.com/camelliabyanandi" },
-                { name: "Instagram", href: "https://instagram.com/camelliabyanandi" },
-              ].map(n => (
-                <a key={n.name} href={n.href} target="_blank" rel="noopener noreferrer" style={s.social}>
-                  {n.name}
+              {SOCIAL_LINKS.map(({ name, href, Icon }) => (
+                <a
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={name}
+                  style={s.social}
+                >
+                  <Icon width={18} height={18} />
                 </a>
               ))}
             </div>
@@ -100,7 +110,7 @@ const s = {
   logo:    { fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", color: "var(--gold-light)", marginBottom: 2 },
   tagline: { fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,196,48,0.85)", marginBottom: 14 },
   desc:    { fontSize: 13, color: "rgba(232,217,192,0.92)", lineHeight: 1.7, marginBottom: 20 },
-  social:  { fontSize: 12, color: "rgba(244,196,48,0.85)", letterSpacing: "0.06em", textTransform: "uppercase" },
+  social:  { display: "inline-flex", alignItems: "center", justifyContent: "center", color: "rgba(244,196,48,0.85)" },
   colHead: { fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--gold-light)", fontWeight: 500, marginBottom: 14, fontFamily: "var(--font-body)" },
   link:    { display: "block", fontSize: 13, color: "rgba(232,217,192,0.92)", marginBottom: 8 },
 };

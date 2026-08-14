@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Menu, Plus } from "lucide-react";
+import { Menu, Plus, MessageCircle, X } from "lucide-react";
 import {
   sendChatMessage,
   getChatHistory,
@@ -239,7 +239,7 @@ export default function ChatWidget() {
         style={s.toggleBtn}
         aria-label={isAdmin ? t("chatTitleAdmin", "Store assistant") : t("chatTitle", "Chat with us")}
       >
-        {open ? "×" : "💬"}
+        {open ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
     </div>
   );
@@ -254,7 +254,9 @@ const s = {
     border: "none",
     background: "var(--maroon, #B3430A)",
     color: "var(--gold-pale, #FCEFC7)",
-    fontSize: 24,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
     boxShadow: "var(--shadow-lg, 0 8px 32px rgba(138,67,0,0.16))",
   },

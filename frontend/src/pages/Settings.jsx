@@ -3,9 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { updateProfile, updateAddress } from "../api/auth";
+import { updateProfile, updateAddress, changePassword } from "../api/auth";
 import { districts } from "../data/districts";
 import Seo from "../components/Seo";
+import PasswordField from "../components/PasswordField";
+import PasswordStrengthChecklist from "../components/PasswordStrengthChecklist";
+import { isPasswordStrong } from "../utils/passwordRules";
 
 export default function Settings() {
   const { t } = useTranslation("settings");
@@ -36,6 +39,13 @@ export default function Settings() {
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifError, setNotifError] = useState("");
 
+  const [pw, setPw] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMessage, setPwMessage] = useState("");
+  const [pwError, setPwError] = useState("");
+  const pwMatches = pw.confirmPassword.length === 0 || pw.confirmPassword === pw.newPassword;
+  const pwStrong = isPasswordStrong(pw.newPassword);
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setProfileError(""); setProfileMessage(""); setProfileSaving(true);
@@ -62,6 +72,22 @@ export default function Settings() {
       setAddressError(err.response?.data?.message || t("updateFailed"));
     } finally {
       setAddressSaving(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPwError(""); setPwMessage("");
+    if (!pwStrong || pw.newPassword !== pw.confirmPassword) return;
+    setPwSaving(true);
+    try {
+      await changePassword(pw.currentPassword, pw.newPassword);
+      setPwMessage(t("passwordChanged"));
+      setPw({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      setPwError(err.response?.data?.message || t("updateFailed"));
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -167,6 +193,63 @@ export default function Settings() {
           </label>
           <button className="btn btn-gold" type="submit" disabled={addressSaving} style={{ padding: "10px 20px", fontSize: 13 }}>
             {addressSaving ? t("savingAddress") : t("saveAddress")}
+          </button>
+        </form>
+      </div>
+
+      <div className="panel" style={{ marginBottom: 20 }}>
+        <p style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 6 }}>
+          {t("changePasswordTitle")}
+        </p>
+        <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>{t("changePasswordDesc")}</p>
+
+        {pwMessage && (
+          <div style={{ background: "#ECFDF5", color: "#065F46", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #A7F3D0", display: "flex", alignItems: "center", gap: 6 }}>
+            <Check size={14} /> {pwMessage}
+          </div>
+        )}
+        {pwError && (
+          <div style={{ background: "#FEF2F2", color: "var(--red)", padding: "10px 14px", borderRadius: "var(--radius-sm)", marginBottom: 16, fontSize: 13, border: "1px solid #FECACA" }}>
+            {pwError}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit}>
+          <label className="form-label">
+            {t("currentPassword")}
+            <PasswordField
+              value={pw.currentPassword}
+              onChange={(e) => setPw((p) => ({ ...p, currentPassword: e.target.value }))}
+              placeholder={t("currentPasswordPlaceholder")}
+            />
+          </label>
+          <label className="form-label">
+            {t("newPassword")}
+            <PasswordField
+              value={pw.newPassword}
+              onChange={(e) => setPw((p) => ({ ...p, newPassword: e.target.value }))}
+              placeholder={t("newPasswordPlaceholder")}
+            />
+          </label>
+          <PasswordStrengthChecklist password={pw.newPassword} />
+          <label className="form-label">
+            {t("confirmNewPassword")}
+            <PasswordField
+              value={pw.confirmPassword}
+              onChange={(e) => setPw((p) => ({ ...p, confirmPassword: e.target.value }))}
+              placeholder={t("confirmNewPasswordPlaceholder")}
+            />
+          </label>
+          {!pwMatches && (
+            <p style={{ color: "var(--red)", fontSize: 12, marginTop: -10, marginBottom: 16 }}>{t("passwordMismatch")}</p>
+          )}
+          <button
+            className="btn btn-gold"
+            type="submit"
+            disabled={pwSaving || !pw.currentPassword || !pwStrong || !pwMatches || !pw.confirmPassword}
+            style={{ padding: "10px 20px", fontSize: 13 }}
+          >
+            {pwSaving ? t("changingPassword") : t("changePasswordButton")}
           </button>
         </form>
       </div>

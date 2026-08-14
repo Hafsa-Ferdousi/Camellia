@@ -213,8 +213,12 @@ export default function ProductDetail() {
       </nav>
 
       <div className="detail-grid">
-        {/* Gallery */}
-        <ImageGallery images={product.images || []} />
+        {/* Gallery — sticky so it follows the scroll instead of the shorter
+            image column ending early and leaving dead space beside the
+            taller info/reviews column next to it. */}
+        <div className="detail-gallery-sticky">
+          <ImageGallery images={product.images || []} />
+        </div>
 
         {/* Info */}
         <div>
@@ -499,12 +503,11 @@ export default function ProductDetail() {
               )}
             </div>
           </div>
-
-          {/* ===== AI RECOMMENDATIONS ===== */}
-          <Recommendations productId={id} />
-
         </div>
       </div>
+
+      {/* ===== RECOMMENDATIONS — full page width, not squeezed into the info column ===== */}
+      <Recommendations productId={id} />
     </div>
   );
 }

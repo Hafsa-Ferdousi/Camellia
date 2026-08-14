@@ -80,11 +80,13 @@ export default function Products() {
   // Reset to page 1 when filters change
   useEffect(() => { setCurrentPage(1); }, [selectedCat, search, minPrice, maxPrice]);
 
-  // Jumping pages should return to the top of the results, not leave the
-  // user scrolled to wherever the previous page's grid happened to end.
+  // Jumping pages or switching category (e.g. from the footer's Shop links,
+  // which only change the ?category= query on an already-mounted /products
+  // page) should return to the top of the results, not leave the user
+  // scrolled to wherever the previous view happened to end.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentPage]);
+  }, [currentPage, selectedCat]);
 
   const selectCategory = useCallback((catId) => {
     setSelectedCat(catId);

@@ -9,6 +9,7 @@ import BkashPaymentPanel from '../components/BkashPaymentPanel';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { getOrderById, guestLookupOrder } from '../api/cart';
+import { getOrderDisplayId } from '../utils/orderId';
 
 export default function OrderConfirmation() {
   const { t } = useTranslation('orders');
@@ -84,9 +85,11 @@ export default function OrderConfirmation() {
     : t('notAvailable');
   const customerEmail = order ? (order.user?.email || order.guestInfo?.email || order.email || '') : '';
 
-  // ✅ Get the best display ID: guestOrderId > invoiceNumber > _id (fallback)
-  const displayOrderId = order?.guestOrderId || order?.invoiceNumber || order?._id?.slice(-8).toUpperCase() || t('notAvailable');
-  const displayInvoiceNumber = order?.invoiceNumber || order?._id?.slice(-8).toUpperCase() || t('notAvailable');
+  // The Order ID is the backend-assigned guestOrderId — the single source of
+  // truth shown everywhere (confirmation, history, tracking, admin). The
+  // invoice number is a separate accounting field, shown alongside it.
+  const displayOrderId = getOrderDisplayId(order) || t('notAvailable');
+  const displayInvoiceNumber = order?.invoiceNumber || t('notAvailable');
 
   // Guest reloaded a bookmarked link with no email in the URL — ask for it
   // before fetching, rather than silently failing.

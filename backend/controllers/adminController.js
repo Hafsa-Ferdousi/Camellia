@@ -2,57 +2,144 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 import Setting from "../models/Setting.js";
+import PasswordResetRequest from "../models/PasswordResetRequest.js";
 import { validatePasswordStrength } from "../utils/validators.js";
 import { sendError } from "../utils/errorResponse.js";
+import { sendPasswordResetByAdminEmail } from "../utils/mailer.js";
 
 const ORDER_STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
-// GET /api/admin/stats
+const STATS_RANGES = ["today", "2d", "7d", "10d", "thisMonth", "lastMonth"];
+
+// All date-bucketing below uses a fixed +06:00 (Asia/Dhaka, no DST) offset
+// rather than the server process's ambient timezone. Dev runs in Asia/Dhaka
+// already, but the deployed backend (Render) very likely runs in UTC — if
+// "today"/day-bucket boundaries were computed from the server's local clock,
+// dev and prod would silently disagree about which calendar day an order
+// falls on. A fixed offset keeps it correct (and identical) everywhere.
+const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+// Reads a Date's Dhaka-local calendar fields by shifting the timestamp and
+// reading it back with the UTC getters — sidesteps the host's own timezone
+// entirely, so this gives the same answer on a UTC server as on this dev box.
+function toDhakaParts(date) {
+  const shifted = new Date(date.getTime() + DHAKA_OFFSET_MS);
+  return { y: shifted.getUTCFullYear(), m: shifted.getUTCMonth(), d: shifted.getUTCDate() };
+}
+// Inverse of toDhakaParts: the real UTC Date instant for 00:00 Dhaka time on
+// the given Dhaka calendar day (month is 0-based, day may overflow — that's
+// used deliberately below to advance by a day without a separate branch).
+function dhakaDateFromParts(y, m, d) {
+  return new Date(Date.UTC(y, m, d) - DHAKA_OFFSET_MS);
+}
+function dhakaStartOfDay(date) {
+  const { y, m, d } = toDhakaParts(date);
+  return dhakaDateFromParts(y, m, d);
+}
+// "YYYY-MM-DD" for the Dhaka calendar day containing `date` — must match the
+// format $dateToString below produces when given the same `timezone`.
+function dhakaDateKey(date) {
+  const { y, m, d } = toDhakaParts(date);
+  return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+// Resolves a `range` query value to a [start, end] window for the revenue
+// chart. `today`/`2d`/`10d` are trailing windows ending now (like the
+// original hardcoded 7-day trend); `thisMonth` runs from the 1st to now;
+// `lastMonth` is a fixed, fully-past calendar month. All boundaries are
+// Dhaka calendar days, per the note above.
+function getStatsRangeBounds(range) {
+  const now = new Date();
+
+  if (range === "lastMonth") {
+    const { y, m } = toDhakaParts(now);
+    const firstOfThisMonth = dhakaDateFromParts(y, m, 1);
+    const end = new Date(firstOfThisMonth.getTime() - 1); // last instant of the previous Dhaka month
+    const { y: ly, m: lm } = toDhakaParts(end);
+    const start = dhakaDateFromParts(ly, lm, 1);
+    return { start, end };
+  }
+
+  const todayStart = dhakaStartOfDay(now);
+  switch (range) {
+    case "today": return { start: todayStart, end: now };
+    case "2d": return { start: new Date(todayStart.getTime() - 1 * 86400000), end: now };
+    case "10d": return { start: new Date(todayStart.getTime() - 9 * 86400000), end: now };
+    case "thisMonth": {
+      const { y, m } = toDhakaParts(now);
+      return { start: dhakaDateFromParts(y, m, 1), end: now };
+    }
+    case "7d":
+    default: return { start: new Date(todayStart.getTime() - 6 * 86400000), end: now };
+  }
+}
+
+// One entry per Dhaka calendar day from start to end (inclusive), so the
+// chart still shows a bar (at 0) for days with no orders instead of
+// skipping them. Keys must line up exactly with what the $dateToString
+// aggregation (timezone: "+06:00") produces for the same instant.
+function buildDailyTrend(start, end, totalsByDay) {
+  const days = [];
+  const startParts = toDhakaParts(start);
+  let cursor = dhakaDateFromParts(startParts.y, startParts.m, startParts.d);
+  const endParts = toDhakaParts(end);
+  const endDay = dhakaDateFromParts(endParts.y, endParts.m, endParts.d);
+  while (cursor <= endDay) {
+    const key = dhakaDateKey(cursor);
+    days.push({ date: key, total: totalsByDay[key] || 0 });
+    const { y, m, d } = toDhakaParts(cursor);
+    cursor = dhakaDateFromParts(y, m, d + 1); // Date.UTC normalizes day overflow across months
+  }
+  return days;
+}
+
+// GET /api/admin/stats?range=today|2d|7d|10d|thisMonth|lastMonth
 export const getStats = async (req, res) => {
   try {
-    const trendStart = new Date();
-    trendStart.setDate(trendStart.getDate() - 6);
-    trendStart.setHours(0, 0, 0, 0);
+    const range = STATS_RANGES.includes(req.query.range) ? req.query.range : "7d";
+    const { start, end } = getStatsRangeBounds(range);
 
-    const [totalOrders, totalUsers, totalProducts, revenueAgg, recentOrders, statusAgg, revenueTrendAgg, settings] =
-      await Promise.all([
-        Order.countDocuments(),
-        User.countDocuments(),
-        Product.countDocuments({ isActive: true }),
-        Order.aggregate([
-          { $match: { "payment.status": "paid" } },
-          { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-        ]),
-        Order.find()
-          .sort({ createdAt: -1 })
-          .limit(5)
-          .populate("user", "name email"),
-        Order.aggregate([
-          { $group: { _id: "$status", count: { $sum: 1 } } },
-        ]),
-        Order.aggregate([
-          { $match: { createdAt: { $gte: trendStart } } },
-          {
-            $group: {
-              _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-              total: { $sum: "$totalAmount" },
-            },
+    const [
+      totalOrders, totalUsers, totalProducts, revenueAgg, recentOrders, statusAgg,
+      periodRevenueAgg, periodOrderCount, settings,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      User.countDocuments(),
+      Product.countDocuments({ isActive: true }),
+      Order.aggregate([
+        { $match: { "payment.status": "paid" } },
+        { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+      ]),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("user", "name email"),
+      Order.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+      // Realized revenue for the selected period — only paid orders, same
+      // definition as the all-time totalRevenue below (the original 7-day
+      // chart summed every order's totalAmount regardless of payment
+      // status, which double-counted unpaid COD/bKash orders as "revenue").
+      Order.aggregate([
+        { $match: { "payment.status": "paid", createdAt: { $gte: start, $lte: end } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "+06:00" } },
+            total: { $sum: "$totalAmount" },
           },
-        ]),
-        Setting.getSingleton(),
-      ]);
+        },
+      ]),
+      Order.countDocuments({ createdAt: { $gte: start, $lte: end } }),
+      Setting.getSingleton(),
+    ]);
 
     const statusCounts = ORDER_STATUSES.reduce((acc, st) => ({ ...acc, [st]: 0 }), {});
     statusAgg.forEach((s) => { if (s._id in statusCounts) statusCounts[s._id] = s.count; });
 
-    const revenueByDay = Object.fromEntries(revenueTrendAgg.map((r) => [r._id, r.total]));
-    const revenueTrend = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      revenueTrend.push({ date: key, total: revenueByDay[key] || 0 });
-    }
+    const revenueByDay = Object.fromEntries(periodRevenueAgg.map((r) => [r._id, r.total]));
+    const revenueTrend = buildDailyTrend(start, end, revenueByDay);
+    const periodRevenue = periodRevenueAgg.reduce((sum, r) => sum + r.total, 0);
 
     const lowStockCount = await Product.countDocuments({
       isActive: true,
@@ -67,6 +154,9 @@ export const getStats = async (req, res) => {
       recentOrders,
       statusCounts,
       revenueTrend,
+      range,
+      periodRevenue,
+      periodOrderCount,
       lowStockCount,
     });
   } catch (err) {
@@ -261,8 +351,9 @@ export const getCustomerDetail = async (req, res) => {
 
 // POST /api/admin/customers/:userId/reset-password
 // Fallback for customers who can't self-serve (e.g. forgot their security
-// answer too) — there's no email service, so this is the only recovery path
-// besides re-registering. Invalidates all of the customer's sessions.
+// answer too — see PasswordResetRequest, created via
+// requestAdminPasswordReset in authController.js). Invalidates all of the
+// customer's sessions.
 export const resetCustomerPassword = async (req, res) => {
   try {
     const { newPassword } = req.body;
@@ -278,7 +369,49 @@ export const resetCustomerPassword = async (req, res) => {
     user.refreshTokens = [];
     await user.save();
 
-    res.json({ message: "Password reset. Share the new password with the customer securely." });
+    // Whatever brought the admin here is now handled — clear it from the queue.
+    await PasswordResetRequest.updateMany(
+      { user: user._id, status: "pending" },
+      { status: "resolved", resolvedAt: new Date() }
+    );
+
+    const { sent } = await sendPasswordResetByAdminEmail(user.email, { newPassword });
+
+    res.json({
+      message: sent
+        ? "Password reset. An email with the new password — and a prompt to change it — has been sent to the customer."
+        : "Password reset, but the notification email could not be sent. Share the new password with the customer securely yourself.",
+    });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// GET /api/admin/password-reset-requests
+export const getPasswordResetRequests = async (req, res) => {
+  try {
+    const requests = await PasswordResetRequest.find({ status: "pending" })
+      .sort({ createdAt: 1 })
+      .populate("user", "name email username");
+    res.json(requests);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// PATCH /api/admin/password-reset-requests/:id/dismiss
+// For when the admin has handled it another way (or it wasn't legitimate)
+// without actually resetting the password through this panel.
+export const dismissPasswordResetRequest = async (req, res) => {
+  try {
+    const request = await PasswordResetRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: "Request not found." });
+
+    request.status = "resolved";
+    request.resolvedAt = new Date();
+    await request.save();
+
+    res.json({ message: "Request dismissed." });
   } catch (err) {
     sendError(res, err);
   }

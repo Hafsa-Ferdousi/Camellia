@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import CartItem from "../models/CartItem.js";
 import Wishlist from "../models/Wishlist.js";
 import Review from "../models/Review.js";
+import PasswordResetRequest from "../models/PasswordResetRequest.js";
 import { sendError } from "../utils/errorResponse.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
 import { validatePasswordStrength } from "../utils/validators.js";
@@ -324,9 +325,78 @@ export const resetPasswordWithAnswer = async (req, res) => {
   }
 };
 
+// Fallback for a customer who's forgotten their security answer too (the
+// "answer" step of resetPasswordWithAnswer above can't help them then) —
+// flags the account for an admin to reset manually. Same response whether
+// or not the identifier matches an account, so this can't be used to
+// enumerate accounts either.
+export const requestAdminPasswordReset = async (req, res) => {
+  try {
+    const { identifier, message } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ message: "Email or username is required." });
+    }
+
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { username: identifier }],
+    });
+
+    if (user) {
+      const alreadyPending = await PasswordResetRequest.findOne({ user: user._id, status: "pending" });
+      if (!alreadyPending) {
+        await PasswordResetRequest.create({ user: user._id, message: message?.trim() || null });
+        notifyAdmins({
+          type: "password_reset_request",
+          title: "Password reset requested",
+          message: `${user.name} (${user.email}) can't access their account and has requested a manual password reset.`,
+        }).catch(() => {});
+      }
+    }
+
+    res.json({ message: "If that account exists, our team has been notified and will help you regain access soon." });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
+
 // ───────────────────────────────  Get profile  ───────────────────────────
 export const getMe = async (req, res) => {
   res.json(publicUser(req.user));
+};
+
+// ───────────────────────  Change password (self-service)  ─────────────────
+// Unlike resetPasswordWithAnswer (used when logged out), the caller here is
+// already authenticated, so the session making this request is left intact
+// — only every *other* session is signed out, in case a different device
+// is the one that's been compromised.
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required." });
+    }
+
+    const strength = validatePasswordStrength(newPassword);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
+    }
+
+    const user = await User.findById(req.user._id).select("+password +refreshTokens");
+    const ok = await user.matchPassword(currentPassword);
+    if (!ok) return res.status(401).json({ message: "Current password is incorrect." });
+
+    user.password = newPassword; // re-hashed by the pre-save hook
+
+    const rawRefresh = req.cookies?.[REFRESH_COOKIE_NAME];
+    const currentTokenHash = rawRefresh ? hashToken(rawRefresh) : null;
+    user.refreshTokens = (user.refreshTokens || []).filter((t) => t.tokenHash === currentTokenHash);
+
+    await user.save();
+
+    res.json({ message: "Password changed successfully." });
+  } catch (error) {
+    sendError(res, error);
+  }
 };
 
 // ──────────────────────────  Update profile / settings  ───────────────────
