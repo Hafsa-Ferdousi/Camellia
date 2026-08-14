@@ -1,23 +1,43 @@
-/**
- * Wishlist Controller Unit Tests
- * Tests all wishlist operations including add, remove, and retrieval
- */
-
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import Wishlist from '../models/Wishlist.js';
-import Product from '../models/Product.js';
 import {
+  describe,
+  test,
+  expect,
+  beforeEach,
+  jest,
+} from "@jest/globals";
+
+// ============================================================
+// MOCK MODEL BEFORE DYNAMIC IMPORT
+// ============================================================
+
+jest.unstable_mockModule("../../models/Wishlist.js", () => ({
+  default: {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    findOneAndDelete: jest.fn(),
+    deleteMany: jest.fn(),
+  },
+}));
+
+// Dynamic imports AFTER mocking
+const Wishlist = (await import("../../models/Wishlist.js")).default;
+
+const {
+  getWishlist,
   addToWishlist,
   removeFromWishlist,
-  getWishlist,
-  checkWishlistItem,
-} from './wishlistController.js';
+  clearWishlist,
+} = await import("../../controllers/wishlistController.js");
 
-jest.mock('../models/Wishlist.js');
-jest.mock('../models/Product.js');
+// ============================================================
+// TEST SUITE
+// ============================================================
 
-describe('Wishlist Controller', () => {
-  let mockReq, mockRes, mockWishlist, mockProduct;
+describe("Wishlist Controller", () => {
+  let mockReq;
+  let mockRes;
+  let mockWishlist;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -25,7 +45,9 @@ describe('Wishlist Controller', () => {
     mockReq = {
       body: {},
       params: {},
-      user: { _id: 'user123' },
+      user: {
+        _id: "user123",
+      },
     };
 
     mockRes = {
@@ -33,418 +55,600 @@ describe('Wishlist Controller', () => {
       json: jest.fn().mockReturnThis(),
     };
 
-    mockProduct = {
-      _id: 'product123',
-      name: 'Diamond Ring',
-      price: 500.00,
-      image: 'ring.jpg',
-    };
-
     mockWishlist = {
-      _id: 'wishlist123',
-      user: 'user123',
-      product: 'product123',
+      _id: "wishlist123",
+      user: "user123",
+      product: "product123",
       createdAt: new Date(),
-      save: jest.fn().mockResolvedValue(true),
-      deleteOne: jest.fn().mockResolvedValue(true),
+      populate: jest.fn().mockResolvedValue(undefined),
     };
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  // ==========================================================
+  // GET WISHLIST
+  // ==========================================================
 
-  // ==================== ADD TO WISHLIST TESTS ====================
-  describe('addToWishlist', () => {
-    test('should successfully add product to wishlist', async () => {
-      // Arrange
-      mockReq.body = {
-        productId: 'product123',
-      };
+  describe("getWishlist", () => {
+    test("should successfully retrieve wishlist", async () => {
+      const wishlistItems = [mockWishlist];
 
-      Product.findById.mockResolvedValue(mockProduct);
-      Wishlist.findOne.mockResolvedValue(null);
-      Wishlist.create.mockResolvedValue(mockWishlist);
+      const sortMock = jest.fn().mockResolvedValue(wishlistItems);
 
-      // Act
-      await addToWishlist(mockReq, mockRes);
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
 
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(201);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Product added to wishlist',
-        })
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(Wishlist.find).toHaveBeenCalledWith({
+        user: "user123",
+      });
+
+      expect(populateMock).toHaveBeenCalledWith(
+        "product",
+        "name images basePrice totalStock isActive"
       );
-      expect(Wishlist.create).toHaveBeenCalledWith({
-        user: 'user123',
-        product: 'product123',
+
+      expect(sortMock).toHaveBeenCalledWith({
+        createdAt: -1,
       });
+
+      expect(mockRes.json).toHaveBeenCalledWith(wishlistItems);
     });
 
-    test('should not add duplicate items to wishlist', async () => {
-      // Arrange
-      mockReq.body = {
-        productId: 'product123',
-      };
+    test("should return empty array when wishlist is empty", async () => {
+      const sortMock = jest.fn().mockResolvedValue([]);
 
-      Product.findById.mockResolvedValue(mockProduct);
-      Wishlist.findOne.mockResolvedValue(mockWishlist);
-
-      // Act
-      await addToWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Product already in wishlist',
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
       });
-      expect(Wishlist.create).not.toHaveBeenCalled();
-    });
 
-    test('should return error for non-existent product', async () => {
-      // Arrange
-      mockReq.body = {
-        productId: 'invalidProduct',
-      };
-
-      Product.findById.mockResolvedValue(null);
-
-      // Act
-      await addToWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Product not found',
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
       });
-    });
 
-    test('should return error when product ID is missing', async () => {
-      // Arrange
-      mockReq.body = {};
-
-      // Act
-      await addToWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('required'),
-        })
-      );
-    });
-
-    test('should handle database errors', async () => {
-      // Arrange
-      mockReq.body = {
-        productId: 'product123',
-      };
-
-      Product.findById.mockRejectedValue(new Error('Database error'));
-
-      // Act
-      await addToWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Database error',
-      });
-    });
-  });
-
-  // ==================== REMOVE FROM WISHLIST TESTS ====================
-  describe('removeFromWishlist', () => {
-    test('should successfully remove product from wishlist', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOneAndDelete.mockResolvedValue(mockWishlist);
-
-      // Act
-      await removeFromWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Product removed from wishlist',
-      });
-      expect(Wishlist.findOneAndDelete).toHaveBeenCalledWith({
-        user: 'user123',
-        product: 'product123',
-      });
-    });
-
-    test('should return error when product not in wishlist', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOneAndDelete.mockResolvedValue(null);
-
-      // Act
-      await removeFromWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Item not found in wishlist',
-      });
-    });
-
-    test('should only remove user\'s own wishlist items', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOneAndDelete.mockResolvedValue(null);
-
-      // Act
-      await removeFromWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(Wishlist.findOneAndDelete).toHaveBeenCalledWith({
-        user: 'user123',
-        product: 'product123',
-      });
-    });
-  });
-
-  // ==================== GET WISHLIST TESTS ====================
-  describe('getWishlist', () => {
-    test('should retrieve user wishlist with all products', async () => {
-      // Arrange
-      const wishlistItems = [
-        mockWishlist,
-        { ...mockWishlist, _id: 'wishlist456', product: 'product456' },
-      ];
-
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockResolvedValue(wishlistItems),
-        });
-
-      // Act
       await getWishlist(mockReq, mockRes);
 
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        wishlist: wishlistItems,
-        count: 2,
-      });
-      expect(Wishlist.find).toHaveBeenCalledWith({ user: 'user123' });
+      expect(mockRes.json).toHaveBeenCalledWith([]);
     });
 
-    test('should return empty wishlist when no items', async () => {
-      // Arrange
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockResolvedValue([]),
-        });
-
-      // Act
-      await getWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        wishlist: [],
-        count: 0,
-      });
-    });
-
-    test('should populate product details', async () => {
-      // Arrange
-      const wishlistWithProduct = {
-        ...mockWishlist,
-        product: mockProduct,
-      };
-
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockResolvedValue([wishlistWithProduct]),
-        });
-
-      // Act
-      await getWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(Wishlist.find().populate).toHaveBeenCalledWith('product');
-    });
-
-    test('should handle database errors', async () => {
-      // Arrange
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockRejectedValue(new Error('Database error')),
-        });
-
-      // Act
-      await getWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Database error',
-      });
-    });
-  });
-
-  // ==================== CHECK WISHLIST ITEM TESTS ====================
-  describe('checkWishlistItem', () => {
-    test('should return true if product is in wishlist', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOne.mockResolvedValue(mockWishlist);
-
-      // Act
-      await checkWishlistItem(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        inWishlist: true,
-      });
-    });
-
-    test('should return false if product is not in wishlist', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOne.mockResolvedValue(null);
-
-      // Act
-      await checkWishlistItem(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        inWishlist: false,
-      });
-    });
-
-    test('should check only user\'s own wishlist', async () => {
-      // Arrange
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOne.mockResolvedValue(null);
-
-      // Act
-      await checkWishlistItem(mockReq, mockRes);
-
-      // Assert
-      expect(Wishlist.findOne).toHaveBeenCalledWith({
-        user: 'user123',
-        product: 'product123',
-      });
-    });
-  });
-
-  // ==================== AUTHORIZATION TESTS ====================
-  describe('Authorization', () => {
-    test('should deny access to unauthenticated users', async () => {
-      // Arrange
-      mockReq.user = null;
-      mockReq.body = { productId: 'product123' };
-
-      // Act
-      await addToWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(mockRes.status).toHaveBeenCalledWith(401);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'Unauthorized access',
-      });
-    });
-
-    test('should allow only user\'s own wishlist access', async () => {
-      // Arrange
-      const otherUserWishlist = { ...mockWishlist, user: 'otherUser' };
-      mockReq.params = { productId: 'product123' };
-
-      Wishlist.findOne.mockResolvedValue(otherUserWishlist);
-
-      // Act
-      await removeFromWishlist(mockReq, mockRes);
-
-      // Assert
-      expect(Wishlist.findOneAndDelete).toHaveBeenCalledWith({
-        user: 'user123',
-        product: 'product123',
-      });
-    });
-  });
-
-  // ==================== BULK OPERATIONS TESTS ====================
-  describe('Bulk Operations', () => {
-    test('should handle multiple items in wishlist', async () => {
-      // Arrange
-      const multipleItems = Array.from({ length: 10 }, (_, i) => ({
+    test("should retrieve multiple wishlist items", async () => {
+      const wishlistItems = Array.from({ length: 5 }, (_, i) => ({
         ...mockWishlist,
         _id: `wishlist${i}`,
         product: `product${i}`,
       }));
 
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockResolvedValue(multipleItems),
-        });
+      const sortMock = jest.fn().mockResolvedValue(wishlistItems);
 
-      // Act
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
       await getWishlist(mockReq, mockRes);
 
-      // Assert
+      expect(mockRes.json).toHaveBeenCalledWith(wishlistItems);
+      expect(wishlistItems).toHaveLength(5);
+    });
+
+    test("should only retrieve current user's wishlist", async () => {
+      const sortMock = jest.fn().mockResolvedValue([]);
+
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(Wishlist.find).toHaveBeenCalledWith({
+        user: "user123",
+      });
+    });
+
+    test("should populate product information", async () => {
+      const sortMock = jest.fn().mockResolvedValue([mockWishlist]);
+
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(populateMock).toHaveBeenCalledWith(
+        "product",
+        "name images basePrice totalStock isActive"
+      );
+    });
+
+    test("should sort wishlist by createdAt descending", async () => {
+      const sortMock = jest.fn().mockResolvedValue([mockWishlist]);
+
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(sortMock).toHaveBeenCalledWith({
+        createdAt: -1,
+      });
+    });
+
+    test("should handle database error", async () => {
+      Wishlist.find.mockImplementation(() => {
+        throw new Error("Database error");
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
       expect(mockRes.json).toHaveBeenCalledWith({
-        wishlist: multipleItems,
-        count: 10,
+        message: "Failed to fetch wishlist.",
+      });
+    });
+
+    test("should handle populate database error", async () => {
+      const sortMock = jest
+        .fn()
+        .mockRejectedValue(new Error("Populate error"));
+
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
+      await getWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to fetch wishlist.",
       });
     });
   });
 
-  // ==================== VALIDATION TESTS ====================
-  describe('Validation', () => {
-    test('should validate product ID format', async () => {
-      // Arrange
-      mockReq.params = { productId: 'invalid_format' };
+  // ==========================================================
+  // ADD TO WISHLIST
+  // ==========================================================
 
-      // Act - assuming validation exists
-      await checkWishlistItem(mockReq, mockRes);
+  describe("addToWishlist", () => {
+    test("should successfully add product to wishlist", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
 
-      // Assert - response should be valid
-      expect(mockRes.json).toBeDefined();
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(Wishlist.findOne).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product123",
+      });
+
+      expect(Wishlist.create).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product123",
+      });
+
+      expect(mockWishlist.populate).toHaveBeenCalledWith(
+        "product",
+        "name images basePrice totalStock isActive"
+      );
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalledWith(mockWishlist);
     });
 
-    test('should handle missing product ID', async () => {
-      // Arrange
-      mockReq.params = {};
+    test("should reject missing product ID", async () => {
+      mockReq.body = {};
 
-      // Act
-      await checkWishlistItem(mockReq, mockRes);
+      await addToWishlist(mockReq, mockRes);
 
-      // Assert
       expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Product ID is required.",
+      });
+
+      expect(Wishlist.findOne).not.toHaveBeenCalled();
+      expect(Wishlist.create).not.toHaveBeenCalled();
+    });
+
+    test("should reject empty product ID", async () => {
+      mockReq.body = {
+        productId: "",
+      };
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Product ID is required.",
+      });
+    });
+
+    test("should reject null product ID", async () => {
+      mockReq.body = {
+        productId: null,
+      };
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Product ID is required.",
+      });
+    });
+
+    test("should reject duplicate wishlist item", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(Wishlist.findOne).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product123",
+      });
+
+      expect(Wishlist.create).not.toHaveBeenCalled();
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Product already in wishlist.",
+      });
+    });
+
+    test("should create wishlist item for correct user", async () => {
+      mockReq.body = {
+        productId: "product999",
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(Wishlist.create).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product999",
+      });
+    });
+
+    test("should populate product after creation", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockWishlist.populate).toHaveBeenCalledWith(
+        "product",
+        "name images basePrice totalStock isActive"
+      );
+    });
+
+    test("should return created wishlist item with 201 status", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalledWith(mockWishlist);
+    });
+
+    test("should handle findOne database error", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to add to wishlist.",
+      });
+    });
+
+    test("should handle create database error", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+
+      Wishlist.create.mockRejectedValue(
+        new Error("Create error")
+      );
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to add to wishlist.",
+      });
+    });
+
+    test("should handle populate error after creation", async () => {
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      const item = {
+        ...mockWishlist,
+        populate: jest
+          .fn()
+          .mockRejectedValue(new Error("Populate error")),
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(item);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to add to wishlist.",
+      });
     });
   });
 
-  // ==================== PERFORMANCE TESTS ====================
-  describe('Performance', () => {
-    test('should efficiently retrieve large wishlist', async () => {
-      // Arrange
-      const largeWishlist = Array.from({ length: 1000 }, (_, i) => ({
-        ...mockWishlist,
-        _id: `wishlist${i}`,
-      }));
+  // ==========================================================
+  // REMOVE FROM WISHLIST
+  // ==========================================================
 
-      Wishlist.find
-        .mockReturnValue({
-          populate: jest.fn().mockResolvedValue(largeWishlist),
-        });
+  describe("removeFromWishlist", () => {
+    test("should successfully remove wishlist item", async () => {
+      mockReq.params = {
+        productId: "product123",
+      };
 
-      // Act
+      Wishlist.findOneAndDelete.mockResolvedValue(mockWishlist);
+
+      await removeFromWishlist(mockReq, mockRes);
+
+      expect(Wishlist.findOneAndDelete).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product123",
+      });
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Removed from wishlist.",
+      });
+    });
+
+    test("should return 404 when item does not exist", async () => {
+      mockReq.params = {
+        productId: "product123",
+      };
+
+      Wishlist.findOneAndDelete.mockResolvedValue(null);
+
+      await removeFromWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(404);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Item not found in wishlist.",
+      });
+    });
+
+    test("should remove only current user's item", async () => {
+      mockReq.params = {
+        productId: "product123",
+      };
+
+      Wishlist.findOneAndDelete.mockResolvedValue(mockWishlist);
+
+      await removeFromWishlist(mockReq, mockRes);
+
+      expect(Wishlist.findOneAndDelete).toHaveBeenCalledWith({
+        user: "user123",
+        product: "product123",
+      });
+    });
+
+    test("should handle database error", async () => {
+      mockReq.params = {
+        productId: "product123",
+      };
+
+      Wishlist.findOneAndDelete.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await removeFromWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to remove from wishlist.",
+      });
+    });
+  });
+
+  // ==========================================================
+  // CLEAR WISHLIST
+  // ==========================================================
+
+  describe("clearWishlist", () => {
+    test("should successfully clear wishlist", async () => {
+      Wishlist.deleteMany.mockResolvedValue({
+        deletedCount: 3,
+      });
+
+      await clearWishlist(mockReq, mockRes);
+
+      expect(Wishlist.deleteMany).toHaveBeenCalledWith({
+        user: "user123",
+      });
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Wishlist cleared.",
+      });
+    });
+
+    test("should clear only current user's wishlist", async () => {
+      Wishlist.deleteMany.mockResolvedValue({
+        deletedCount: 5,
+      });
+
+      await clearWishlist(mockReq, mockRes);
+
+      expect(Wishlist.deleteMany).toHaveBeenCalledWith({
+        user: "user123",
+      });
+    });
+
+    test("should successfully clear an already empty wishlist", async () => {
+      Wishlist.deleteMany.mockResolvedValue({
+        deletedCount: 0,
+      });
+
+      await clearWishlist(mockReq, mockRes);
+
+      expect(Wishlist.deleteMany).toHaveBeenCalledWith({
+        user: "user123",
+      });
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Wishlist cleared.",
+      });
+    });
+
+    test("should handle database error while clearing", async () => {
+      Wishlist.deleteMany.mockRejectedValue(
+        new Error("Database error")
+      );
+
+      await clearWishlist(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: "Failed to clear wishlist.",
+      });
+    });
+
+    test("should delete all wishlist items for current user", async () => {
+      Wishlist.deleteMany.mockResolvedValue({
+        deletedCount: 100,
+      });
+
+      await clearWishlist(mockReq, mockRes);
+
+      expect(Wishlist.deleteMany).toHaveBeenCalledTimes(1);
+
+      expect(Wishlist.deleteMany).toHaveBeenCalledWith({
+        user: "user123",
+      });
+    });
+  });
+
+  // ==========================================================
+  // EDGE CASES
+  // ==========================================================
+
+  describe("Edge Cases", () => {
+    test("should work with different user IDs", async () => {
+      mockReq.user._id = "differentUser";
+
+      mockReq.body = {
+        productId: "product123",
+      };
+
+      Wishlist.findOne.mockResolvedValue(null);
+      Wishlist.create.mockResolvedValue(mockWishlist);
+
+      await addToWishlist(mockReq, mockRes);
+
+      expect(Wishlist.findOne).toHaveBeenCalledWith({
+        user: "differentUser",
+        product: "product123",
+      });
+
+      expect(Wishlist.create).toHaveBeenCalledWith({
+        user: "differentUser",
+        product: "product123",
+      });
+    });
+
+    test("should retrieve a large wishlist", async () => {
+      const largeWishlist = Array.from(
+        { length: 1000 },
+        (_, i) => ({
+          ...mockWishlist,
+          _id: `wishlist${i}`,
+          product: `product${i}`,
+        })
+      );
+
+      const sortMock = jest
+        .fn()
+        .mockResolvedValue(largeWishlist);
+
+      const populateMock = jest.fn().mockReturnValue({
+        sort: sortMock,
+      });
+
+      Wishlist.find.mockReturnValue({
+        populate: populateMock,
+      });
+
       await getWishlist(mockReq, mockRes);
 
-      // Assert
-      expect(mockRes.json).toHaveBeenCalledWith({
-        wishlist: largeWishlist,
-        count: 1000,
-      });
+      expect(mockRes.json).toHaveBeenCalledWith(
+        largeWishlist
+      );
+
+      expect(largeWishlist).toHaveLength(1000);
     });
   });
 });
