@@ -2462,4 +2462,409 @@ export default function Admin() {
               <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("images")}
                 {form.images.length > 0 && (
-                  <div style={{ display: "flex",
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                    {form.images.map((url, idx) => (
+                      <div key={url + idx} style={{ position: "relative" }}>
+                        <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                        <button
+                          type="button"
+                          onClick={() => removeProductImage(idx)}
+                          title="Remove image"
+                          style={{
+                            position: "absolute", top: -6, right: -6, width: 20, height: 20,
+                            borderRadius: "50%", border: "none", background: "var(--red)", color: "#fff",
+                            cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex",
+                            alignItems: "center", justifyContent: "center",
+                          }}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  onChange={handleProductImageSelect}
+                  disabled={imageUploading}
+                />
+                {imageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
+              </div>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("featuredOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
+                {t("bestSellingOnHomepage")}
+              </label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
+                {t("activeVisibleInStore")}
+              </label>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeModal} disabled={formSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveProduct} disabled={formSaving || imageUploading}>
+                {formSaving ? t("saving") : modal === "add" ? t("createProduct") : t("saveChanges")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteProductTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+              {t("deleteProductBody", { name: confirmDelete.name?.en })}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDelete(confirmDelete._id)}>
+                {t("yesDelete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {catModal && (
+        <div style={s.overlay} onClick={closeCatModal}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{catModal === "add" ? t("addNewCategory") : t("editCategory")}</h3>
+            {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
+            <div className="admin-form-grid" style={s.formGrid}>
+              <label style={s.label}>
+                {t("nameEnglish")}
+                <input className="input" name="nameEn" value={catForm.nameEn} onChange={setCF} placeholder="e.g. Earrings" />
+              </label>
+              <label style={s.label}>
+                {t("nameBengali")}
+                <input className="input" name="nameBn" value={catForm.nameBn} onChange={setCF} placeholder="বাংলা নাম" />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("slug")}
+                <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
+              </label>
+              {/* Plain div, not <label> — see the product-images field above
+                  for why: a <label> here would implicitly bind to the
+                  "Remove image" <button> (the first labelable descendant),
+                  forwarding any click on the thumbnail <img> to it. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("image")}
+                {catForm.image && (
+                  <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                    <img src={catForm.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ fontSize: 12, padding: "5px 10px" }}
+                      onClick={() => {
+                        if (catForm.image.startsWith("/uploads/")) {
+                          setPendingDeleteCatImages(prev => [...prev, catForm.image]);
+                        }
+                        setCatForm(f => ({ ...f, image: "" }));
+                      }}
+                    >
+                      {t("removeImage")}
+                    </button>
+                  </div>
+                )}
+                <input
+                  className="input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleCategoryImageSelect}
+                  disabled={catImageUploading}
+                />
+                {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
+              </div>
+              {catModal === "add" && (
+                <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
+                  <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
+                  {t("fixedCategoryCheckbox")}
+                </label>
+              )}
+              {catModal === "edit" && catForm.isFixed && (
+                <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                  <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t("fixedCategoryNote")}</span>
+                </p>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving || catImageUploading}>
+                {catFormSaving ? t("saving") : catModal === "add" ? t("createCategory") : t("saveChanges")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {catConfirmDelete && (
+        <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCategoryTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+              {t("deleteCategoryBody", { name: catConfirmDelete.name?.en })}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setCatConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCategory(catConfirmDelete)}>
+                {t("yesDelete")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {couponModal && (
+        <div style={s.overlay} onClick={closeCouponModal}>
+          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{couponModal === "add" ? t("createCouponModalTitle") : t("editCouponModalTitle")}</h3>
+            {couponFormErr && <div style={s.formErr}>{couponFormErr}</div>}
+            <div className="admin-form-grid" style={s.formGrid}>
+              <label style={s.label}>{t("couponCodeLabel")}<input className="input" name="code" value={couponForm.code} onChange={setCouponF} placeholder={t("couponCodePlaceholder")} style={{ textTransform: "uppercase" }} /></label>
+              <label style={s.label}>{t("couponTitleLabel")}<input className="input" name="title" value={couponForm.title} onChange={setCouponF} placeholder={t("couponTitlePlaceholder")} /></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("couponDescriptionLabel")}<textarea className="input" name="description" value={couponForm.description} onChange={setCouponF} rows={2} placeholder={t("couponDescriptionPlaceholder")} style={{ resize: "vertical" }} /></label>
+              <label style={s.label}>{t("discountTypeLabel")}<select className="input" name="discountType" value={couponForm.discountType} onChange={setCouponF}><option value="percentage">{t("percentageOption")}</option><option value="fixed">{t("fixedAmountOption")}</option></select></label>
+              <label style={s.label}>{t("discountValueLabel")}<input className="input" name="discountValue" type="number" min="0" value={couponForm.discountValue} onChange={setCouponF} placeholder={couponForm.discountType === "percentage" ? t("discountValuePercentPlaceholder") : t("discountValueFixedPlaceholder")} /></label>
+              <label style={s.label}>{t("minimumPurchaseLabel")}<input className="input" name="minimumPurchase" type="number" min="0" value={couponForm.minimumPurchase} onChange={setCouponF} placeholder="0" /></label>
+              <label style={s.label}>{t("maximumDiscountLabel")}<input className="input" name="maximumDiscount" type="number" min="0" value={couponForm.maximumDiscount} onChange={setCouponF} placeholder={t("noCapPlaceholder")} /></label>
+              <label style={s.label}>{t("usageLimitLabel")}<input className="input" name="usageLimit" type="number" min="0" value={couponForm.usageLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
+              <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
+              <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
+              <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={closeCouponModal} disabled={couponFormSaving}>{t("cancel")}</button>
+              <button className="btn btn-gold" onClick={handleSaveCoupon} disabled={couponFormSaving}>{couponFormSaving ? t("saving") : couponModal === "add" ? t("createCoupon") : t("saveChanges")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {couponConfirmDelete && (
+        <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCouponTitle")}</h3>
+            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>{t("deleteCouponBody", { code: couponConfirmDelete.code })}</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={() => setCouponConfirmDelete(null)}>{t("cancel")}</button>
+              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCoupon(couponConfirmDelete._id)}>{t("yesDelete")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {couponStatsTarget && (
+        <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
+          <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("couponUsageTitle", { code: couponStatsTarget.code })}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedCount}</div><div style={s.statLabel}>{t("totalUses")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usageLimit != null ? couponStatsTarget.usageLimit : "∞"}</div><div style={s.statLabel}>{t("usageLimitLabel")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.perUserLimit != null ? couponStatsTarget.perUserLimit : "∞"}</div><div style={s.statLabel}>{t("perUserLimitLabel")}</div></div>
+              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedBy?.length || 0}</div><div style={s.statLabel}>{t("uniqueCustomers")}</div></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="btn btn-outline" onClick={() => setCouponStatsTarget(null)}>{t("close")}</button></div>
+          </div>
+        </div>
+      )}
+      {replyTarget && (
+        <div style={s.overlay} onClick={closeReplyModal}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("replyToTitle", { name: replyTarget.name })}</h3>
+            <div style={{ background: "var(--cream-dark)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--muted)" }}>
+              {replyTarget.message}
+            </div>
+            {replyTarget.status === "replied" && replyTarget.reply && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("previousReply")}</div>
+                <div style={{ fontSize: 13, color: "var(--charcoal)", whiteSpace: "pre-wrap" }}>{replyTarget.reply}</div>
+              </div>
+            )}
+            <label style={s.label}>
+              {t("yourReply")}
+              <textarea
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                rows={5}
+                placeholder={t("replyPlaceholder")}
+                style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-outline" onClick={closeReplyModal}>{t("cancel")}</button>
+              <button className="btn" disabled={!replyText.trim() || replySending} onClick={handleSendReply}>
+                {replySending ? t("sending") : t("sendReply")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bkashDetail && (
+        <div style={s.overlay} onClick={closeBkashDetail}>
+          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
+
+            <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
+              {t("orderReference")}: <span style={s.mono}>#{getOrderDisplayId(bkashDetail)}</span>
+              {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div style={s.modalSubTitle}>{t("colCustomer")}</div>
+                <div style={{ fontSize: 13 }}>{bkashDetail.user?.name || bkashDetail.guestInfo?.name || "—"}</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>{bkashDetail.user?.email || bkashDetail.guestInfo?.email || ""}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashAmount")}</div>
+                <div style={{ fontSize: 13 }}>{fmt(bkashDetail.payment?.amount || bkashDetail.totalAmount || 0)}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColSenderNumber")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.senderNumber || "—"}</div>
+              </div>
+              <div>
+                <div style={s.modalSubTitle}>{t("bkashColTrxId")}</div>
+                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.trxId || "—"}</div>
+              </div>
+            </div>
+
+            {bkashDetail.payment?.bkash?.screenshot && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={s.modalSubTitle}>{t("attachedPhotos")}</div>
+                <a href={bkashDetail.payment.bkash.screenshot} target="_blank" rel="noreferrer">
+                  <img
+                    src={bkashDetail.payment.bkash.screenshot}
+                    alt=""
+                    style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: "1px solid var(--border)" }}
+                  />
+                </a>
+              </div>
+            )}
+
+            {bkashDetail.payment?.bkash?.verificationStatus === "pending_verification" ? (
+              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                {bkashActErr && <div style={s.formErr}>{bkashActErr}</div>}
+                <label style={s.label}>
+                  {t("bkashRejectionReasonLabel")}
+                  <textarea
+                    value={bkashRejectReason}
+                    onChange={e => setBkashRejectReason(e.target.value)}
+                    rows={2}
+                    placeholder={t("bkashRejectionReasonPlaceholder")}
+                    style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+                  />
+                </label>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                  <button className="btn btn-outline" onClick={closeBkashDetail}>{t("cancel")}</button>
+                  <button
+                    className="btn"
+                    style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
+                    disabled={bkashActing}
+                    onClick={() => handleBkashDecision(false)}
+                  >
+                    {t("bkashReject")}
+                  </button>
+                  <button className="btn" disabled={bkashActing} onClick={() => handleBkashDecision(true)}>
+                    {bkashActing ? t("bkashSaving") : t("bkashApprove")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {revenueModalOpen && (
+        <div style={s.overlay} onClick={() => setRevenueModalOpen(false)}>
+          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+              <h3 style={{ ...s.modalTitle, marginBottom: 0 }}>{t("revenueDetails")}</h3>
+              <select
+                className="input"
+                value={statsRange}
+                onChange={e => setStatsRange(e.target.value)}
+                style={{ width: "auto", fontSize: 12.5 }}
+              >
+                <option value="today">{t("rangeToday")}</option>
+                <option value="2d">{t("range2Days")}</option>
+                <option value="7d">{t("range7Days")}</option>
+                <option value="10d">{t("range10Days")}</option>
+                <option value="thisMonth">{t("rangeThisMonth")}</option>
+                <option value="lastMonth">{t("rangeLastMonth")}</option>
+              </select>
+            </div>
+
+            {!periodStats && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {periodStats && (
+              <>
+                <div style={{ display: "flex", gap: 28, marginBottom: 20, flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{fmt(periodStats.periodRevenue)}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("revenueInPeriod")}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)" }}>{periodStats.periodOrderCount}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" }}>{t("ordersInPeriod")}</div>
+                  </div>
+                </div>
+                <RevenueTrendChart data={periodStats.revenueTrend} />
+              </>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <button className="btn btn-outline" onClick={() => setRevenueModalOpen(false)}>{t("close")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <AdminAiAssistant open={aiAssistantOpen} onClose={() => setAiAssistantOpen(false)} title={t("navAiAssistant")} />
+    </div>
+  );
+}
+
+const s = {
+  center:       { display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--muted)" },
+  pageTitle:    { fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--charcoal)", marginBottom: 24 },
+  sectionTitle: { fontFamily: "var(--font-display)", fontSize: 20, color: "var(--charcoal)", marginBottom: 16 },
+  err:          { background: "#FEE2E2", color: "var(--red)", padding: "10px 14px", borderRadius: 6, marginBottom: 16, fontSize: 13 },
+  statGrid:     { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 },
+  statCard:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
+  statIcon:     { fontSize: 26, marginBottom: 8 },
+  statValue:    { fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)", marginBottom: 2 },
+  statLabel:    { fontSize: 12, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" },
+  tableWrap:    { overflowX: "auto", background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "var(--shadow-sm)" },
+  table:        { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+  th:           { padding: "12px 16px", background: "var(--cream-dark)", color: "var(--muted)", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "left", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" },
+  td:           { padding: "12px 16px", borderBottom: "1px solid var(--border-light)", verticalAlign: "middle" },
+  tr:           { transition: "background 0.12s" },
+  mono:         { fontFamily: "monospace", fontWeight: 600, fontSize: 12, color: "var(--maroon)" },
+  select:       { padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-body)", background: "var(--cream)", color: "var(--ink)", cursor: "pointer" },
+  editBtn:      { padding: "5px 12px", background: "var(--maroon)", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, cursor: "pointer", marginRight: 6, fontFamily: "var(--font-body)" },
+  delBtn:       { padding: "5px 12px", background: "transparent", color: "var(--red)", border: "1px solid var(--red)", borderRadius: 4, fontSize: 12, cursor: "pointer", fontFamily: "var(--font-body)" },
+  overlay:      { position: "fixed", inset: 0, background: "rgba(28,10,15,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  modalBox:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "32px 28px", maxWidth: 580, width: "100%", boxShadow: "var(--shadow-lg)", maxHeight: "90vh", overflowY: "auto" },
+  modalTitle:   { fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", marginBottom: 20, color: "var(--charcoal)" },
+  modalSubTitle:{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 },
+  chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
+  formGrid:     { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" },
+  label:        { display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5, color: "var(--muted)", marginBottom: 14, fontWeight: 500 },
+  formErr:      { background: "#FEE2E2", color: "var(--red)", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 },
+};
