@@ -5,6 +5,16 @@ const refundSchema = new mongoose.Schema(
     order: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 
+    // Guest checkouts have no account (no `user`), so a snapshot of their
+    // contact details is stored here instead — same pattern as
+    // Order.guestInfo — so admin can see who's asking without a login.
+    isGuest: { type: Boolean, default: false },
+    guestInfo: {
+      name: String,
+      email: String,
+      phone: String,
+    },
+
     item: {
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
       nameSnapshot: { type: String, required: true },
@@ -27,6 +37,18 @@ const refundSchema = new mongoose.Schema(
       required: true,
     },
     details: { type: String, default: "", maxlength: 1000 },
+
+    // Proof photos the customer submits (Cloudinary URLs) so an admin can
+    // actually judge whether the return looks legitimate — e.g. a photo of
+    // damage or the wrong item received — before approving a refund.
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 5,
+        message: "You can attach up to 5 photos.",
+      },
+    },
 
     status: {
       type: String,

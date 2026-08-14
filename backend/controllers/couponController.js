@@ -207,6 +207,26 @@ export const getActiveCoupons = async (req, res) => {
   }
 };
 
+// ── Customer: GET /api/coupons/upcoming ─────────────────────────────────────
+// Coupons that are turned on but whose start date hasn't arrived yet, so the
+// storefront can tease them ahead of time with a "starts in Xh Ym" countdown
+// instead of customers only finding out once they're already live.
+export const getUpcomingCoupons = async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $gt: now },
+    })
+      .select("code title description discountType discountValue minimumPurchase maximumDiscount startDate endDate")
+      .sort({ startDate: 1 });
+
+    res.json(coupons);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 // ── Customer: POST /api/coupons/validate ───────────────────────────────────
 // Body: { couponCode, cartTotal, items? } where items is optional
 // [{ product, category }] for restriction checks. req.user is set when a

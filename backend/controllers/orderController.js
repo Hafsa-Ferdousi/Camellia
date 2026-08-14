@@ -439,6 +439,13 @@ export const updateOrderStatus = async (req, res) => {
       order.payment.paidAt = new Date();
     }
 
+    // First time this order reaches "delivered" — stamp it so the 7-day
+    // return/refund window has a fixed anchor (see Order.js). Re-marking
+    // an order delivered later (e.g. a status correction) doesn't reset it.
+    if (req.body.status === "delivered" && !order.deliveredAt) {
+      order.deliveredAt = new Date();
+    }
+
     // Optional — admin can attach/update a private note in the same
     // request. Empty string clears it; omit the field entirely to leave
     // the existing note untouched.
