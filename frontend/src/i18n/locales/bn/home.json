@@ -39,5 +39,10 @@
   "offersEyebrow": "স্বল্প সময়ের জন্য",
   "offersTitle": "আপনার জন্য বিশেষ অফার",
   "couponValidTill": "মেয়াদ শেষ {{value}}",
-  "couponDateRange": "{{start}} – {{end}}"
+  "couponDateRange": "{{start}} – {{end}}",
+  "upcomingEyebrow": "শীঘ্রই আসছে",
+  "startsInDays": "শুরু হবে {{days}} দিন {{hours}} ঘণ্টায়",
+  "startsInHours": "শুরু হবে {{hours}} ঘণ্টা {{minutes}} মিনিটে",
+  "startsInMinutes": "শুরু হবে {{minutes}} মিনিটে",
+  "startingSoon": "এখনই শুরু হচ্ছে"
 }

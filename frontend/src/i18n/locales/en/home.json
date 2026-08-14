@@ -39,5 +39,10 @@
   "offersEyebrow": "Limited Time",
   "offersTitle": "Exclusive Offers For You",
   "couponValidTill": "Valid till {{value}}",
-  "couponDateRange": "{{start}} – {{end}}"
+  "couponDateRange": "{{start}} – {{end}}",
+  "upcomingEyebrow": "Coming Soon",
+  "startsInDays": "Starts in {{days}}d {{hours}}h",
+  "startsInHours": "Starts in {{hours}}h {{minutes}}m",
+  "startsInMinutes": "Starts in {{minutes}}m",
+  "startingSoon": "Starting any moment"
 }

@@ -160,5 +160,15 @@
   "type_exchange_desc": "আপনার পছন্দের একটি ভিন্ন পণ্যের সাথে বদলে নিন।",
   "exchangeForLabel": "কোন পণ্যটা চান?",
   "exchangeSearchPlaceholder": "পণ্য খুঁজুন…",
-  "exchangeProductRequired": "অনুগ্রহ করে বিনিময়ের জন্য একটি পণ্য বেছে নিন।"
+  "exchangeProductRequired": "অনুগ্রহ করে বিনিময়ের জন্য একটি পণ্য বেছে নিন।",
+  "returnDaysLeft": "ফেরত দিতে {{count}} দিন বাকি",
+  "returnDaysLeft_plural": "ফেরত দিতে {{count}} দিন বাকি",
+  "returnWindowClosed": "ফেরতের সময় শেষ",
+  "returnWindowNote": "ডেলিভারির ৭ দিনের মধ্যে ফেরত গ্রহণযোগ্য।",
+  "returnPhotosLabel": "পণ্যের ছবি",
+  "returnPhotosHint": "যাচাইয়ের জন্য অন্তত ১টি ছবি (সর্বোচ্চ ৫টি) যোগ করুন — যেমন ক্ষতিগ্রস্ত অংশ, ভুল পণ্য, বা প্যাকেজিং।",
+  "returnPhotosRequired": "অনুগ্রহ করে পণ্যের অন্তত একটি ছবি যুক্ত করুন।",
+  "returnPhotoUploadError": "ছবিটি আপলোড করা যায়নি। আবার চেষ্টা করুন।",
+  "addPhoto": "ছবি যোগ করুন",
+  "uploadingPhoto": "আপলোড হচ্ছে…"
 }
