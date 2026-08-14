@@ -9,6 +9,7 @@ import { formatPrice } from "../utils/formatPrice";
 import { guestLookupOrder } from "../api/cart";
 import { getGuestRefunds } from "../api/refunds";
 import RefundRequestModal from "../components/RefundRequestModal";
+import { getOrderDisplayId } from "../utils/orderId";
 
 const REFUND_STATUS_STYLE = {
   pending:   { bg: "#FEF3C7", color: "#92400E" },
@@ -209,8 +210,7 @@ export default function TrackOrder() {
             {orders.map((order) => {
               const status = STATUS_STYLE[order.status] || STATUS_STYLE.pending;
               const items = order.items || [];
-              // ✅ Use guestOrderId if available, otherwise fallback to shortened _id
-              const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
+              const displayOrderId = getOrderDisplayId(order);
 
               return (
                 <div key={order._id} style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-light)" }}>

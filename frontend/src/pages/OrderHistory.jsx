@@ -9,6 +9,7 @@ import { localized } from "../utils/localized";
 import { formatPrice } from "../utils/formatPrice";
 import { getOrders } from "../api/cart";
 import { getMyRefunds } from "../api/refunds";
+import { getOrderDisplayId } from "../utils/orderId";
 import RefundRequestModal from "../components/RefundRequestModal";
 import Seo from "../components/Seo";
 
@@ -196,8 +197,7 @@ export default function OrderHistory() {
             const stepIndex = STATUS_STEPS.indexOf(order.status);
             const isPaid = order.payment?.status === 'paid';
 
-            // ✅ Friendly order ID: use guestOrderId if exists, else fallback to shortened _id
-            const displayOrderId = order.guestOrderId || order._id.slice(-8).toUpperCase();
+            const displayOrderId = getOrderDisplayId(order);
 
             return (
               <div key={order._id} className="panel" style={{ overflow: "hidden" }}>

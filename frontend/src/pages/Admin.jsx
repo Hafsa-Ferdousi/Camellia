@@ -6,9 +6,10 @@ import {
   ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Phone, Check,
   LayoutDashboard, Settings, LogOut, ArrowLeft, Download, Lock,
   Ticket, Mail, MessageCircle, Trash2, Bell, TrendingUp,
-  RotateCcw, PackageCheck, Wallet, Menu, X,
+  RotateCcw, PackageCheck, Wallet, Menu, X, Bot, KeyRound,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import AdminAiAssistant from "../components/AdminAiAssistant";
 import { generateDescription } from "../api/admin";
 import { getNotifications, markAsRead, markAllAsRead, deleteNotification } from "../api/notifications";
 import { getAllRefunds, updateRefundStatus as updateRefundStatusApi } from "../api/refunds";
@@ -20,6 +21,8 @@ import {
   getCustomers,
   getCustomerDetail,
   resetCustomerPassword,
+  getPasswordResetRequests,
+  dismissPasswordResetRequest,
   getAllOrders,
   updateOrderStatus,
   getAllProducts,
@@ -49,6 +52,7 @@ import {
 } from "../api/coupons";
 import { getBkashSubmissions, verifyBkashPayment as verifyBkashPaymentApi } from "../api/payments";
 import client from "../api/client";
+import { getOrderDisplayId } from "../utils/orderId";
 
 const STATUS_COLORS = {
   pending:    { bg: "#FEF9C3", color: "#854D0E" },
@@ -146,21 +150,26 @@ const styles_editBtnSmall = {
 
 const fmt = (n) => `৳${Number(n).toLocaleString("en-BD")}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
-const fmtDayLabel = (isoDate) => new Date(isoDate).toLocaleDateString("en-BD", { weekday: "short" });
+const fmtDayLabel = (isoDate, compact) =>
+  new Date(isoDate).toLocaleDateString("en-BD", compact ? { day: "numeric", month: "short" } : { weekday: "short" });
 
 const RevenueTrendChart = ({ data }) => {
   const max = Math.max(1, ...data.map(d => d.total));
+  // Month-length ranges (13-31 bars) can't fit a weekday label under every
+  // bar without overlapping — drop the per-bar label and rely on the title
+  // tooltip instead, same as any dense bar chart would.
+  const compact = data.length > 10;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 140, padding: "8px 4px 0" }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: compact ? 3 : 10, height: 140, padding: "8px 4px 0" }}>
       {data.map(d => (
-        <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div title={fmt(d.total)} style={{
-            width: "100%", maxWidth: 32,
+        <div key={d.date} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <div title={`${fmtDayLabel(d.date, true)} — ${fmt(d.total)}`} style={{
+            width: "100%", maxWidth: compact ? 14 : 32,
             height: `${Math.max(4, (d.total / max) * 100)}px`,
             background: "var(--gold, #C9A24B)", borderRadius: "4px 4px 0 0",
             transition: "height 0.2s",
           }} />
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>
+          {!compact && <span style={{ fontSize: 10, color: "var(--muted)" }}>{fmtDayLabel(d.date)}</span>}
         </div>
       ))}
     </div>
@@ -270,6 +279,7 @@ const NOTIFICATION_TAB = {
   new_customer: "customers",
   order_status: "orders",
   payment: "orders",
+  password_reset_request: "passwordRequests",
 };
 
 export default function Admin() {
@@ -283,6 +293,8 @@ export default function Admin() {
   const [alertsUnread, setAlertsUnread] = useState(0);
   const [bellOpen, setBellOpen]       = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [revenueModalOpen, setRevenueModalOpen] = useState(false);
   const bellRef = useRef(null);
 
   const loadAlerts = useCallback(() => {
@@ -331,6 +343,7 @@ export default function Admin() {
 
   const [stats, setStats]       = useState(null);
   const [statsErr, setStatsErr] = useState("");
+  const [statsRange, setStatsRange] = useState("7d");
   const [orders, setOrders]           = useState([]);
   const [ordersLoading, setOL]        = useState(false);
   const [statusUpdating, setSU]       = useState(null);
@@ -354,6 +367,13 @@ export default function Admin() {
   const [resetPwMsg, setResetPwMsg]           = useState("");
   const [resetPwOk, setResetPwOk]             = useState(false);
   const [resetPwSaving, setResetPwSaving]     = useState(false);
+  // Only offer the reset-password action when the customer detail modal was
+  // opened from a Password Request — not from the general Customers tab, so
+  // there's exactly one place an admin can reset a customer's password.
+  const [resetPwFromRequest, setResetPwFromRequest] = useState(false);
+  const [passwordRequests, setPasswordRequests] = useState([]);
+  const [passwordRequestsLoading, setPRL]     = useState(false);
+  const [dismissingRequestId, setDismissingRequestId] = useState(null);
   const [products, setProducts]       = useState([]);
   const [categories, setCategories]   = useState([]);
   const [prodLoading, setPL]          = useState(false);
@@ -428,6 +448,9 @@ export default function Admin() {
   const [bkashActErr, setBkashActErr] = useState("");
 
   // ── data loaders ────────────────────────────────────────────
+  // Always the fixed default window — the stat cards, the "Revenue — Last 7
+  // Days" chart, and "Recent Orders" must stay put regardless of whatever
+  // period the Revenue modal (below) is currently showing.
   const loadStats = useCallback(async () => {
     try {
       const r = await getAdminStats();
@@ -436,6 +459,31 @@ export default function Admin() {
       setStatsErr(t("couldNotLoadStats"));
     }
   }, []);
+
+  // Independent fetch for the Revenue modal's period selector, so switching
+  // it never perturbs the fixed 7-day data above.
+  const [periodStats, setPeriodStats] = useState(null);
+  // Opening the modal fires a fetch for whatever range is currently
+  // selected; picking a new range immediately fires another. Two requests
+  // can resolve out of order, so only ever commit the response that still
+  // matches the range selected *now* — otherwise a slow, stale response can
+  // land after a newer one and silently show the wrong period's numbers.
+  const statsRangeRef = useRef(statsRange);
+  useEffect(() => { statsRangeRef.current = statsRange; }, [statsRange]);
+
+  const loadPeriodStats = useCallback(async () => {
+    const requestedRange = statsRange;
+    try {
+      const r = await getAdminStats(requestedRange);
+      if (statsRangeRef.current === requestedRange) setPeriodStats(r.data);
+    } catch {
+      if (statsRangeRef.current === requestedRange) setPeriodStats(null);
+    }
+  }, [statsRange]);
+
+  useEffect(() => {
+    if (revenueModalOpen) loadPeriodStats();
+  }, [revenueModalOpen, loadPeriodStats]);
 
   const loadOrders = useCallback(async () => {
     setOL(true);
@@ -585,6 +633,14 @@ export default function Admin() {
     }
   };
 
+  // ── Password reset requests (customer forgot their security answer too) ──
+  const loadPasswordRequests = useCallback(async () => {
+    setPRL(true);
+    try { const r = await getPasswordResetRequests(); setPasswordRequests(r.data); }
+    catch { setPasswordRequests([]); }
+    finally { setPRL(false); }
+  }, []);
+
   useEffect(() => {
     if (tab === "overview")   loadStats();
     if (tab === "orders")     loadOrders();
@@ -597,7 +653,8 @@ export default function Admin() {
     if (tab === "chats")      loadConversations();
     if (tab === "refunds")    loadRefunds();
     if (tab === "bkash")      loadBkash();
-  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash]);
+    if (tab === "passwordRequests") loadPasswordRequests();
+  }, [tab, loadStats, loadOrders, loadCustomers, loadProducts, loadCategories, loadSettings, loadCoupons, loadMessages, loadConversations, loadRefunds, loadBkash, loadPasswordRequests]);
 
   useEffect(() => { if (tab === "refunds") loadRefunds(refundStatusFilter); }, [refundStatusFilter]);
   useEffect(() => { setMobileNavOpen(false); }, [tab]);
@@ -609,28 +666,48 @@ export default function Admin() {
   const openCustomerDetail = async (c) => {
     if (c.type === "guest") return;
     setCDL(true);
+    setResetPwFromRequest(false);
     setCustomerDetail({ user: { name: c.name, email: c.email }, orders: [] });
     try { const r = await getCustomerDetail(c._id); setCustomerDetail(r.data); }
     catch { setCustomerDetail(null); }
     finally { setCDL(false); }
   };
 
-  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); };
+  const closeCustomerDetail = () => { setCustomerDetail(null); setResetPwUserId(null); setResetPwValue(""); setResetPwMsg(""); setResetPwFromRequest(false); };
 
   const handleResetCustomerPassword = async (userId) => {
     setResetPwSaving(true);
     setResetPwMsg("");
     try {
-      await resetCustomerPassword(userId, resetPwValue);
-      setResetPwMsg(t("passwordResetSuccess"));
+      const { data } = await resetCustomerPassword(userId, resetPwValue);
+      setResetPwMsg(data?.message || t("passwordResetSuccess"));
       setResetPwOk(true);
       setResetPwValue("");
+      // The backend auto-resolves any pending request for this user — drop
+      // it from the queue locally instead of waiting for a manual reload.
+      setPasswordRequests(prev => prev.filter(r => r.user?._id !== userId));
     } catch (err) {
       setResetPwMsg(err.response?.data?.message || t("couldNotResetPassword"));
       setResetPwOk(false);
     } finally {
       setResetPwSaving(false);
     }
+  };
+
+  const openCustomerDetailForReset = (request) => {
+    openCustomerDetail({ _id: request.user._id, name: request.user.name, email: request.user.email, type: "registered" });
+    setResetPwFromRequest(true);
+    setResetPwUserId(request.user._id);
+    setResetPwMsg("");
+  };
+
+  const handleDismissRequest = async (id) => {
+    setDismissingRequestId(id);
+    try {
+      await dismissPasswordResetRequest(id);
+      setPasswordRequests(prev => prev.filter(r => r._id !== id));
+    } catch { /* ignore */ }
+    finally { setDismissingRequestId(null); }
   };
 
   const setVatRate = (pct) => setSettings(s => ({ ...s, vatRate: Number(pct) / 100 }));
@@ -1066,17 +1143,19 @@ export default function Admin() {
           { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
           { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
+          { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
           { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
           { id: "chats",      label: t("navChats"),       icon: MessageCircle },
+          { id: "aiAssistant", label: t("navAiAssistant"), icon: Bot, onClick: () => setAiAssistantOpen(true) },
           { id: "settings",   label: t("navSettings"),   icon: Settings },
         ].map(navItem => (
           <button
             key={navItem.id}
-            className={`admin-nav-btn${tab === navItem.id ? " active" : ""}`}
-            onClick={() => setTab(navItem.id)}
+            className={`admin-nav-btn${(navItem.onClick ? aiAssistantOpen : tab === navItem.id) ? " active" : ""}`}
+            onClick={() => { if (navItem.onClick) { navItem.onClick(); setMobileNavOpen(false); } else setTab(navItem.id); }}
             style={{ display: "flex", alignItems: "center", gap: 10 }}
           >
             <navItem.icon size={15} /> {navItem.label}
@@ -1088,6 +1167,11 @@ export default function Admin() {
             {navItem.id === "refunds" && refundStatusFilter === "pending" && refunds.length > 0 && (
               <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                 {refunds.length}
+              </span>
+            )}
+            {navItem.id === "passwordRequests" && passwordRequests.length > 0 && (
+              <span style={{ marginLeft: 8, background: "var(--red)", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                {passwordRequests.length}
               </span>
             )}
           </button>
@@ -1107,7 +1191,17 @@ export default function Admin() {
 
         {tab === "overview" && (
           <div>
-            <h2 style={s.pageTitle}>{t("overview")}</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <h2 style={{ ...s.pageTitle, marginBottom: 0 }}>{t("overview")}</h2>
+              <button
+                type="button"
+                className="btn btn-gold"
+                onClick={() => setRevenueModalOpen(true)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <DollarSign size={15} /> {t("revenueDetails")}
+              </button>
+            </div>
             {statsErr && <p style={s.err}>{statsErr}</p>}
             {!stats && !statsErr && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
             {stats && (
@@ -1151,7 +1245,7 @@ export default function Admin() {
                     <tbody>
                       {stats.recentOrders.map(o => (
                         <tr key={o._id} style={{ ...s.tr, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
-                          <td style={s.td}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                          <td style={s.td}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                           <td style={s.td}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}<br/><span style={{ fontSize: 12, color: "var(--muted)" }}>{o.user?.email || o.guestInfo?.email}</span></td>
                           <td style={s.td}>{fmtDate(o.createdAt)}</td>
                           <td style={s.td}>{fmt(o.totalAmount)}</td>
@@ -1209,7 +1303,7 @@ export default function Admin() {
               const filtered = orders.filter(o => {
                 if (orderStatusFilter !== "all" && o.status !== orderStatusFilter) return false;
                 if (!q) return true;
-                const idMatch = o._id.slice(-6).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
+                const idMatch = getOrderDisplayId(o).toLowerCase().includes(q) || o._id.toLowerCase().includes(q);
                 const name = (o.user?.name || o.guestInfo?.name || "").toLowerCase();
                 const email = (o.user?.email || o.guestInfo?.email || "").toLowerCase();
                 return idMatch || name.includes(q) || email.includes(q);
@@ -1231,7 +1325,7 @@ export default function Admin() {
                       <tbody>
                         {pageItems.map(o => (
                           <tr key={o._id} style={s.tr}>
-                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span></td>
+                            <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}><span style={s.mono}>#{getOrderDisplayId(o)}</span></td>
                             <td style={{ ...s.td, cursor: "pointer" }} onClick={() => setOrderDetail(o)}>
                               <div style={{ fontSize: 13 }}>{o.user?.name || o.guestInfo?.name || "—"}{o.isGuest && <span style={{ fontSize: 10, marginLeft: 6, padding: "1px 6px", borderRadius: 4, background: "var(--muted-bg, #eee)", color: "var(--muted)" }}>{t("guestBadge")}</span>}</div>
                               <div style={{ fontSize: 11, color: "var(--muted)" }}>{o.address?.city}</div>
@@ -1566,6 +1660,62 @@ export default function Admin() {
                       ))}
                     {customers.length === 0 && (
                       <tr><td colSpan={6} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("noCustomersYet")}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "passwordRequests" && (
+          <div>
+            <h2 style={s.pageTitle}>{t("passwordRequestsTitle")}</h2>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>{t("passwordRequestsDesc")}</p>
+            {passwordRequestsLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            {!passwordRequestsLoading && (
+              <div style={s.tableWrap}>
+                <table style={s.table}>
+                  <thead>
+                    <tr>
+                      {[t("colCustomer"), t("colContact"), t("passwordRequestColMessage"), t("colDate"), t("colActions")].map(h => (
+                        <th key={h} style={s.th}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {passwordRequests.map(r => (
+                      <tr key={r._id} style={s.tr}>
+                        <td style={s.td}>{r.user?.name || "—"}</td>
+                        <td style={s.td}>
+                          <div style={{ fontSize: 13 }}>{r.user?.email}</div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.user?.username}</div>
+                        </td>
+                        <td style={{ ...s.td, maxWidth: 280 }}>
+                          {r.message
+                            ? <span style={{ fontSize: 12.5 }}>{r.message}</span>
+                            : <span style={{ fontSize: 12.5, color: "var(--muted)", fontStyle: "italic" }}>{t("passwordRequestNoMessage")}</span>}
+                        </td>
+                        <td style={s.td}><span style={{ fontSize: 12 }}>{fmtDate(r.createdAt)}</span></td>
+                        <td style={s.td}>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button className="btn btn-gold" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => openCustomerDetailForReset(r)}>
+                              {t("resetThisCustomerPassword")}
+                            </button>
+                            <button
+                              className="btn btn-outline"
+                              style={{ padding: "6px 12px", fontSize: 12 }}
+                              disabled={dismissingRequestId === r._id}
+                              onClick={() => handleDismissRequest(r._id)}
+                            >
+                              {dismissingRequestId === r._id ? t("loading") : t("passwordRequestDismiss")}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {passwordRequests.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...s.td, textAlign: "center", color: "var(--muted)", padding: 32 }}>{t("passwordRequestsEmpty")}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -2053,7 +2203,7 @@ export default function Admin() {
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("orderHash")}{orderDetail._id.slice(-6).toUpperCase()}</h3>
+            <h3 style={s.modalTitle}>{t("orderHash")}{getOrderDisplayId(orderDetail)}</h3>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <StatusBadge status={orderDetail.status} />
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
@@ -2125,7 +2275,7 @@ export default function Admin() {
                 <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
                   {customerDetail.orders.map(o => (
                     <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
-                      <span style={s.mono}>#{o._id.slice(-6).toUpperCase()}</span>
+                      <span style={s.mono}>#{getOrderDisplayId(o)}</span>
                       <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
                       <span>{fmt(o.totalAmount)}</span>
                       <StatusBadge status={o.status} />
@@ -2136,39 +2286,40 @@ export default function Admin() {
                   )}
                 </div>
 
-                <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
-                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                  {t("resetPasswordHint")}
-                </p>
-                {resetPwUserId !== customerDetail.user._id ? (
-                  <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
-                    {t("resetThisCustomerPassword")}
-                  </button>
-                ) : (
-                  <div>
-                    {resetPwMsg && (
-                      <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
-                        {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                {resetPwFromRequest && (
+                  <>
+                    <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
+                    {resetPwUserId !== customerDetail.user._id ? (
+                      <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                        {t("resetThisCustomerPassword")}
+                      </button>
+                    ) : (
+                      <div>
+                        {resetPwMsg && (
+                          <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
+                            {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <input
+                            className="input"
+                            type="text"
+                            placeholder={t("newPasswordPlaceholder")}
+                            value={resetPwValue}
+                            onChange={e => setResetPwValue(e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            className="btn btn-gold"
+                            disabled={resetPwSaving || !resetPwValue}
+                            onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                          >
+                            {resetPwSaving ? t("saving") : t("confirm")}
+                          </button>
+                        </div>
                       </div>
                     )}
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <input
-                        className="input"
-                        type="text"
-                        placeholder={t("newPasswordPlaceholder")}
-                        value={resetPwValue}
-                        onChange={e => setResetPwValue(e.target.value)}
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        className="btn btn-gold"
-                        disabled={resetPwSaving || !resetPwValue}
-                        onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
-                      >
-                        {resetPwSaving ? t("saving") : t("confirm")}
-                      </button>
-                    </div>
-                  </div>
+                  </>
                 )}
               </>
             )}
@@ -2302,362 +2453,13 @@ export default function Admin() {
                 {t("stockQuantity")}
                 <input className="input" name="totalStock" type="number" min="0" value={form.totalStock} onChange={setF} placeholder="0" />
               </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+              {/* Plain div, not <label> — a <label> wrapping these thumbnails would
+                  implicitly associate with the first labelable descendant (the
+                  "remove" <button>, since buttons are labelable elements), so the
+                  browser would forward any click on a non-interactive thumbnail
+                  <img> to that button instead of the file input, silently
+                  deleting image 0 no matter which thumbnail was clicked. */}
+              <div style={{ ...s.label, gridColumn: "1 / -1" }}>
                 {t("images")}
                 {form.images.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                    {form.images.map((url, idx) => (
-                      <div key={url + idx} style={{ position: "relative" }}>
-                        <img src={url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
-                        <button
-                          type="button"
-                          onClick={() => removeProductImage(idx)}
-                          title="Remove image"
-                          style={{
-                            position: "absolute", top: -6, right: -6, width: 20, height: 20,
-                            borderRadius: "50%", border: "none", background: "var(--red)", color: "#fff",
-                            cursor: "pointer", fontSize: 12, lineHeight: 1, display: "flex",
-                            alignItems: "center", justifyContent: "center",
-                          }}
-                        >×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <input
-                  className="input"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  multiple
-                  onChange={handleProductImageSelect}
-                  disabled={imageUploading}
-                />
-                {imageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
-              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input type="checkbox" name="isFeatured" checked={form.isFeatured} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
-                {t("featuredOnHomepage")}
-              </label>
-              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input type="checkbox" name="isBestSeller" checked={form.isBestSeller} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--gold)" }} />
-                {t("bestSellingOnHomepage")}
-              </label>
-              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <input type="checkbox" name="isActive" checked={form.isActive} onChange={setF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />
-                {t("activeVisibleInStore")}
-              </label>
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-              <button className="btn btn-outline" onClick={closeModal} disabled={formSaving}>{t("cancel")}</button>
-              <button className="btn btn-gold" onClick={handleSaveProduct} disabled={formSaving || imageUploading}>
-                {formSaving ? t("saving") : modal === "add" ? t("createProduct") : t("saveChanges")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmDelete && (
-        <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteProductTitle")}</h3>
-            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
-              {t("deleteProductBody", { name: confirmDelete.name?.en })}
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)}>{t("cancel")}</button>
-              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDelete(confirmDelete._id)}>
-                {t("yesDelete")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {catModal && (
-        <div style={s.overlay} onClick={closeCatModal}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{catModal === "add" ? t("addNewCategory") : t("editCategory")}</h3>
-            {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
-            <div className="admin-form-grid" style={s.formGrid}>
-              <label style={s.label}>
-                {t("nameEnglish")}
-                <input className="input" name="nameEn" value={catForm.nameEn} onChange={setCF} placeholder="e.g. Earrings" />
-              </label>
-              <label style={s.label}>
-                {t("nameBengali")}
-                <input className="input" name="nameBn" value={catForm.nameBn} onChange={setCF} placeholder="বাংলা নাম" />
-              </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
-                {t("slug")}
-                <input className="input" name="slug" value={catForm.slug} onChange={setCF} placeholder="e.g. earrings" />
-              </label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
-                {t("image")}
-                {catForm.image && (
-                  <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                    <img src={catForm.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      style={{ fontSize: 12, padding: "5px 10px" }}
-                      onClick={() => {
-                        if (catForm.image.startsWith("/uploads/")) {
-                          setPendingDeleteCatImages(prev => [...prev, catForm.image]);
-                        }
-                        setCatForm(f => ({ ...f, image: "" }));
-                      }}
-                    >
-                      {t("removeImage")}
-                    </button>
-                  </div>
-                )}
-                <input
-                  className="input"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleCategoryImageSelect}
-                  disabled={catImageUploading}
-                />
-                {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
-              </label>
-              {catModal === "add" && (
-                <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
-                  <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
-                  {t("fixedCategoryCheckbox")}
-                </label>
-              )}
-              {catModal === "edit" && catForm.isFixed && (
-                <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 6 }}>
-                  <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t("fixedCategoryNote")}</span>
-                </p>
-              )}
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-              <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>{t("cancel")}</button>
-              <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving || catImageUploading}>
-                {catFormSaving ? t("saving") : catModal === "add" ? t("createCategory") : t("saveChanges")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {catConfirmDelete && (
-        <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCategoryTitle")}</h3>
-            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
-              {t("deleteCategoryBody", { name: catConfirmDelete.name?.en })}
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn btn-outline" onClick={() => setCatConfirmDelete(null)}>{t("cancel")}</button>
-              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCategory(catConfirmDelete)}>
-                {t("yesDelete")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {couponModal && (
-        <div style={s.overlay} onClick={closeCouponModal}>
-          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{couponModal === "add" ? t("createCouponModalTitle") : t("editCouponModalTitle")}</h3>
-            {couponFormErr && <div style={s.formErr}>{couponFormErr}</div>}
-            <div className="admin-form-grid" style={s.formGrid}>
-              <label style={s.label}>{t("couponCodeLabel")}<input className="input" name="code" value={couponForm.code} onChange={setCouponF} placeholder={t("couponCodePlaceholder")} style={{ textTransform: "uppercase" }} /></label>
-              <label style={s.label}>{t("couponTitleLabel")}<input className="input" name="title" value={couponForm.title} onChange={setCouponF} placeholder={t("couponTitlePlaceholder")} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("couponDescriptionLabel")}<textarea className="input" name="description" value={couponForm.description} onChange={setCouponF} rows={2} placeholder={t("couponDescriptionPlaceholder")} style={{ resize: "vertical" }} /></label>
-              <label style={s.label}>{t("discountTypeLabel")}<select className="input" name="discountType" value={couponForm.discountType} onChange={setCouponF}><option value="percentage">{t("percentageOption")}</option><option value="fixed">{t("fixedAmountOption")}</option></select></label>
-              <label style={s.label}>{t("discountValueLabel")}<input className="input" name="discountValue" type="number" min="0" value={couponForm.discountValue} onChange={setCouponF} placeholder={couponForm.discountType === "percentage" ? t("discountValuePercentPlaceholder") : t("discountValueFixedPlaceholder")} /></label>
-              <label style={s.label}>{t("minimumPurchaseLabel")}<input className="input" name="minimumPurchase" type="number" min="0" value={couponForm.minimumPurchase} onChange={setCouponF} placeholder="0" /></label>
-              <label style={s.label}>{t("maximumDiscountLabel")}<input className="input" name="maximumDiscount" type="number" min="0" value={couponForm.maximumDiscount} onChange={setCouponF} placeholder={t("noCapPlaceholder")} /></label>
-              <label style={s.label}>{t("usageLimitLabel")}<input className="input" name="usageLimit" type="number" min="0" value={couponForm.usageLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
-              <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
-              <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
-              <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
-              <button className="btn btn-outline" onClick={closeCouponModal} disabled={couponFormSaving}>{t("cancel")}</button>
-              <button className="btn btn-gold" onClick={handleSaveCoupon} disabled={couponFormSaving}>{couponFormSaving ? t("saving") : couponModal === "add" ? t("createCoupon") : t("saveChanges")}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {couponConfirmDelete && (
-        <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCouponTitle")}</h3>
-            <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>{t("deleteCouponBody", { code: couponConfirmDelete.code })}</p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button className="btn btn-outline" onClick={() => setCouponConfirmDelete(null)}>{t("cancel")}</button>
-              <button className="btn" style={{ background: "var(--red)", borderColor: "var(--red)" }} onClick={() => handleDeleteCoupon(couponConfirmDelete._id)}>{t("yesDelete")}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {couponStatsTarget && (
-        <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("couponUsageTitle", { code: couponStatsTarget.code })}</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedCount}</div><div style={s.statLabel}>{t("totalUses")}</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usageLimit != null ? couponStatsTarget.usageLimit : "∞"}</div><div style={s.statLabel}>{t("usageLimitLabel")}</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.perUserLimit != null ? couponStatsTarget.perUserLimit : "∞"}</div><div style={s.statLabel}>{t("perUserLimitLabel")}</div></div>
-              <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedBy?.length || 0}</div><div style={s.statLabel}>{t("uniqueCustomers")}</div></div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}><button className="btn btn-outline" onClick={() => setCouponStatsTarget(null)}>{t("close")}</button></div>
-          </div>
-        </div>
-      )}
-      {replyTarget && (
-        <div style={s.overlay} onClick={closeReplyModal}>
-          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("replyToTitle", { name: replyTarget.name })}</h3>
-            <div style={{ background: "var(--cream-dark)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--muted)" }}>
-              {replyTarget.message}
-            </div>
-            {replyTarget.status === "replied" && replyTarget.reply && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={s.modalSubTitle}>{t("previousReply")}</div>
-                <div style={{ fontSize: 13, color: "var(--charcoal)", whiteSpace: "pre-wrap" }}>{replyTarget.reply}</div>
-              </div>
-            )}
-            <label style={s.label}>
-              {t("yourReply")}
-              <textarea
-                value={replyText}
-                onChange={e => setReplyText(e.target.value)}
-                rows={5}
-                placeholder={t("replyPlaceholder")}
-                style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
-              />
-            </label>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
-              <button className="btn btn-outline" onClick={closeReplyModal}>{t("cancel")}</button>
-              <button className="btn" disabled={!replyText.trim() || replySending} onClick={handleSendReply}>
-                {replySending ? t("sending") : t("sendReply")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {bkashDetail && (
-        <div style={s.overlay} onClick={closeBkashDetail}>
-          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
-
-            <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
-              {t("orderReference")}: <span style={s.mono}>#{(bkashDetail._id || "").toString().slice(-6).toUpperCase()}</span>
-              {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-              <div>
-                <div style={s.modalSubTitle}>{t("colCustomer")}</div>
-                <div style={{ fontSize: 13 }}>{bkashDetail.user?.name || bkashDetail.guestInfo?.name || "—"}</div>
-                <div style={{ fontSize: 12, color: "var(--muted)" }}>{bkashDetail.user?.email || bkashDetail.guestInfo?.email || ""}</div>
-              </div>
-              <div>
-                <div style={s.modalSubTitle}>{t("bkashAmount")}</div>
-                <div style={{ fontSize: 13 }}>{fmt(bkashDetail.payment?.amount || bkashDetail.totalAmount || 0)}</div>
-              </div>
-              <div>
-                <div style={s.modalSubTitle}>{t("bkashColSenderNumber")}</div>
-                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.senderNumber || "—"}</div>
-              </div>
-              <div>
-                <div style={s.modalSubTitle}>{t("bkashColTrxId")}</div>
-                <div style={{ ...s.mono, fontSize: 14 }}>{bkashDetail.payment?.bkash?.trxId || "—"}</div>
-              </div>
-            </div>
-
-            {bkashDetail.payment?.bkash?.screenshot && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={s.modalSubTitle}>{t("attachedPhotos")}</div>
-                <a href={bkashDetail.payment.bkash.screenshot} target="_blank" rel="noreferrer">
-                  <img
-                    src={bkashDetail.payment.bkash.screenshot}
-                    alt=""
-                    style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, border: "1px solid var(--border)" }}
-                  />
-                </a>
-              </div>
-            )}
-
-            {bkashDetail.payment?.bkash?.verificationStatus === "pending_verification" ? (
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
-                {bkashActErr && <div style={s.formErr}>{bkashActErr}</div>}
-                <label style={s.label}>
-                  {t("bkashRejectionReasonLabel")}
-                  <textarea
-                    value={bkashRejectReason}
-                    onChange={e => setBkashRejectReason(e.target.value)}
-                    rows={2}
-                    placeholder={t("bkashRejectionReasonPlaceholder")}
-                    style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
-                  />
-                </label>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
-                  <button className="btn btn-outline" onClick={closeBkashDetail}>{t("cancel")}</button>
-                  <button
-                    className="btn"
-                    style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
-                    disabled={bkashActing}
-                    onClick={() => handleBkashDecision(false)}
-                  >
-                    {t("bkashReject")}
-                  </button>
-                  <button className="btn" disabled={bkashActing} onClick={() => handleBkashDecision(true)}>
-                    {bkashActing ? t("bkashSaving") : t("bkashApprove")}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const s = {
-  center:       { display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", color: "var(--muted)" },
-  pageTitle:    { fontFamily: "var(--font-display)", fontSize: 28, fontStyle: "italic", color: "var(--charcoal)", marginBottom: 24 },
-  sectionTitle: { fontFamily: "var(--font-display)", fontSize: 20, color: "var(--charcoal)", marginBottom: 16 },
-  err:          { background: "#FEE2E2", color: "var(--red)", padding: "10px 14px", borderRadius: 6, marginBottom: 16, fontSize: 13 },
-  statGrid:     { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 },
-  statCard:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
-  statIcon:     { fontSize: 26, marginBottom: 8 },
-  statValue:    { fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--charcoal)", marginBottom: 2 },
-  statLabel:    { fontSize: 12, color: "var(--muted)", letterSpacing: "0.05em", textTransform: "uppercase" },
-  tableWrap:    { overflowX: "auto", background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, boxShadow: "var(--shadow-sm)" },
-  table:        { width: "100%", borderCollapse: "collapse", fontSize: 13 },
-  th:           { padding: "12px 16px", background: "var(--cream-dark)", color: "var(--muted)", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", textAlign: "left", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap" },
-  td:           { padding: "12px 16px", borderBottom: "1px solid var(--border-light)", verticalAlign: "middle" },
-  tr:           { transition: "background 0.12s" },
-  mono:         { fontFamily: "monospace", fontWeight: 600, fontSize: 12, color: "var(--maroon)" },
-  select:       { padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-body)", background: "var(--cream)", color: "var(--ink)", cursor: "pointer" },
-  editBtn:      { padding: "5px 12px", background: "var(--maroon)", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, cursor: "pointer", marginRight: 6, fontFamily: "var(--font-body)" },
-  delBtn:       { padding: "5px 12px", background: "transparent", color: "var(--red)", border: "1px solid var(--red)", borderRadius: 4, fontSize: 12, cursor: "pointer", fontFamily: "var(--font-body)" },
-  overlay:      { position: "fixed", inset: 0, background: "rgba(28,10,15,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  modalBox:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "32px 28px", maxWidth: 580, width: "100%", boxShadow: "var(--shadow-lg)", maxHeight: "90vh", overflowY: "auto" },
-  modalTitle:   { fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", marginBottom: 20, color: "var(--charcoal)" },
-  modalSubTitle:{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 },
-  chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
-  formGrid:     { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" },
-  label:        { display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5, color: "var(--muted)", marginBottom: 14, fontWeight: 500 },
-  formErr:      { background: "#FEE2E2", color: "var(--red)", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 },
-};
+                  <div style={{ display: "flex",

@@ -33,11 +33,15 @@ export const deleteAccount = (password) => client.delete("/auth/me", { data: { p
 // --- Profile / settings ---
 export const updateProfile = (data) => client.patch("/auth/me", data);
 export const updateAddress = (data) => client.put("/auth/me/address", data);
+export const changePassword = (currentPassword, newPassword) =>
+  client.post("/auth/me/change-password", { currentPassword, newPassword });
 
 // --- Password reset (via security question — no email service) ---
 export const getSecurityQuestion = (identifier) => client.post("/auth/forgot-password/question", { identifier });
 export const resetPasswordWithAnswer = (identifier, answer, password) =>
   client.post("/auth/forgot-password/reset", { identifier, answer, password });
+export const requestAdminPasswordReset = (identifier, message) =>
+  client.post("/auth/forgot-password/request-admin-reset", { identifier, message });
 
 // --- Two-factor management (requires being logged in) ---
 export const setupTwoFactor = () => client.post("/auth/2fa/setup");
