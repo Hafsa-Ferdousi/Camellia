@@ -20,6 +20,8 @@
   "inStock": "In stock",
   "onlyLeft": "Only {{count}} left",
   "outOfStock": "Out of stock",
+  "offerPercentOff": "{{value}}% OFF",
+  "offerFixedOff": "৳{{value}} OFF",
   "addToCart": "Add to Cart",
   "added": "Added!",
   "noProductsYet": "No products to show right now — please check back soon.",

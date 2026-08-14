@@ -987,6 +987,7 @@ export default function Admin() {
   const openEditCoupon = (c) => { setCouponForm({ code: c.code || "", title: c.title || "", description: c.description || "", discountType: c.discountType || "percentage", discountValue: c.discountValue ?? "", minimumPurchase: c.minimumPurchase ?? "", maximumDiscount: c.maximumDiscount ?? "", usageLimit: c.usageLimit ?? "", perUserLimit: c.perUserLimit ?? "", startDate: toDateInput(c.startDate), endDate: toDateInput(c.endDate), applicableProducts: (c.applicableProducts || []).map(p => p._id || p), applicableCategories: (c.applicableCategories || []).map(cat => cat._id || cat), excludedProducts: (c.excludedProducts || []).map(p => p._id || p), isActive: c.isActive !== false }); setCouponEditTarget(c); setCouponFormErr(""); setCouponModal("edit"); };
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
   const setCouponF = (e) => { const { name, value, type, checked } = e.target; if (type === "select-multiple") { const values = Array.from(e.target.selectedOptions).map(o => o.value); setCouponForm(f => ({ ...f, [name]: values })); return; } setCouponForm(f => ({ ...f, [name]: type === "checkbox" ? checked : value })); };
+  const toggleCouponListField = (field, value) => setCouponForm(f => ({ ...f, [field]: f[field].includes(value) ? f[field].filter(v => v !== value) : [...f[field], value] }));
   const buildCouponPayload = () => ({ code: couponForm.code.trim().toUpperCase(), title: couponForm.title.trim(), description: couponForm.description.trim(), discountType: couponForm.discountType, discountValue: Number(couponForm.discountValue), minimumPurchase: couponForm.minimumPurchase === "" ? 0 : Number(couponForm.minimumPurchase), maximumDiscount: couponForm.maximumDiscount === "" ? null : Number(couponForm.maximumDiscount), usageLimit: couponForm.usageLimit === "" ? null : Number(couponForm.usageLimit), perUserLimit: couponForm.perUserLimit === "" ? null : Number(couponForm.perUserLimit), startDate: couponForm.startDate, endDate: couponForm.endDate, applicableProducts: couponForm.applicableProducts, applicableCategories: couponForm.applicableCategories, excludedProducts: couponForm.excludedProducts, isActive: couponForm.isActive });
 
   const handleSaveCoupon = async () => {
@@ -1138,17 +1139,21 @@ export default function Admin() {
           <X size={18} />
         </button>
         {[
+          // Ordered by admin priority: dashboard first, then the order-
+          // fulfillment pipeline (orders → refunds → payment verification),
+          // then catalog/merchandising, then customer relations, then
+          // lower-frequency admin/config tasks last.
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
           { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
           { id: "bkash",      label: t("navBkash"),      icon: Wallet },
-          { id: "customers",  label: t("navCustomers"),  icon: Users },
-          { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
           { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
+          { id: "customers",  label: t("navCustomers"),  icon: Users },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
           { id: "chats",      label: t("navChats"),       icon: MessageCircle },
+          { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
           { id: "aiAssistant", label: t("navAiAssistant"), icon: Bot, onClick: () => setAiAssistantOpen(true) },
           { id: "settings",   label: t("navSettings"),   icon: Settings },
         ].map(navItem => (
@@ -2644,9 +2649,36 @@ export default function Admin() {
               <label style={s.label}>{t("perUserLimitLabel")}<input className="input" name="perUserLimit" type="number" min="0" value={couponForm.perUserLimit} onChange={setCouponF} placeholder={t("unlimitedPlaceholder")} /></label>
               <label style={s.label}>{t("startDateLabel")}<input className="input" name="startDate" type="date" value={couponForm.startDate} onChange={setCouponF} /></label>
               <label style={s.label}>{t("endDateLabel")}<input className="input" name="endDate" type="date" value={couponForm.endDate} onChange={setCouponF} /></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableCategoriesLabel")}<select className="input" name="applicableCategories" multiple value={couponForm.applicableCategories} onChange={setCouponF} style={{ height: 84 }}>{categories.map(c => <option key={c._id} value={c._id}>{c.name?.en || c.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("applicableProductsLabel")}<select className="input" name="applicableProducts" multiple value={couponForm.applicableProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
-              <label style={{ ...s.label, gridColumn: "1 / -1" }}>{t("excludedProductsLabel")}<select className="input" name="excludedProducts" multiple value={couponForm.excludedProducts} onChange={setCouponF} style={{ height: 84 }}>{products.map(p => <option key={p._id} value={p._id}>{p.name?.en || p.name}</option>)}</select></label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableCategoriesLabel")}
+                <span style={s.fieldHint}>{t("applicableCategoriesHint")}</span>
+                <CheckboxMultiSelect
+                  options={categories.map(c => ({ value: c._id, label: c.name?.en || c.name }))}
+                  selected={couponForm.applicableCategories}
+                  onToggle={(v) => toggleCouponListField("applicableCategories", v)}
+                  placeholder={t("searchCategoriesPlaceholder")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("applicableProductsLabel")}
+                <span style={s.fieldHint}>{t("applicableProductsHint")}</span>
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.applicableProducts}
+                  onToggle={(v) => toggleCouponListField("applicableProducts", v)}
+                  placeholder={t("searchProductsPlaceholder")}
+                />
+              </label>
+              <label style={{ ...s.label, gridColumn: "1 / -1" }}>
+                {t("excludedProductsLabel")}
+                <span style={s.fieldHint}>{t("excludedProductsHint")}</span>
+                <CheckboxMultiSelect
+                  options={products.map(p => ({ value: p._id, label: p.name?.en || p.name }))}
+                  selected={couponForm.excludedProducts}
+                  onToggle={(v) => toggleCouponListField("excludedProducts", v)}
+                  placeholder={t("searchProductsPlaceholder")}
+                />
+              </label>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
@@ -2872,5 +2904,6 @@ const s = {
   chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
   formGrid:     { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" },
   label:        { display: "flex", flexDirection: "column", gap: 6, fontSize: 12.5, color: "var(--muted)", marginBottom: 14, fontWeight: 500 },
+  fieldHint:    { fontSize: 11, color: "var(--faint)", fontWeight: 400, marginTop: -4 },
   formErr:      { background: "#FEE2E2", color: "var(--red)", padding: "8px 12px", borderRadius: 6, marginBottom: 14, fontSize: 13 },
 };

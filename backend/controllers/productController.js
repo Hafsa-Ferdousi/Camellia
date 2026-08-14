@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import { sendError } from "../utils/errorResponse.js";
+import { tagWithOffers, tagOneWithOffer } from "../utils/productOffers.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -83,8 +84,8 @@ export const getProducts = async (req, res) => {
       else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
       else q = q.sort({ createdAt: -1 });
       q = q.limit(limitNum);
-      const products = await q;
-      return res.json(products);
+      const products = await q.lean();
+      return res.json(await tagWithOffers(products));
     }
 
     const pageNum = Number(page);
@@ -130,8 +131,9 @@ export const getProducts = async (req, res) => {
       else if (sort === "price-desc") q = q.sort({ basePrice: -1 });
       else q = q.sort({ createdAt: -1 });
       q = q.skip((currentPage - 1) * size).limit(size);
-      products = await q;
+      products = await q.lean();
     }
+    products = await tagWithOffers(products);
 
     res.json({
       products,
@@ -161,9 +163,10 @@ export const getBestSellers = async (req, res) => {
     const bestSellers = await Product.find({ isActive: true, isBestSeller: true, isFeatured: false })
       .populate("category", "name slug")
       .sort({ updatedAt: -1 })
-      .limit(limitNum);
+      .limit(limitNum)
+      .lean();
 
-    res.json(bestSellers);
+    res.json(await tagWithOffers(bestSellers));
   } catch (error) {
     sendError(res, error);
   }
@@ -188,9 +191,9 @@ export const getProductById = async (req, res) => {
     if (!isValidObjectId(req.params.id)) {
       return res.status(404).json({ message: "Product not found" });
     }
-    const product = await Product.findById(req.params.id).populate("category", "name slug");
+    const product = await Product.findById(req.params.id).populate("category", "name slug").lean();
     if (!product || !product.isActive) return res.status(404).json({ message: "Product not found" });
-    res.json(product);
+    res.json(await tagOneWithOffer(product));
   } catch (error) {
     sendError(res, error);
   }
@@ -274,7 +277,7 @@ export const getRecommendations = async (req, res) => {
     // ✅ NO FALLBACK! If there are only 2 products, we return only 2.
     // We do NOT add random products from other categories.
 
-    res.json(recommendations);
+    res.json(await tagWithOffers(recommendations));
   } catch (error) {
     sendError(res, error);
   }

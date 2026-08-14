@@ -192,10 +192,10 @@ export default function Home() {
         .cta-banner > * { position: relative; }
 
         /* ── Active coupons banner ──
-           Now shown as a compact pill in the navbar on desktop (next to the
-           logo/links), so this section is mobile-only — a light band, tinted
-           to match the page background instead of a loud saturated orange,
-           directly below the hero. */
+           A light band, tinted to match the page background instead of a
+           loud saturated orange, directly below the hero on every screen
+           size — replaces the old floating card that used to sit inside
+           the hero on desktop. */
         .coupon-strip {
           position: relative; overflow: hidden;
           background: linear-gradient(120deg, var(--cream-dark) 0%, var(--gold-pale) 50%, var(--cream-dark) 100%);
@@ -259,26 +259,13 @@ export default function Home() {
           border: 1px solid rgba(244,196,48,0.55);
           border-radius: 20px; padding: 6px 12px; margin-top: 6px;
         }
-
-        /* Desktop already shows the live coupon as a pill in the navbar
-           (next to the logo/links) — no need to repeat it as a whole extra
-           section further down the page. */
-        @media (min-width: 1024px) {
-          .coupon-strip { display: none; }
-        }
       `}</style>
 
       {/* ── Hero ── */}
-      <Hero
-        onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)}
-        coupons={coupons}
-        upcomingCoupons={upcomingCoupons}
-        copiedCode={copiedCode}
-        onCopyCoupon={copyCoupon}
-        language={language}
-      />
+      <Hero onSearch={(q) => navigate(`/products?search=${encodeURIComponent(q)}`)} />
 
-      {/* ── Active + upcoming coupons (shown as soon as admin activates one) ── */}
+      {/* ── Active + upcoming coupons (shown as soon as admin activates one) ──
+          Sits directly below the hero on both desktop and mobile. */}
       {(coupons.length > 0 || upcomingCoupons.length > 0) && (
         <section className="coupon-strip">
           <div className="container coupon-strip-inner" style={{ padding: "0 24px" }}>

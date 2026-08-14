@@ -20,6 +20,8 @@
   "inStock": "স্টকে আছে",
   "onlyLeft": "মাত্র {{count}}টি বাকি",
   "outOfStock": "স্টক শেষ",
+  "offerPercentOff": "{{value}}% ছাড়",
+  "offerFixedOff": "৳{{value}} ছাড়",
   "addToCart": "কার্টে যোগ করুন",
   "added": "যোগ হয়েছে!",
   "noProductsYet": "এই মুহূর্তে কোনো পণ্য নেই — অনুগ্রহ করে শীঘ্রই আবার দেখুন।",

@@ -15,6 +15,12 @@ export default function ProductCard({ product }) {
   const image = product.images?.[0] || null;
   const outOfStock = (product.totalStock ?? 0) <= 0;
   const isLowStock = !outOfStock && (product.totalStock ?? 0) <= 5;
+  const offer = product.offer;
+  const offerLabel = offer
+    ? offer.discountType === "percentage"
+      ? t("offerPercentOff", { value: offer.discountValue, defaultValue: `${offer.discountValue}% OFF` })
+      : t("offerFixedOff", { value: offer.discountValue, defaultValue: `৳${offer.discountValue} OFF` })
+    : null;
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
@@ -42,6 +48,9 @@ export default function ProductCard({ product }) {
               />
             : <div className="product-img-placeholder"><Gem size={26} /></div>
           }
+          {offerLabel && (
+            <span className="product-offer-badge">{offerLabel}</span>
+          )}
           {isLowStock && (
             <span className="product-stock-badge" style={{ background: "rgba(232,163,23,0.15)", color: "var(--gold-text)", fontSize: "10.5px", fontWeight: 600, padding: "3px 9px", borderRadius: 20, position: "absolute", top: 10, right: 10, letterSpacing: "0.04em", textTransform: "uppercase" }}>
               {t("onlyLeft", { count: product.totalStock })}

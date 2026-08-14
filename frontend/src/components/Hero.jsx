@@ -1,9 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Tag, Copy, Check, Clock } from "lucide-react";
-import { formatPrice } from "../utils/formatPrice";
-
-const fmtDate = (d) => new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
 
 // Ticks down to `target` and renders as "Starts in Xd Yh" / "Xh Ym" / "Xm",
 // re-rendering on a 30s interval — fine-grained enough for an "hours
@@ -29,7 +25,7 @@ export function CouponCountdown({ target, t }) {
   return <span>{t("startsInMinutes", { minutes, defaultValue: `Starts in ${minutes}m` })}</span>;
 }
 
-export default function Hero({ onSearch, coupons, upcomingCoupons, copiedCode, onCopyCoupon, language }) {
+export default function Hero({ onSearch }) {
   const { t } = useTranslation(["home", "common"]);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -39,95 +35,8 @@ export default function Hero({ onSearch, coupons, upcomingCoupons, copiedCode, o
 
   const trustBadges = ["trustHandcrafted", "trustDelivery", "trustBridal", "trustBrides"];
 
-  const couponLabel = (c) =>
-    c.discountType === "percentage"
-      ? t("couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
-      : t("couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` });
-
-  const activeCoupons = coupons || [];
-  const futureCoupons = upcomingCoupons || [];
-  // More live coupons than fit comfortably at "hero" size — scale the
-  // whole block down in tiers instead of letting it overflow or forcing
-  // a scrollbar, so it still reads as one tidy block under the navbar.
-  const totalCouponCount = activeCoupons.length + futureCoupons.length;
-  const couponSizeTier =
-    totalCouponCount <= 1 ? "" :
-    totalCouponCount <= 2 ? "hero-coupon-card--compact" :
-    totalCouponCount <= 4 ? "hero-coupon-card--dense" :
-    "hero-coupon-card--tight";
-
   return (
     <section className="hero">
-      {/* Live + upcoming coupons — a clean, borderless accent tucked under
-          the navbar in the hero's otherwise-empty left column. No
-          background fill; a thin gold rule + light text keeps it reading
-          as part of the hero. Every currently-active coupon is listed here
-          (not just the first), plus any admin has scheduled to start soon
-          gets a live "starts in..." countdown so customers know to come
-          back. Desktop only; mobile keeps the coupon band below the hero
-          (see Home.jsx). Text scales down in tiers as more coupons stack
-          up (see couponSizeTier) so several offers still fit without
-          overflowing the hero. */}
-      {(activeCoupons.length > 0 || futureCoupons.length > 0) && (
-        <div className={`hero-coupon-card ${couponSizeTier}`}>
-          {activeCoupons.length > 0 && (
-            <>
-              <span className="hero-coupon-card-eyebrow">
-                <Tag size={12} /> {t("offersEyebrow", { defaultValue: "Limited Time" })}
-              </span>
-              {activeCoupons.map((coupon, i) => (
-                <div key={coupon._id} className={`hero-coupon-entry${i > 0 ? " hero-coupon-entry--divided" : ""}`}>
-                  <div className="hero-coupon-card-label">{couponLabel(coupon)}</div>
-                  {coupon.minimumPurchase > 0 && (
-                    <div className="hero-coupon-card-min">
-                      {t("couponMinPurchase", { value: `৳ ${formatPrice(coupon.minimumPurchase, language, 0)}`, defaultValue: `Minimum ৳ ${formatPrice(coupon.minimumPurchase, language, 0)}` })}
-                    </div>
-                  )}
-                  {coupon.title && <div className="hero-coupon-card-desc">{coupon.title}</div>}
-                  <button
-                    type="button"
-                    className="hero-coupon-card-code"
-                    onClick={() => onCopyCoupon?.(coupon.code)}
-                    title={t("copyCode", { defaultValue: "Copy code" })}
-                  >
-                    {coupon.code}
-                    {copiedCode === coupon.code ? <Check size={14} /> : <Copy size={14} />}
-                  </button>
-                  {coupon.startDate && coupon.endDate && (
-                    <div className="hero-coupon-card-expiry">
-                      {t("couponDateRange", {
-                        start: fmtDate(coupon.startDate),
-                        end: fmtDate(coupon.endDate),
-                        defaultValue: `${fmtDate(coupon.startDate)} – ${fmtDate(coupon.endDate)}`,
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
-
-          {futureCoupons.length > 0 && (
-            <>
-              <span
-                className={`hero-coupon-card-eyebrow hero-coupon-card-eyebrow--upcoming${activeCoupons.length > 0 ? " hero-coupon-entry--divided" : ""}`}
-              >
-                <Clock size={12} /> {t("upcomingEyebrow", { defaultValue: "Coming Soon" })}
-              </span>
-              {futureCoupons.map((coupon) => (
-                <div key={coupon._id} className="hero-coupon-entry hero-coupon-entry--upcoming">
-                  <div className="hero-coupon-card-label hero-coupon-card-label--upcoming">{couponLabel(coupon)}</div>
-                  {coupon.title && <div className="hero-coupon-card-desc">{coupon.title}</div>}
-                  <div className="hero-coupon-card-countdown">
-                    <CouponCountdown target={coupon.startDate} t={t} />
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-
       <div className="container" style={{ position: "relative" }}>
         <span className="hero-eyebrow">{t("heroEyebrow")}</span>
 
