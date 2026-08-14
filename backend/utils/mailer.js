@@ -182,6 +182,24 @@ export async function sendBkashStatusEmail(to, { invoiceNumber, approved, reject
   return sendMail({ to, subject, text });
 }
 
+// ── Return/exchange status update ───────────────────────────────────────
+// Guests have no in-app notification bell to fall back on (see
+// refundController.js's updateRefundStatus), so this is the ONLY way a
+// guest customer ever finds out their return/exchange status changed.
+export async function sendRefundStatusEmail(to, { itemName, requestType, status, adminNote }) {
+  if (!to) return { sent: false, reason: "no_recipient" };
+  const kind = requestType === "exchange" ? "exchange" : "return";
+  const subject = `Camellia ${kind === "exchange" ? "Exchange" : "Return"} Update — ${itemName || "Your item"}`;
+  const text =
+    status === "approved"
+      ? `Hi,\n\nGood news — your ${kind} request for "${itemName}" has been approved.\n\nThank you for your patience.`
+      : status === "rejected"
+      ? `Hi,\n\nWe're sorry, but your ${kind} request for "${itemName}" was not approved.${adminNote ? `\n\nReason: ${adminNote}` : ""}\n\n` +
+        `If you'd like to discuss this or submit a new request, please contact us or visit the Track Order page.`
+      : `Hi,\n\nYour ${kind} for "${itemName}" has been processed on our end.\n\nThank you for shopping with Camellia.`;
+  return sendMail({ to, subject, text });
+}
+
 export async function sendOrderAutoCancelledEmail(to, { invoiceNumber, orderId, amount }) {
   if (!to) return { sent: false, reason: "no_recipient" };
   const subject = `Camellia Order Cancelled — Invoice ${invoiceNumber || orderId}`;
@@ -232,4 +250,4 @@ export async function sendContactReplyEmail(to, { name, originalMessage, reply }
   return sendMail({ to, subject, text });
 }
 
-export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendOrderAutoCancelledEmail, sendVerificationOtpEmail, sendPasswordResetByAdminEmail, sendContactReplyEmail };
+export default { sendMail, sendOrderStatusEmail, sendPaymentConfirmedEmail, sendBkashStatusEmail, sendRefundStatusEmail, sendOrderAutoCancelledEmail, sendVerificationOtpEmail, sendPasswordResetByAdminEmail, sendContactReplyEmail };
