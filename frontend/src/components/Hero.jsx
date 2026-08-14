@@ -80,7 +80,7 @@ export default function Hero({ onSearch, coupons, upcomingCoupons, copiedCode, o
                   <div className="hero-coupon-card-label">{couponLabel(coupon)}</div>
                   {coupon.minimumPurchase > 0 && (
                     <div className="hero-coupon-card-min">
-                      {t("couponMinPurchase", { value: `৳ ${formatPrice(coupon.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(coupon.minimumPurchase, language, 0)}` })}
+                      {t("couponMinPurchase", { value: `৳ ${formatPrice(coupon.minimumPurchase, language, 0)}`, defaultValue: `Minimum ৳ ${formatPrice(coupon.minimumPurchase, language, 0)}` })}
                     </div>
                   )}
                   {coupon.title && <div className="hero-coupon-card-desc">{coupon.title}</div>}

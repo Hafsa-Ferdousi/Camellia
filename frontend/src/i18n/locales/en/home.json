@@ -35,7 +35,7 @@
   "copyCode": "Copy code",
   "couponPercentOff": "{{value}}% off",
   "couponFixedOff": "{{value}} off",
-  "couponMinPurchase": "min. {{value}}",
+  "couponMinPurchase": "Minimum {{value}}",
   "offersEyebrow": "Limited Time",
   "offersTitle": "Exclusive Offers For You",
   "couponValidTill": "Valid till {{value}}",
