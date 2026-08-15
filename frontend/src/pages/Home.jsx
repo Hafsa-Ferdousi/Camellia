@@ -53,20 +53,25 @@ export default function Home() {
   const [copiedCode,  setCopiedCode]  = useState("");
 
   useEffect(() => {
-    getCategories().then(r => setCategories(r.data)).catch(() => setCatError(true));
+    getCategories().then(r => Array.isArray(r.data) ? setCategories(r.data) : setCatError(true)).catch(() => setCatError(true));
   }, []);
 
   // Coupons the admin has activated are otherwise invisible to customers
   // (previously the only place a code appeared was the admin panel itself).
   // Surface any currently-usable ones here so shoppers actually see them.
+  //
+  // Array.isArray guards every list below against a malformed 200 (e.g. a
+  // transient gateway/redeploy response that isn't real JSON) slipping past
+  // .catch() and reaching .map() downstream — that's what crashed the whole
+  // page in production instead of just leaving a section empty.
   useEffect(() => {
-    getActiveCoupons().then(r => setCoupons(r.data)).catch(() => setCoupons([]));
+    getActiveCoupons().then(r => setCoupons(Array.isArray(r.data) ? r.data : [])).catch(() => setCoupons([]));
   }, []);
 
   // Coupons that are turned on but haven't started yet — teased on the
   // homepage with a live countdown so customers know to come back.
   useEffect(() => {
-    getUpcomingCoupons().then(r => setUpcomingCoupons(r.data)).catch(() => setUpcomingCoupons([]));
+    getUpcomingCoupons().then(r => setUpcomingCoupons(Array.isArray(r.data) ? r.data : [])).catch(() => setUpcomingCoupons([]));
   }, []);
 
   const copyCoupon = (code) => {
@@ -104,7 +109,7 @@ export default function Home() {
     // of the isFeatured flag admins can set. The backend already supports a
     // featured=true filter (productController.js) — use it.
     getProducts({ featured: true, limit: 4 })
-      .then(r => setFeatured(r.data.slice(0, 4)))
+      .then(r => setFeatured(Array.isArray(r.data) ? r.data.slice(0, 4) : []))
       .catch(() => setFeatured([]))
       .finally(() => setLoadingF(false));
   }, []);
@@ -115,7 +120,7 @@ export default function Home() {
     // just the newest products, so this reflects what customers are really
     // buying.
     getBestSellers(4)
-      .then(r => setBestSellers(r.data))
+      .then(r => setBestSellers(Array.isArray(r.data) ? r.data : []))
       .catch(() => setBestSellers([]))
       .finally(() => setLoadingBS(false));
   }, []);
