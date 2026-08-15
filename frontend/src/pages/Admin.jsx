@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -996,6 +996,25 @@ export default function Admin() {
   const closeCouponModal = () => { setCouponModal(null); setCouponEditTarget(null); };
   const setCouponF = (e) => { const { name, value, type, checked } = e.target; if (type === "select-multiple") { const values = Array.from(e.target.selectedOptions).map(o => o.value); setCouponForm(f => ({ ...f, [name]: values })); return; } setCouponForm(f => ({ ...f, [name]: type === "checkbox" ? checked : value })); };
   const toggleCouponListField = (field, value) => setCouponForm(f => ({ ...f, [field]: f[field].includes(value) ? f[field].filter(v => v !== value) : [...f[field], value] }));
+
+  // Live "which products will this coupon actually discount" preview, computed
+  // with the exact same rule the backend's coupon engine uses (excludedProducts
+  // wins; otherwise a product qualifies if no applicableProducts/applicableCategories
+  // scope is set, or it matches one of them). Lets an admin see right in the
+  // form — before saving — whether the coupon is scoped the way they intended.
+  const couponEligibleProducts = useMemo(() => {
+    const hasProductScope = couponForm.applicableProducts.length > 0;
+    const hasCategoryScope = couponForm.applicableCategories.length > 0;
+    const excluded = new Set(couponForm.excludedProducts);
+    return products.filter((p) => {
+      if (excluded.has(p._id)) return false;
+      if (!hasProductScope && !hasCategoryScope) return true;
+      const categoryId = p.category?._id || p.category;
+      const productMatch = hasProductScope && couponForm.applicableProducts.includes(p._id);
+      const categoryMatch = hasCategoryScope && categoryId && couponForm.applicableCategories.includes(categoryId);
+      return productMatch || categoryMatch;
+    });
+  }, [products, couponForm.applicableProducts, couponForm.applicableCategories, couponForm.excludedProducts]);
   const buildCouponPayload = () => ({ code: couponForm.code.trim().toUpperCase(), title: couponForm.title.trim(), description: couponForm.description.trim(), discountType: couponForm.discountType, discountValue: Number(couponForm.discountValue), minimumPurchase: couponForm.minimumPurchase === "" ? 0 : Number(couponForm.minimumPurchase), maximumDiscount: couponForm.maximumDiscount === "" ? null : Number(couponForm.maximumDiscount), usageLimit: couponForm.usageLimit === "" ? null : Number(couponForm.usageLimit), perUserLimit: couponForm.perUserLimit === "" ? null : Number(couponForm.perUserLimit), startDate: couponForm.startDate, endDate: couponForm.endDate, applicableProducts: couponForm.applicableProducts, applicableCategories: couponForm.applicableCategories, excludedProducts: couponForm.excludedProducts, isActive: couponForm.isActive });
 
   const handleSaveCoupon = async () => {
@@ -2696,6 +2715,19 @@ export default function Admin() {
                   placeholder={t("searchProductsPlaceholder")}
                 />
               </label>
+              <div style={{ gridColumn: "1 / -1", background: "#f8f5f0", border: "1px solid var(--border, #e5ddd0)", borderRadius: 8, padding: "10px 14px" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>
+                  {t("couponEligiblePreviewTitle", { count: couponEligibleProducts.length })}
+                </div>
+                {couponEligibleProducts.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "var(--red, #c0392b)" }}>{t("couponEligiblePreviewNone")}</div>
+                ) : (
+                  <div style={{ fontSize: 12, color: "var(--faint)", lineHeight: 1.6 }}>
+                    {couponEligibleProducts.slice(0, 25).map(p => p.name?.en || p.name).join(", ")}
+                    {couponEligibleProducts.length > 25 && t("couponEligiblePreviewMore", { count: couponEligibleProducts.length - 25 })}
+                  </div>
+                )}
+              </div>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>

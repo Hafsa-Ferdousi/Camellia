@@ -5,16 +5,27 @@ import Coupon from "../models/Coupon.js";
 // server-side before it ever touches an order) call into this so the two
 // can never drift out of sync.
 //
-// items (optional): [{ product: <id>, category: <id> }, ...] — the current
-// cart lines, used to enforce applicableProducts/applicableCategories/
-// excludedProducts. If omitted, product/category restrictions are skipped
-// (used by lightweight "does this code exist and work at all" checks).
+// items (optional): [{ product: <id>, category: <id>, price, quantity }, ...]
+// — the current cart lines, used to enforce applicableProducts/
+// applicableCategories/excludedProducts. If omitted, product/category
+// restrictions are skipped (used by lightweight "does this code exist and
+// work at all" checks).
+//
+// A coupon only ever discounts the lines it's actually eligible for — e.g.
+// a "SALE15" code scoped to Category A discounts only the Category A items
+// in a mixed cart; the rest of the cart is untouched. price/quantity on each
+// line let us compute that eligible subtotal; if they're omitted (older
+// caller) we fall back to discounting the full cart total, same as before.
 //
 // identity: { userId, guestEmail } — whichever the caller has, used to
 // enforce perUserLimit.
 //
 // Throws an Error with a customer-facing message on any failed rule.
-// Returns { coupon, discount, newTotal } on success.
+// Returns { coupon, discount, newTotal, appliesToAllItems, eligibleProductIds }
+// on success — appliesToAllItems is false when the discount only covered
+// some of the cart's lines; eligibleProductIds (only set when items were
+// passed) lists which product ids the discount actually applied to, so
+// callers can show an item-by-item breakdown.
 export async function findAndValidateCoupon({ code, cartTotal, items, userId, guestEmail }) {
   if (!code || !String(code).trim()) {
     throw new Error("Please enter a coupon code.");
@@ -63,6 +74,10 @@ export async function findAndValidateCoupon({ code, cartTotal, items, userId, gu
   // the current cart lines. An item is eligible unless it's explicitly
   // excluded; if applicableProducts/applicableCategories are set, at least
   // one cart line must match one of them.
+  let appliesToAllItems = true;
+  let eligibleSubtotal = total;
+  let eligibleProductIds = null;
+
   if (Array.isArray(items) && items.length > 0) {
     const hasProductScope = coupon.applicableProducts?.length > 0;
     const hasCategoryScope = coupon.applicableCategories?.length > 0;
@@ -81,24 +96,45 @@ export async function findAndValidateCoupon({ code, cartTotal, items, userId, gu
     });
 
     if (eligibleItems.length === 0) {
-      throw new Error("This coupon doesn't apply to the items in your cart.");
+      // Every item in the cart is excluded / outside this coupon's scope.
+      throw new Error("This coupon doesn't apply to any items in your cart.");
+    }
+
+    appliesToAllItems = eligibleItems.length === items.length;
+    eligibleProductIds = eligibleItems
+      .map((line) => (line.product ? String(line.product) : null))
+      .filter(Boolean);
+
+    // Discount only the eligible lines. If every line carries a price and
+    // quantity we can compute their exact subtotal; otherwise (an older
+    // caller that only sent product/category) fall back to the full cart
+    // total, same as the previous behaviour.
+    const canPriceLines = eligibleItems.every(
+      (line) => Number.isFinite(Number(line.price)) && Number.isFinite(Number(line.quantity))
+    );
+    if (!appliesToAllItems && canPriceLines) {
+      eligibleSubtotal = eligibleItems.reduce(
+        (sum, line) => sum + Number(line.price) * Number(line.quantity),
+        0
+      );
     }
   }
 
   let discount = 0;
   if (coupon.discountType === "percentage") {
-    discount = (total * coupon.discountValue) / 100;
+    discount = (eligibleSubtotal * coupon.discountValue) / 100;
     if (coupon.maximumDiscount != null) {
       discount = Math.min(discount, coupon.maximumDiscount);
     }
   } else {
     discount = coupon.discountValue;
   }
-  // Never let a coupon push the total below zero.
-  discount = Math.round(Math.min(discount, total) * 100) / 100;
+  // Never let a coupon discount more than the eligible items are worth
+  // (or, for a fully-eligible cart, more than the cart total).
+  discount = Math.round(Math.min(discount, eligibleSubtotal) * 100) / 100;
   const newTotal = Math.round((total - discount) * 100) / 100;
 
-  return { coupon, discount, newTotal };
+  return { coupon, discount, newTotal, appliesToAllItems, eligibleProductIds };
 }
 
 // Called once an order is actually placed with a coupon: bumps usedCount and

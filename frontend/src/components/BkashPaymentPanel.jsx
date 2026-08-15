@@ -123,12 +123,12 @@ export default function BkashPaymentPanel({ order, guestEmail, onUpdated }) {
   // ── Pending verification (already submitted, waiting on admin) ─
   if (status === "pending_verification" && !justSubmitted) {
     return (
-      <div style={{ ...cardStyle, background: "var(--gold-pale)", borderColor: "var(--gold)" }}>
-        <p style={{ ...titleStyle, color: "var(--gold-text)" }}>
+      <div style={{ ...cardStyle, background: "#F8F0DF", border: "none" }}>
+        <p style={{ ...titleStyle, color: "#6F1D3D" }}>
           <Clock size={19} /> {t("bkashPendingTitle")}
         </p>
-        <p style={{ fontSize: 13.5, color: "var(--gold-text)", margin: "0 0 8px", maxWidth: 440, lineHeight: 1.55 }}>{t("bkashPendingDesc")}</p>
-        <p style={{ fontSize: 12.5, color: "var(--gold-text)", opacity: 0.85, margin: 0 }}>
+        <p style={{ fontSize: 13.5, color: "#6F1D3D", margin: "0 0 8px", maxWidth: 440, lineHeight: 1.55 }}>{t("bkashPendingDesc")}</p>
+        <p style={{ fontSize: 12.5, color: "#6F1D3D", opacity: 0.85, margin: 0 }}>
           {t("bkashSubmittedDetails", { number: bkash.senderNumber, trxId: bkash.trxId })}
         </p>
       </div>
@@ -137,8 +137,8 @@ export default function BkashPaymentPanel({ order, guestEmail, onUpdated }) {
 
   if (justSubmitted) {
     return (
-      <div style={{ ...cardStyle, background: "var(--gold-pale)", borderColor: "var(--gold)" }}>
-        <p style={{ ...titleStyle, color: "var(--gold-text)" }}>
+      <div style={{ ...cardStyle, background: "#F8F0DF", border: "none" }}>
+        <p style={{ ...titleStyle, color: "var(--green)" }}>
           <Clock size={19} /> {t("bkashSubmitted")}
         </p>
         <p style={{ fontSize: 13.5, color: "var(--gold-text)", margin: 0, maxWidth: 440, lineHeight: 1.55 }}>{t("bkashPendingDesc")}</p>
