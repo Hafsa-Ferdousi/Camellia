@@ -436,6 +436,8 @@ export default function Admin() {
   const [refundsLoading, setRL]                = useState(false);
   const [refundStatusFilter, setRefundStatusFilter] = useState("pending");
   const [refundActionId, setRefundActionId]    = useState(null);
+  const [refundRejectTarget, setRefundRejectTarget] = useState(null);
+  const [refundRejectReason, setRefundRejectReason] = useState("");
 
   // ── bKash payment verification state ────────────────────────
   const [bkashSubmissions, setBkashSubmissions] = useState([]);
@@ -589,12 +591,7 @@ export default function Admin() {
     finally { setRL(false); }
   }, [refundStatusFilter]);
 
-  const handleRefundStatusChange = async (refund, status) => {
-    let adminNote = "";
-    if (status === "rejected") {
-      adminNote = window.prompt(t("refundRejectPrompt")) || "";
-      if (adminNote === "" && !window.confirm(t("refundRejectConfirmNoReason"))) return;
-    }
+  const handleRefundStatusChange = async (refund, status, adminNote = "") => {
     setRefundActionId(refund._id);
     try {
       const r = await updateRefundStatusApi(refund._id, status, adminNote);
@@ -605,6 +602,17 @@ export default function Admin() {
       );
     } catch { /* ignore */ }
     finally { setRefundActionId(null); }
+  };
+
+  const openRefundReject = (refund) => {
+    setRefundRejectReason("");
+    setRefundRejectTarget(refund);
+  };
+  const closeRefundReject = () => setRefundRejectTarget(null);
+  const confirmRefundReject = async () => {
+    const target = refundRejectTarget;
+    setRefundRejectTarget(null);
+    await handleRefundStatusChange(target, "rejected", refundRejectReason.trim());
   };
 
   // ── bKash loader / handlers ─────────────────────────────────
@@ -1139,18 +1147,18 @@ export default function Admin() {
           <X size={18} />
         </button>
         {[
-          // Ordered by admin priority: dashboard first, then the order-
-          // fulfillment pipeline (orders → refunds → payment verification),
-          // then catalog/merchandising, then customer relations, then
-          // lower-frequency admin/config tasks last.
+          // Dashboard first, then Orders (highest-frequency admin task),
+          // then Products+Categories (catalog) and Customers, then the rest
+          // grouped by domain: order fulfillment, promotions, customer
+          // relations, and admin/config tasks last.
           { id: "overview",   label: t("navOverview"),   icon: LayoutDashboard },
           { id: "orders",     label: t("navOrders"),     icon: Package },
-          { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
-          { id: "bkash",      label: t("navBkash"),      icon: Wallet },
           { id: "products",   label: t("navProducts"),   icon: Gem },
           { id: "categories", label: t("navCategories"), icon: Tag },
-          { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
           { id: "customers",  label: t("navCustomers"),  icon: Users },
+          { id: "bkash",      label: t("navBkash"),      icon: Wallet },
+          { id: "refunds",    label: t("navRefunds"),    icon: RotateCcw },
+          { id: "coupons",    label: t("navCoupons"),     icon: Ticket },
           { id: "messages",   label: t("navMessages"),    icon: Mail },
           { id: "chats",      label: t("navChats"),       icon: MessageCircle },
           { id: "passwordRequests", label: t("navPasswordRequests"), icon: KeyRound },
@@ -1496,7 +1504,7 @@ export default function Admin() {
                               </button>
                               <button
                                 disabled={refundActionId === rf._id}
-                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                onClick={() => openRefundReject(rf)}
                                 style={s.delBtn}
                               >
                                 {t("refundReject")}
@@ -1514,7 +1522,7 @@ export default function Admin() {
                               </button>
                               <button
                                 disabled={refundActionId === rf._id}
-                                onClick={() => handleRefundStatusChange(rf, "rejected")}
+                                onClick={() => openRefundReject(rf)}
                                 style={s.delBtn}
                               >
                                 {t("refundReject")}
@@ -2752,6 +2760,35 @@ export default function Admin() {
               <button className="btn btn-outline" onClick={closeReplyModal}>{t("cancel")}</button>
               <button className="btn" disabled={!replyText.trim() || replySending} onClick={handleSendReply}>
                 {replySending ? t("sending") : t("sendReply")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {refundRejectTarget && (
+        <div style={s.overlay} onClick={closeRefundReject}>
+          <div style={{ ...s.modalBox, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("refundReject")}</h3>
+            <label style={s.label}>
+              {t("refundRejectPrompt")}
+              <textarea
+                autoFocus
+                value={refundRejectReason}
+                onChange={e => setRefundRejectReason(e.target.value)}
+                rows={3}
+                style={{ padding: "8px 10px", border: "1px solid var(--border)", borderRadius: 6, fontFamily: "var(--font-body)", fontSize: 13, resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-outline" onClick={closeRefundReject}>{t("cancel")}</button>
+              <button
+                className="btn"
+                style={{ background: "#B91C1C", borderColor: "#B91C1C" }}
+                disabled={refundActionId === refundRejectTarget._id || !refundRejectReason.trim()}
+                onClick={confirmRefundReject}
+              >
+                {t("refundReject")}
               </button>
             </div>
           </div>
