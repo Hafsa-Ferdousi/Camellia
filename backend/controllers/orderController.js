@@ -143,7 +143,7 @@ export const checkout = async (req, res) => {
         quantity,
         price,
       });
-      couponLines.push({ product: product._id, category: product.category });
+      couponLines.push({ product: product._id, category: product.category, price, quantity });
     }
 
     // Coupons are re-validated from scratch here — the discount amount the
@@ -267,7 +267,7 @@ export const guestCheckout = async (req, res) => {
         quantity,
         price,
       });
-      couponLines.push({ product: product._id, category: product.category });
+      couponLines.push({ product: product._id, category: product.category, price, quantity });
     }
 
     let coupon = null;

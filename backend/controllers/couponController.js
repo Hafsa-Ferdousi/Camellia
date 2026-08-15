@@ -234,7 +234,7 @@ export const getUpcomingCoupons = async (req, res) => {
 export const validateCoupon = async (req, res) => {
   try {
     const { couponCode, cartTotal, items } = req.body;
-    const { coupon, discount, newTotal } = await findAndValidateCoupon({
+    const { coupon, discount, newTotal, appliesToAllItems, eligibleProductIds } = await findAndValidateCoupon({
       code: couponCode,
       cartTotal,
       items,
@@ -247,7 +247,11 @@ export const validateCoupon = async (req, res) => {
       coupon: coupon.code,
       discount,
       newTotal,
-      message: "Coupon Applied Successfully",
+      appliesToAllItems,
+      eligibleProductIds,
+      message: appliesToAllItems
+        ? "Coupon Applied Successfully"
+        : "Coupon applied — it only discounts the eligible items in your cart. Other items are charged at full price.",
     });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
