@@ -233,6 +233,24 @@ const Checkout = () => {
   const { subtotal, vat } = calculateTotals();
   const discount = appliedCoupon?.discount || 0;
 
+  // Which cart lines the applied coupon actually discounted vs. skipped,
+  // by name, so a "partial" coupon can show the customer exactly what
+  // did and didn't get the discount instead of just a generic notice.
+  const couponItemBreakdown = (() => {
+    if (!appliedCoupon || appliedCoupon.appliesToAllItems || !appliedCoupon.eligibleProductIds) {
+      return null;
+    }
+    const eligibleSet = new Set(appliedCoupon.eligibleProductIds);
+    const discounted = [];
+    const fullPrice = [];
+    cartItems.forEach((item) => {
+      const id = String(item.productId || item.product?._id || '');
+      const name = localized(item.product?.name, language) || getString(item.name || '') || t('productFallback');
+      (eligibleSet.has(id) ? discounted : fullPrice).push(name);
+    });
+    return { discounted, fullPrice };
+  })();
+
   const cartSignature = cartItems.map(i => `${i.productId || i.product?._id}:${i.quantity}`).join('|');
   useEffect(() => {
     if (appliedCoupon) {
@@ -250,9 +268,19 @@ const Checkout = () => {
       const items = cartItems.map((item) => ({
         product: item.productId || item.product?._id,
         category: item.product?.category?._id || item.product?.category,
+        price: getNumber(item.product?.basePrice) || getNumber(item.product?.price) || getNumber(item.price) || 0,
+        quantity: item.quantity || 1,
       }));
       const { data } = await validateCoupon(code, subtotal, items, isGuest ? formData.email : undefined);
-      setAppliedCoupon({ code: data.coupon, discount: data.discount, newTotal: data.newTotal });
+      setAppliedCoupon({
+        code: data.coupon,
+        discount: data.discount,
+        newTotal: data.newTotal,
+        appliesToAllItems: data.appliesToAllItems !== false,
+        eligibleProductIds: Array.isArray(data.eligibleProductIds)
+          ? data.eligibleProductIds.map(String)
+          : null,
+      });
       showToast('success', data.message || t('couponAppliedSuccess'));
     } catch (err) {
       setAppliedCoupon(null);
@@ -740,7 +768,36 @@ const Checkout = () => {
                     </button>
                   </div>
                 )}
-                {couponError && <div className="coupon-error">{couponError}</div>}
+                {appliedCoupon && appliedCoupon.appliesToAllItems === false && (
+                  <div className="coupon-partial-note" role="status">
+                    <AlertTriangle size={14} strokeWidth={2} />
+                    <div>
+                      <div>{t('couponPartialNote')}</div>
+                      {couponItemBreakdown && (
+                        <ul className="coupon-partial-breakdown">
+                          {couponItemBreakdown.discounted.length > 0 && (
+                            <li>
+                              <strong>{t('couponPartialDiscountedLabel')}</strong>{' '}
+                              {couponItemBreakdown.discounted.join(', ')}
+                            </li>
+                          )}
+                          {couponItemBreakdown.fullPrice.length > 0 && (
+                            <li>
+                              <strong>{t('couponPartialFullPriceLabel')}</strong>{' '}
+                              {couponItemBreakdown.fullPrice.join(', ')}
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {couponError && (
+                  <div className="coupon-error" role="alert">
+                    <AlertTriangle size={14} strokeWidth={2} />
+                    <span>{couponError}</span>
+                  </div>
+                )}
               </div>
 
               <div className="order-summary">
