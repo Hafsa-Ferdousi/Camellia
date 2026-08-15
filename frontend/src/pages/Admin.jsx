@@ -946,9 +946,9 @@ export default function Admin() {
         name: { en: catForm.nameEn.trim(), bn: catForm.nameBn.trim() },
         slug: slugify(catForm.slug),
         image: catForm.image.trim(),
+        isFixed: catForm.isFixed,
       };
       if (catModal === "add") {
-        payload.isFixed = catForm.isFixed;
         payload.sortOrder = categories.length
           ? Math.max(...categories.map(c => c.sortOrder || 0)) + 1
           : 1;
@@ -2309,69 +2309,73 @@ export default function Admin() {
       {customerDetail && (
         <div style={s.overlay} onClick={closeCustomerDetail}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{customerDetail.user?.name || t("customer")}</h3>
-            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
-              {customerDetail.user?.email} {customerDetail.user?.phone && `· ${customerDetail.user.phone}`}
-            </p>
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{customerDetail.user?.name || t("customer")}</h3>
+              <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
+                {customerDetail.user?.email} {customerDetail.user?.phone && `· ${customerDetail.user.phone}`}
+              </p>
+            </div>
 
-            {customerDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
+            <div style={s.modalBody}>
+              {customerDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
 
-            {!customerDetailLoading && customerDetail.user?._id && (
-              <>
-                <h4 style={s.modalSubTitle}>{t("orderHistoryCount", { count: customerDetail.orders.length })}</h4>
-                <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
-                  {customerDetail.orders.map(o => (
-                    <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
-                      <span style={s.mono}>#{getOrderDisplayId(o)}</span>
-                      <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
-                      <span>{fmt(o.totalAmount)}</span>
-                      <StatusBadge status={o.status} />
-                    </div>
-                  ))}
-                  {customerDetail.orders.length === 0 && (
-                    <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("noOrdersYet")}</p>
-                  )}
-                </div>
-
-                {resetPwFromRequest && (
-                  <>
-                    <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
-                    {resetPwUserId !== customerDetail.user._id ? (
-                      <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
-                        {t("resetThisCustomerPassword")}
-                      </button>
-                    ) : (
-                      <div>
-                        {resetPwMsg && (
-                          <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
-                            {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
-                          </div>
-                        )}
-                        <div style={{ display: "flex", gap: 10 }}>
-                          <input
-                            className="input"
-                            type="text"
-                            placeholder={t("newPasswordPlaceholder")}
-                            value={resetPwValue}
-                            onChange={e => setResetPwValue(e.target.value)}
-                            style={{ flex: 1 }}
-                          />
-                          <button
-                            className="btn btn-gold"
-                            disabled={resetPwSaving || !resetPwValue}
-                            onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
-                          >
-                            {resetPwSaving ? t("saving") : t("confirm")}
-                          </button>
-                        </div>
+              {!customerDetailLoading && customerDetail.user?._id && (
+                <>
+                  <h4 style={s.modalSubTitle}>{t("orderHistoryCount", { count: customerDetail.orders.length })}</h4>
+                  <div style={{ marginBottom: 20, maxHeight: 220, overflowY: "auto" }}>
+                    {customerDetail.orders.map(o => (
+                      <div key={o._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "8px 0", borderBottom: "1px solid var(--border-light)" }}>
+                        <span style={s.mono}>#{getOrderDisplayId(o)}</span>
+                        <span style={{ color: "var(--muted)" }}>{fmtDate(o.createdAt)}</span>
+                        <span>{fmt(o.totalAmount)}</span>
+                        <StatusBadge status={o.status} />
                       </div>
+                    ))}
+                    {customerDetail.orders.length === 0 && (
+                      <p style={{ fontSize: 13, color: "var(--muted)" }}>{t("noOrdersYet")}</p>
                     )}
-                  </>
-                )}
-              </>
-            )}
+                  </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+                  {resetPwFromRequest && (
+                    <>
+                      <h4 style={s.modalSubTitle}>{t("adminResetPassword")}</h4>
+                      {resetPwUserId !== customerDetail.user._id ? (
+                        <button className="btn btn-outline" onClick={() => { setResetPwUserId(customerDetail.user._id); setResetPwMsg(""); }}>
+                          {t("resetThisCustomerPassword")}
+                        </button>
+                      ) : (
+                        <div>
+                          {resetPwMsg && (
+                            <div style={{ fontSize: 12, marginBottom: 8, color: resetPwOk ? "var(--green)" : "var(--red)", display: "flex", alignItems: "center", gap: 6 }}>
+                              {resetPwOk ? <Check size={13} /> : <AlertTriangle size={13} />} {resetPwMsg}
+                            </div>
+                          )}
+                          <div style={{ display: "flex", gap: 10 }}>
+                            <input
+                              className="input"
+                              type="text"
+                              placeholder={t("newPasswordPlaceholder")}
+                              value={resetPwValue}
+                              onChange={e => setResetPwValue(e.target.value)}
+                              style={{ flex: 1 }}
+                            />
+                            <button
+                              className="btn btn-gold"
+                              disabled={resetPwSaving || !resetPwValue}
+                              onClick={() => handleResetCustomerPassword(customerDetail.user._id)}
+                            >
+                              {resetPwSaving ? t("saving") : t("confirm")}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={closeCustomerDetail}>{t("close")}</button>
             </div>
           </div>
@@ -2419,8 +2423,11 @@ export default function Admin() {
       {modal && (
         <div style={s.overlay} onClick={closeModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{modal === "add" ? t("addNewProduct") : t("editProduct")}</h3>
-            {formErr && <div style={s.formErr}>{formErr}</div>}
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{modal === "add" ? t("addNewProduct") : t("editProduct")}</h3>
+              {formErr && <div style={s.formErr}>{formErr}</div>}
+            </div>
+            <div style={s.modalBody}>
             <div className="admin-form-grid" style={s.formGrid}>
               <label style={s.label}>
                 {t("nameEnglish")}
@@ -2551,7 +2558,8 @@ export default function Admin() {
                 {t("activeVisibleInStore")}
               </label>
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+            </div>
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={closeModal} disabled={formSaving}>{t("cancel")}</button>
               <button className="btn btn-gold" onClick={handleSaveProduct} disabled={formSaving || imageUploading}>
                 {formSaving ? t("saving") : modal === "add" ? t("createProduct") : t("saveChanges")}
@@ -2581,8 +2589,11 @@ export default function Admin() {
       {catModal && (
         <div style={s.overlay} onClick={closeCatModal}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{catModal === "add" ? t("addNewCategory") : t("editCategory")}</h3>
-            {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{catModal === "add" ? t("addNewCategory") : t("editCategory")}</h3>
+              {catFormErr && <div style={s.formErr}>{catFormErr}</div>}
+            </div>
+            <div style={s.modalBody}>
             <div className="admin-form-grid" style={s.formGrid}>
               <label style={s.label}>
                 {t("nameEnglish")}
@@ -2629,19 +2640,18 @@ export default function Admin() {
                 />
                 {catImageUploading && <span style={{ fontSize: 12, color: "var(--muted)" }}>{t("uploading")}</span>}
               </div>
-              {catModal === "add" && (
-                <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
-                  <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
-                  {t("fixedCategoryCheckbox")}
-                </label>
-              )}
-              {catModal === "edit" && catForm.isFixed && (
+              <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8, gridColumn: "1 / -1" }}>
+                <input type="checkbox" name="isFixed" checked={catForm.isFixed} onChange={setCF} style={{ width: 16, height: 16, accentColor: "var(--maroon)" }} />
+                {t("fixedCategoryCheckbox")}
+              </label>
+              {catForm.isFixed && (
                 <p style={{ gridColumn: "1 / -1", fontSize: 12, color: "var(--muted)", marginTop: -8, marginBottom: 8, display: "flex", alignItems: "flex-start", gap: 6 }}>
                   <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} /> <span>{t("fixedCategoryNote")}</span>
                 </p>
               )}
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+            </div>
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={closeCatModal} disabled={catFormSaving}>{t("cancel")}</button>
               <button className="btn btn-gold" onClick={handleSaveCategory} disabled={catFormSaving || catImageUploading}>
                 {catFormSaving ? t("saving") : catModal === "add" ? t("createCategory") : t("saveChanges")}
@@ -2671,8 +2681,11 @@ export default function Admin() {
       {couponModal && (
         <div style={s.overlay} onClick={closeCouponModal}>
           <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{couponModal === "add" ? t("createCouponModalTitle") : t("editCouponModalTitle")}</h3>
-            {couponFormErr && <div style={s.formErr}>{couponFormErr}</div>}
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{couponModal === "add" ? t("createCouponModalTitle") : t("editCouponModalTitle")}</h3>
+              {couponFormErr && <div style={s.formErr}>{couponFormErr}</div>}
+            </div>
+            <div style={s.modalBody}>
             <div className="admin-form-grid" style={s.formGrid}>
               <label style={s.label}>{t("couponCodeLabel")}<input className="input" name="code" value={couponForm.code} onChange={setCouponF} placeholder={t("couponCodePlaceholder")} style={{ textTransform: "uppercase" }} /></label>
               <label style={s.label}>{t("couponTitleLabel")}<input className="input" name="title" value={couponForm.title} onChange={setCouponF} placeholder={t("couponTitlePlaceholder")} /></label>
@@ -2730,7 +2743,8 @@ export default function Admin() {
               </div>
               <label style={{ ...s.label, flexDirection: "row", alignItems: "center", gap: 8 }}><input type="checkbox" name="isActive" checked={couponForm.isActive} onChange={setCouponF} style={{ width: 16, height: 16, accentColor: "var(--green)" }} />{t("activeCheckboxLabel")}</label>
             </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
+            </div>
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={closeCouponModal} disabled={couponFormSaving}>{t("cancel")}</button>
               <button className="btn btn-gold" onClick={handleSaveCoupon} disabled={couponFormSaving}>{couponFormSaving ? t("saving") : couponModal === "add" ? t("createCoupon") : t("saveChanges")}</button>
             </div>
@@ -2975,8 +2989,19 @@ const s = {
   select:       { padding: "5px 8px", border: "1px solid var(--border)", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-body)", background: "var(--cream)", color: "var(--ink)", cursor: "pointer" },
   editBtn:      { padding: "5px 12px", background: "var(--maroon)", color: "#fff", border: "none", borderRadius: 4, fontSize: 12, cursor: "pointer", marginRight: 6, fontFamily: "var(--font-body)" },
   delBtn:       { padding: "5px 12px", background: "transparent", color: "var(--red)", border: "1px solid var(--red)", borderRadius: 4, fontSize: 12, cursor: "pointer", fontFamily: "var(--font-body)" },
-  overlay:      { position: "fixed", inset: 0, background: "rgba(28,10,15,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  modalBox:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "32px 28px", maxWidth: 580, width: "100%", boxShadow: "var(--shadow-lg)", maxHeight: "90vh", overflowY: "auto" },
+  // top: 64 keeps the overlay clear of .admin-topbar's space (min-height 64px,
+  // z-index 210 — above the overlay's own 200) so a tall modal centers within
+  // the room actually available below the header instead of tucking under it.
+  overlay:      { position: "fixed", top: 64, left: 0, right: 0, bottom: 0, background: "rgba(28,10,15,0.55)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  // No padding/scroll of its own — modalHeader/modalBody/modalFooter below
+  // split those responsibilities so the footer is a real, separate section
+  // instead of a sticky overlay: a sticky footer sits on top of whatever in
+  // the scrollable area hasn't scrolled past yet, which is what made it look
+  // like it was "floating" with form content visible around/through it.
+  modalBox:     { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, maxWidth: 580, width: "100%", boxShadow: "var(--shadow-lg)", maxHeight: "calc(100vh - 128px)", display: "flex", flexDirection: "column", overflow: "hidden" },
+  modalHeader:  { padding: "32px 28px 0" },
+  modalBody:    { padding: "0 28px", overflowY: "auto", flex: 1, minHeight: 0 },
+  modalFooter:  { display: "flex", gap: 10, justifyContent: "flex-end", padding: "14px 28px 28px", borderTop: "1px solid var(--border)", marginTop: 14 },
   modalTitle:   { fontFamily: "var(--font-display)", fontSize: 22, fontStyle: "italic", marginBottom: 20, color: "var(--charcoal)" },
   modalSubTitle:{ fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 },
   chartCard:    { background: "var(--ivory)", border: "1px solid var(--border)", borderRadius: 12, padding: "20px 22px", boxShadow: "var(--shadow-sm)" },
