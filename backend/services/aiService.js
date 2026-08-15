@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 
 // Free-tier Groq model — fast, no billing required.
-const MODEL_NAME = "llama-3.3-70b-versatile";
+const MODEL_NAME = "openai/gpt-oss-120b";
 
 let client = null;
 function getClient() {
