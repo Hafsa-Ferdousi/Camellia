@@ -3,8 +3,11 @@ import { getAccessToken, setAccessToken, clearAccessToken } from "./tokenStore";
 
 // In dev: Vite proxy forwards /api -> http://localhost:5000/api (no CORS issues)
 // In prod: set VITE_API_BASE_URL to your deployed backend URL
-const API_BASE_URL =
-  import.meta?.env?.VITE_API_BASE_URL || "/api";
+// Vite only statically replaces the exact "import.meta.env.VITE_XXX" pattern
+// at build time — optional chaining here (import.meta?.env?.VITE_XXX) isn't
+// recognized, so the var never gets baked in and this silently falls back to
+// "/api" in every production build no matter what's configured in Vercel.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const client = axios.create({
   baseURL: API_BASE_URL,
