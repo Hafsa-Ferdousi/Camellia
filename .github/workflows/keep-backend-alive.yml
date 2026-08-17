@@ -1,0 +1,20 @@
+name: Keep backend alive
+
+# Render's free tier spins the backend down after 15 minutes of no traffic;
+# the next real visitor then eats a slow cold start (or an outright failed
+# request if it lands mid-boot, racing with page-load's parallel API calls).
+# Pinging /health well inside that window keeps it warm — Render's free plan
+# already includes enough monthly instance hours to run 24/7 as long as it's
+# never allowed to fully idle out, so this costs nothing extra.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          curl -fsS --max-time 30 https://camellia-backend-6w47.onrender.com/health

@@ -2250,7 +2250,10 @@ export default function Admin() {
       {orderDetail && (
         <div style={s.overlay} onClick={() => setOrderDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("orderHash")}{getOrderDisplayId(orderDetail)}</h3>
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{t("orderHash")}{getOrderDisplayId(orderDetail)}</h3>
+            </div>
+            <div style={s.modalBody}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <StatusBadge status={orderDetail.status} />
               <span style={{ fontSize: 12, color: "var(--muted)" }}>{fmtDate(orderDetail.createdAt)}</span>
@@ -2298,8 +2301,9 @@ export default function Admin() {
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
               {t("payment", { method: orderDetail.payment?.method?.toUpperCase(), status: t(`orders:${orderDetail.payment?.status === "paid" ? "paid" : "unpaid"}`) })}
             </p>
+            </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={() => setOrderDetail(null)}>{t("close")}</button>
             </div>
           </div>
@@ -2385,9 +2389,11 @@ export default function Admin() {
       {conversationDetail && (
         <div style={s.overlay} onClick={() => setConversationDetail(null)}>
           <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{conversationDetail.user?.name || t("guestBadge")}</h3>
-            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{conversationDetail.user?.email}</p>
-
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{conversationDetail.user?.name || t("guestBadge")}</h3>
+              <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>{conversationDetail.user?.email}</p>
+            </div>
+            <div style={s.modalBody}>
             {conversationDetailLoading && <p style={{ color: "var(--muted)" }}>{t("loading")}</p>}
             {!conversationDetailLoading && (
               <div style={{ maxHeight: 380, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
@@ -2412,8 +2418,9 @@ export default function Admin() {
                 )}
               </div>
             )}
+            </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <div style={s.modalFooter}>
               <button className="btn btn-outline" onClick={() => setConversationDetail(null)}>{t("close")}</button>
             </div>
           </div>
@@ -2571,7 +2578,7 @@ export default function Admin() {
 
       {confirmDelete && (
         <div style={s.overlay} onClick={() => setConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 400, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteProductTitle")}</h3>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
               {t("deleteProductBody", { name: confirmDelete.name?.en })}
@@ -2663,7 +2670,7 @@ export default function Admin() {
 
       {catConfirmDelete && (
         <div style={s.overlay} onClick={() => setCatConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 400, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCategoryTitle")}</h3>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
               {t("deleteCategoryBody", { name: catConfirmDelete.name?.en })}
@@ -2754,7 +2761,7 @@ export default function Admin() {
 
       {couponConfirmDelete && (
         <div style={s.overlay} onClick={() => setCouponConfirmDelete(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 400, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("deleteCouponTitle")}</h3>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>{t("deleteCouponBody", { code: couponConfirmDelete.code })}</p>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -2767,7 +2774,7 @@ export default function Admin() {
 
       {couponStatsTarget && (
         <div style={s.overlay} onClick={() => setCouponStatsTarget(null)}>
-          <div style={{ ...s.modalBox, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 420, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={s.modalTitle}>{t("couponUsageTitle", { code: couponStatsTarget.code })}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
               <div style={s.statCard}><div style={s.statValue}>{couponStatsTarget.usedCount}</div><div style={s.statLabel}>{t("totalUses")}</div></div>
@@ -2781,7 +2788,7 @@ export default function Admin() {
       )}
       {replyTarget && (
         <div style={s.overlay} onClick={closeReplyModal}>
-          <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 520, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={s.modalTitle}>{t("replyToTitle", { name: replyTarget.name })}</h3>
             <div style={{ background: "var(--cream-dark)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--muted)" }}>
               {replyTarget.message}
@@ -2814,7 +2821,7 @@ export default function Admin() {
 
       {refundRejectTarget && (
         <div style={s.overlay} onClick={closeRefundReject}>
-          <div style={{ ...s.modalBox, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 440, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <h3 style={{ ...s.modalTitle, color: "var(--red)" }}>{t("refundReject")}</h3>
             <label style={s.label}>
               {t("refundRejectPrompt")}
@@ -2844,8 +2851,10 @@ export default function Admin() {
       {bkashDetail && (
         <div style={s.overlay} onClick={closeBkashDetail}>
           <div style={{ ...s.modalBox, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
-
+            <div style={s.modalHeader}>
+              <h3 style={s.modalTitle}>{t("bkashDetailTitle")}</h3>
+            </div>
+            <div style={{ ...s.modalBody, paddingBottom: 28 }}>
             <div style={{ marginBottom: 14, fontSize: 13, color: "var(--muted)" }}>
               {t("orderReference")}: <span style={s.mono}>#{getOrderDisplayId(bkashDetail)}</span>
               {" · "}<BkashStatusBadge status={bkashDetail.payment?.bkash?.verificationStatus || "awaiting_submission"} />
@@ -2917,13 +2926,14 @@ export default function Admin() {
                 <button className="btn btn-outline" onClick={closeBkashDetail}>{t("close")}</button>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
 
       {revenueModalOpen && (
         <div style={s.overlay} onClick={() => setRevenueModalOpen(false)}>
-          <div style={{ ...s.modalBox, maxWidth: 640 }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: 640, padding: "32px 28px" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
               <h3 style={{ ...s.modalTitle, marginBottom: 0 }}>{t("revenueDetails")}</h3>
               <select
