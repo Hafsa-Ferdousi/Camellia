@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -96,25 +96,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -125,25 +125,25 @@
 import jwt from "jsonwebtoken";
 &nbsp;
 // --- Short-lived JWT access token ---
-export const ACCESS_TOKEN_EXPIRES = <span class="cstat-no" title="statement not covered" >process.env.JWT_ACCESS_EXPIRES || "15m";</span>
-export const generateAccessToken = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>d) =&gt;</span>
-<span class="cstat-no" title="statement not covered" >  jwt.sign({ id, type: "access" }, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });</span>
+export const ACCESS_TOKEN_EXPIRES = process.env.JWT_ACCESS_EXPIRES || "15m";
+export const generateAccessToken = (id) =&gt;
+  jwt.sign({ id, type: "access" }, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });
 &nbsp;
 // --- Short-lived JWT used only to complete a pending 2FA challenge ---
-export const generateTwoFactorTempToken = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>d) =&gt;</span>
-<span class="cstat-no" title="statement not covered" >  jwt.sign({ id, type: "2fa_pending" }, process.env.JWT_SECRET, { expiresIn: "5m" });</span>
+export const generateTwoFactorTempToken = (id) =&gt;
+  jwt.sign({ id, type: "2fa_pending" }, process.env.JWT_SECRET, { expiresIn: "5m" });
 &nbsp;
 // --- Opaque, high-entropy refresh tokens ---
 // We hand the raw token to the client (httpOnly cookie) and store only a
 // SHA-256 hash server-side. A leaked DB is then useless for replaying them.
-export const generateRawToken = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >crypto.randomBytes(32).toString("hex");</span></span>
-export const hashToken = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(r</span>aw) =&gt; <span class="cstat-no" title="statement not covered" >crypto.createHash("sha256").update(raw).digest("hex");</span></span>
+export const generateRawToken = () =&gt; crypto.randomBytes(32).toString("hex");
+export const hashToken = (raw) =&gt; crypto.createHash("sha256").update(raw).digest("hex");
 &nbsp;
-export const REFRESH_TOKEN_TTL_MS = <span class="cstat-no" title="statement not covered" >7 * 24 * 60 * 60 * 1000;</span> // 7 days
+export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 &nbsp;
-export const REFRESH_COOKIE_NAME = <span class="cstat-no" title="statement not covered" >"refreshToken";</span>
+export const REFRESH_COOKIE_NAME = "refreshToken";
 &nbsp;
-export const refreshCookieOptions = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+export const refreshCookieOptions = () =&gt; ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax",
@@ -157,7 +157,7 @@ export const refreshCookieOptions = <span class="cstat-no" title="statement not 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:14:59.888Z
+                at 2026-08-18T17:40:46.926Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

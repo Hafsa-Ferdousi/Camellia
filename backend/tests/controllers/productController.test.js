@@ -1,14 +1,8 @@
-import {
-  describe,
-  test,
-  expect,
-  jest,
-  beforeEach,
-} from "@jest/globals";
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-/* ============================================================
-   MOCK DEPENDENCIES
-   ============================================================ */
+// ============================================================
+// MOCK MONGOOSE
+// ============================================================
 
 jest.unstable_mockModule("mongoose", () => ({
   default: {
@@ -20,15 +14,23 @@ jest.unstable_mockModule("mongoose", () => ({
   },
 }));
 
+// ============================================================
+// MOCK PRODUCT MODEL
+// ============================================================
+
 jest.unstable_mockModule("../../models/Product.js", () => ({
   default: {
+    countDocuments: jest.fn(),
     find: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
     findByIdAndUpdate: jest.fn(),
-    countDocuments: jest.fn(),
   },
 }));
+
+// ============================================================
+// MOCK CATEGORY MODEL
+// ============================================================
 
 jest.unstable_mockModule("../../models/Category.js", () => ({
   default: {
@@ -36,9 +38,17 @@ jest.unstable_mockModule("../../models/Category.js", () => ({
   },
 }));
 
-const mongoose = (await import("mongoose")).default;
-const Product = (await import("../../models/Product.js")).default;
-const Category = (await import("../../models/Category.js")).default;
+// ============================================================
+// IMPORT MOCKED MODULES
+// ============================================================
+
+const { default: mongoose } = await import("mongoose");
+
+const { default: Product } =
+  await import("../../models/Product.js");
+
+const { default: Category } =
+  await import("../../models/Category.js");
 
 const {
   getProducts,
@@ -51,12 +61,11 @@ const {
   searchProducts,
 } = await import("../../controllers/productController.js");
 
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
-
-const mockResponse = () => {
+const createResponse = () => {
   const res = {};
 
   res.status = jest.fn().mockReturnValue(res);
@@ -65,26 +74,37 @@ const mockResponse = () => {
   return res;
 };
 
+const createRequest = ({
+  query = {},
+  params = {},
+  body = {},
+} = {}) => ({
+  query,
+  params,
+  body,
+});
 
-/*
- * Creates a Mongoose-like chain:
- *
- * Product.find()
- *   .populate()
- *   .sort()
- *   .skip()
- *   .limit()
- *
- * and allows:
- *
- * await chain
- */
-const createQueryChain = (result) => {
-  const chain = {
+// Creates a chainable Mongoose-like query.
+//
+// Supports:
+// find()
+//   .populate()
+//   .sort()
+//   .skip()
+//   .limit()
+//   .select()
+//   .lean()
+//
+// And allows:
+// await query
+//
+// through the custom then() implementation.
+const createQueryMock = (result) => {
+  const query = {
     populate: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     lean: jest.fn().mockReturnThis(),
 
@@ -95,17 +115,12 @@ const createQueryChain = (result) => {
       Promise.resolve(result).catch(reject),
   };
 
-  return chain;
+  return query;
 };
 
-
-const validId = "507f1f77bcf86cd799439011";
-const anotherValidId = "507f1f77bcf86cd799439012";
-
-
-/* ============================================================
-   BEFORE EACH
-   ============================================================ */
+// ============================================================
+// RESET BEFORE EACH TEST
+// ============================================================
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -113,32 +128,41 @@ beforeEach(() => {
   mongoose.Types.ObjectId.isValid.mockReturnValue(true);
 });
 
-
-/* ============================================================
-   GET PRODUCTS
-   ============================================================ */
+// ============================================================
+// getProducts
+// ============================================================
 
 describe("getProducts", () => {
   test("returns paginated products successfully", async () => {
     const products = [
-      { _id: "1", name: { en: "Apple" }, basePrice: 100 },
-      { _id: "2", name: { en: "Banana" }, basePrice: 200 },
+      {
+        _id: "product1",
+        name: { en: "Apple" },
+        basePrice: 100,
+        isActive: true,
+      },
+      {
+        _id: "product2",
+        name: { en: "Orange" },
+        basePrice: 200,
+        isActive: true,
+      },
     ];
 
     Product.countDocuments.mockResolvedValue(2);
 
     Product.find.mockReturnValue(
-      createQueryChain(products)
+      createQueryMock(products)
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         page: "1",
         pageSize: "2",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -161,23 +185,23 @@ describe("getProducts", () => {
     });
   });
 
-
   test("uses minimum page number of 1", async () => {
     const products = [];
 
     Product.countDocuments.mockResolvedValue(0);
+
     Product.find.mockReturnValue(
-      createQueryChain(products)
+      createQueryMock(products)
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         page: "0",
-        pageSize: "12",
+        pageSize: "10",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -186,27 +210,27 @@ describe("getProducts", () => {
       pagination: {
         total: 0,
         page: 1,
-        pageSize: 12,
+        pageSize: 10,
         totalPages: 0,
       },
     });
   });
 
-
   test("uses minimum page size of 1", async () => {
     Product.countDocuments.mockResolvedValue(0);
+
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         page: "1",
         pageSize: "0",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -221,84 +245,235 @@ describe("getProducts", () => {
     });
   });
 
-
   test("filters products by search term", async () => {
     const products = [
       {
-        name: { en: "Red Shirt" },
-        description: { en: "Cotton shirt" },
+        _id: "1",
+        name: { en: "Apple Juice" },
+        description: { en: "Fresh juice" },
+        isFeatured: false,
+      },
+      {
+        _id: "2",
+        name: { en: "Orange" },
+        description: { en: "Apple flavored drink" },
+        isFeatured: true,
+      },
+    ];
+
+    Product.countDocuments.mockResolvedValue(2);
+
+    Product.find.mockReturnValue(
+      createQueryMock(products)
+    );
+
+    const req = createRequest({
+      query: {
+        search: "apple",
+        page: "1",
+        pageSize: "12",
+      },
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    expect(Product.countDocuments).toHaveBeenCalledWith({
+      isActive: true,
+      $or: [
+        {
+          "name.en": {
+            $regex: "apple",
+            $options: "i",
+          },
+        },
+        {
+          "name.bn": {
+            $regex: "apple",
+            $options: "i",
+          },
+        },
+        {
+          "description.en": {
+            $regex: "apple",
+            $options: "i",
+          },
+        },
+        {
+          "description.bn": {
+            $regex: "apple",
+            $options: "i",
+          },
+        },
+      ],
+    });
+
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  test("ranks name matches higher than description matches", async () => {
+    const products = [
+      {
+        _id: "description-match",
+        name: { en: "Orange" },
+        description: { en: "This contains apple" },
+        isFeatured: false,
+      },
+      {
+        _id: "name-match",
+        name: { en: "Apple Juice" },
+        description: { en: "Fresh juice" },
         isFeatured: false,
       },
     ];
 
-    Product.countDocuments.mockResolvedValue(1);
+    Product.countDocuments.mockResolvedValue(2);
 
-    Product.find
-      .mockReturnValueOnce(
-        createQueryChain(products)
-      );
+    Product.find.mockReturnValue(
+      createQueryMock(products)
+    );
 
-    const req = {
+    const req = createRequest({
       query: {
-        search: "shirt",
+        search: "apple",
         page: "1",
         pageSize: "12",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
-    const query = Product.find.mock.calls[0][0];
+    const response = res.json.mock.calls[0][0];
 
-    expect(query.isActive).toBe(true);
-    expect(query.$or).toHaveLength(4);
-
-    expect(query.$or[0]).toHaveProperty("name.en");
-    expect(query.$or[1]).toHaveProperty("name.bn");
-    expect(query.$or[2]).toHaveProperty("description.en");
-    expect(query.$or[3]).toHaveProperty("description.bn");
+    expect(response.products[0]._id).toBe("name-match");
+    expect(response.products[1]._id).toBe("description-match");
   });
 
+  test("uses featured product as tie breaker for search ranking", async () => {
+    const products = [
+      {
+        _id: "not-featured",
+        name: { en: "Apple" },
+        description: { en: "" },
+        isFeatured: false,
+      },
+      {
+        _id: "featured",
+        name: { en: "Apple" },
+        description: { en: "" },
+        isFeatured: true,
+      },
+    ];
+
+    Product.countDocuments.mockResolvedValue(2);
+
+    Product.find.mockReturnValue(
+      createQueryMock(products)
+    );
+
+    const req = createRequest({
+      query: {
+        search: "apple",
+      },
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    const response = res.json.mock.calls[0][0];
+
+    expect(response.products[0]._id).toBe("featured");
+  });
 
   test("escapes regex special characters in search", async () => {
     Product.countDocuments.mockResolvedValue(0);
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
-        search: "(",
-        page: "1",
-        pageSize: "12",
+        search: "apple(",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
-    const query = Product.find.mock.calls[0][0];
-
-    const regexValue = query.$or[0]["name.en"].$regex;
-
-    expect(regexValue).toBe("\\(");
+    expect(Product.countDocuments).toHaveBeenCalledWith({
+      isActive: true,
+      $or: [
+        {
+          "name.en": {
+            $regex: "apple\\(",
+            $options: "i",
+          },
+        },
+        {
+          "name.bn": {
+            $regex: "apple\\(",
+            $options: "i",
+          },
+        },
+        {
+          "description.en": {
+            $regex: "apple\\(",
+            $options: "i",
+          },
+        },
+        {
+          "description.bn": {
+            $regex: "apple\\(",
+            $options: "i",
+          },
+        },
+      ],
+    });
   });
 
+  test("filters by valid category", async () => {
+    const products = [{ _id: "product1" }];
+
+    mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+
+    Product.countDocuments.mockResolvedValue(1);
+
+    Product.find.mockReturnValue(
+      createQueryMock(products)
+    );
+
+    const req = createRequest({
+      query: {
+        category: "507f1f77bcf86cd799439011",
+      },
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    expect(Product.countDocuments).toHaveBeenCalledWith({
+      isActive: true,
+      category: "507f1f77bcf86cd799439011",
+    });
+  });
 
   test("returns 400 for invalid category id", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    const req = {
+    const req = createRequest({
       query: {
-        category: "invalid-id",
+        category: "invalid-category",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -311,45 +486,20 @@ describe("getProducts", () => {
     expect(Product.countDocuments).not.toHaveBeenCalled();
   });
 
-
-  test("filters by category", async () => {
-    Product.countDocuments.mockResolvedValue(0);
-
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
-      query: {
-        category: validId,
-      },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    expect(Product.countDocuments).toHaveBeenCalledWith({
-      isActive: true,
-      category: validId,
-    });
-  });
-
-
   test("filters by minimum price", async () => {
-    Product.countDocuments.mockResolvedValue(0);
+    Product.countDocuments.mockResolvedValue(1);
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([{ _id: "1" }])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         minPrice: "100",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -360,22 +510,21 @@ describe("getProducts", () => {
       },
     });
   });
-
 
   test("filters by maximum price", async () => {
-    Product.countDocuments.mockResolvedValue(0);
+    Product.countDocuments.mockResolvedValue(1);
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([{ _id: "1" }])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         maxPrice: "500",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -387,22 +536,21 @@ describe("getProducts", () => {
     });
   });
 
-
   test("filters by minimum and maximum price", async () => {
-    Product.countDocuments.mockResolvedValue(0);
+    Product.countDocuments.mockResolvedValue(1);
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([{ _id: "1" }])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         minPrice: "100",
         maxPrice: "500",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -415,15 +563,14 @@ describe("getProducts", () => {
     });
   });
 
-
   test("returns 400 for invalid minPrice", async () => {
-    const req = {
+    const req = createRequest({
       query: {
         minPrice: "abc",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -434,15 +581,14 @@ describe("getProducts", () => {
     });
   });
 
-
   test("returns 400 for invalid maxPrice", async () => {
-    const req = {
+    const req = createRequest({
       query: {
         maxPrice: "abc",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -453,21 +599,20 @@ describe("getProducts", () => {
     });
   });
 
-
   test("filters featured products", async () => {
-    Product.countDocuments.mockResolvedValue(0);
+    Product.countDocuments.mockResolvedValue(1);
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([{ _id: "featured1" }])
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         featured: "true",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -477,93 +622,113 @@ describe("getProducts", () => {
     });
   });
 
+  test("sorts by price ascending", async () => {
+    Product.countDocuments.mockResolvedValue(2);
 
-  test("supports limit parameter", async () => {
+    const query = createQueryMock([
+      { _id: "1", basePrice: 100 },
+      { _id: "2", basePrice: 200 },
+    ]);
+
+    Product.find.mockReturnValue(query);
+
+    const req = createRequest({
+      query: {
+        sort: "price-asc",
+      },
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    expect(query.sort).toHaveBeenCalledWith({
+      basePrice: 1,
+    });
+  });
+
+  test("sorts by price descending", async () => {
+    Product.countDocuments.mockResolvedValue(2);
+
+    const query = createQueryMock([
+      { _id: "1", basePrice: 200 },
+      { _id: "2", basePrice: 100 },
+    ]);
+
+    Product.find.mockReturnValue(query);
+
+    const req = createRequest({
+      query: {
+        sort: "price-desc",
+      },
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    expect(query.sort).toHaveBeenCalledWith({
+      basePrice: -1,
+    });
+  });
+
+  test("uses createdAt descending as default sort", async () => {
+    Product.countDocuments.mockResolvedValue(2);
+
+    const query = createQueryMock([]);
+
+    Product.find.mockReturnValue(query);
+
+    const req = createRequest({
+      query: {},
+    });
+
+    const res = createResponse();
+
+    await getProducts(req, res);
+
+    expect(query.sort).toHaveBeenCalledWith({
+      createdAt: -1,
+    });
+  });
+
+  test("supports legacy limit parameter", async () => {
     const products = [
       { _id: "1" },
       { _id: "2" },
     ];
 
-    Product.countDocuments.mockResolvedValue(2);
+    Product.countDocuments.mockResolvedValue(10);
 
-    const chain = createQueryChain(products);
+    const query = createQueryMock(products);
 
-    Product.find.mockReturnValue(chain);
+    Product.find.mockReturnValue(query);
 
-    const req = {
+    const req = createRequest({
       query: {
-        limit: "5",
+        limit: "2",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
-    expect(chain.limit).toHaveBeenCalledWith(5);
+    expect(query.limit).toHaveBeenCalledWith(2);
 
     expect(res.json).toHaveBeenCalledWith(products);
   });
 
-
-  test("supports price-asc sorting with limit", async () => {
-    Product.countDocuments.mockResolvedValue(0);
-
-    const chain = createQueryChain([]);
-
-    Product.find.mockReturnValue(chain);
-
-    const req = {
-      query: {
-        limit: "5",
-        sort: "price-asc",
-      },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    expect(chain.sort).toHaveBeenCalledWith({
-      basePrice: 1,
-    });
-  });
-
-
-  test("supports price-desc sorting with limit", async () => {
-    Product.countDocuments.mockResolvedValue(0);
-
-    const chain = createQueryChain([]);
-
-    Product.find.mockReturnValue(chain);
-
-    const req = {
-      query: {
-        limit: "5",
-        sort: "price-desc",
-      },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    expect(chain.sort).toHaveBeenCalledWith({
-      basePrice: -1,
-    });
-  });
-
-
   test("returns 400 for invalid limit", async () => {
     Product.countDocuments.mockResolvedValue(0);
 
-    const req = {
+    const req = createRequest({
       query: {
         limit: "abc",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -574,17 +739,16 @@ describe("getProducts", () => {
     });
   });
 
-
   test("returns 400 for invalid page", async () => {
     Product.countDocuments.mockResolvedValue(0);
 
-    const req = {
+    const req = createRequest({
       query: {
         page: "abc",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -594,18 +758,17 @@ describe("getProducts", () => {
       message: "Invalid page or pageSize",
     });
   });
-
 
   test("returns 400 for invalid pageSize", async () => {
     Product.countDocuments.mockResolvedValue(0);
 
-    const req = {
+    const req = createRequest({
       query: {
         pageSize: "abc",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
@@ -616,253 +779,157 @@ describe("getProducts", () => {
     });
   });
 
+  test("correctly applies pagination skip and limit", async () => {
+    Product.countDocuments.mockResolvedValue(50);
 
-  test("supports price-asc pagination sorting", async () => {
-    Product.countDocuments.mockResolvedValue(10);
+    const query = createQueryMock([]);
 
-    const chain = createQueryChain([]);
+    Product.find.mockReturnValue(query);
 
-    Product.find.mockReturnValue(chain);
-
-    const req = {
+    const req = createRequest({
       query: {
-        page: "2",
-        pageSize: "5",
-        sort: "price-asc",
+        page: "3",
+        pageSize: "10",
       },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    expect(chain.sort).toHaveBeenCalledWith({
-      basePrice: 1,
     });
 
-    expect(chain.skip).toHaveBeenCalledWith(5);
-    expect(chain.limit).toHaveBeenCalledWith(5);
-  });
-
-
-  test("supports price-desc pagination sorting", async () => {
-    Product.countDocuments.mockResolvedValue(10);
-
-    const chain = createQueryChain([]);
-
-    Product.find.mockReturnValue(chain);
-
-    const req = {
-      query: {
-        page: "2",
-        pageSize: "5",
-        sort: "price-desc",
-      },
-    };
-
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
-    expect(chain.sort).toHaveBeenCalledWith({
-      basePrice: -1,
+    expect(query.skip).toHaveBeenCalledWith(20);
+
+    expect(query.limit).toHaveBeenCalledWith(10);
+
+    expect(res.json).toHaveBeenCalledWith({
+      products: [],
+      pagination: {
+        total: 50,
+        page: 3,
+        pageSize: 10,
+        totalPages: 5,
+      },
     });
   });
 
-
-  test("ranks search results by name relevance", async () => {
-    const products = [
-      {
-        name: { en: "Nice Product" },
-        description: { en: "shirt" },
-        isFeatured: false,
-      },
-      {
-        name: { en: "Shirt Product" },
-        description: { en: "something" },
-        isFeatured: false,
-      },
-    ];
-
-    Product.countDocuments.mockResolvedValue(2);
-
-    Product.find.mockReturnValue(
-      createQueryChain(products)
-    );
-
-    const req = {
-      query: {
-        search: "shirt",
-        page: "1",
-        pageSize: "12",
-      },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    const response = res.json.mock.calls[0][0];
-
-    expect(response.products[0].name.en).toBe(
-      "Shirt Product"
-    );
-  });
-
-
-  test("uses featured product as tie breaker", async () => {
-    const products = [
-      {
-        name: { en: "Product A" },
-        description: { en: "test" },
-        isFeatured: false,
-      },
-      {
-        name: { en: "Product B" },
-        description: { en: "test" },
-        isFeatured: true,
-      },
-    ];
-
-    Product.countDocuments.mockResolvedValue(2);
-
-    Product.find.mockReturnValue(
-      createQueryChain(products)
-    );
-
-    const req = {
-      query: {
-        search: "test",
-      },
-    };
-
-    const res = mockResponse();
-
-    await getProducts(req, res);
-
-    const response = res.json.mock.calls[0][0];
-
-    expect(response.products[0].isFeatured).toBe(true);
-  });
-
-
-  test("handles database errors with 500", async () => {
+  test("returns 500 when getProducts throws", async () => {
     Product.countDocuments.mockRejectedValue(
-      new Error("Database failure")
+      new Error("Database error")
     );
 
-    const req = {
-      query: {},
-    };
+    const req = createRequest();
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProducts(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "Database failure",
+      message: "Database error",
     });
   });
 });
 
-
-/* ============================================================
-   GET ALL PRODUCTS ADMIN
-   ============================================================ */
+// ============================================================
+// getAllProductsAdmin
+// ============================================================
 
 describe("getAllProductsAdmin", () => {
-  test("returns all products", async () => {
+  test("returns all products for admin", async () => {
     const products = [
       { _id: "1", name: "Product 1" },
       { _id: "2", name: "Product 2" },
     ];
 
-    Product.find.mockReturnValue(
-      createQueryChain(products)
-    );
+    const query = createQueryMock(products);
 
-    const req = {};
-    const res = mockResponse();
+    Product.find.mockReturnValue(query);
+
+    const req = createRequest();
+
+    const res = createResponse();
 
     await getAllProductsAdmin(req, res);
 
     expect(Product.find).toHaveBeenCalledWith();
 
+    expect(query.populate).toHaveBeenCalledWith(
+      "category",
+      "name slug"
+    );
+
+    expect(query.sort).toHaveBeenCalledWith({
+      createdAt: -1,
+    });
+
     expect(res.json).toHaveBeenCalledWith(products);
   });
 
+  test("returns 500 when admin product retrieval fails", async () => {
+    Product.find.mockReturnValue(
+      createQueryMock(Promise.reject(new Error("Database error")))
+    );
 
-  test("returns 500 when database fails", async () => {
-    Product.find.mockReturnValue({
-      populate: jest.fn().mockReturnThis(),
-      sort: jest.fn().mockReturnThis(),
-      then: (resolve, reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).then(resolve, reject),
-      catch: (reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).catch(reject),
-    });
+    const req = createRequest();
 
-    const res = mockResponse();
+    const res = createResponse();
 
-    await getAllProductsAdmin({}, res);
+    await getAllProductsAdmin(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "Database failure",
+      message: "Database error",
     });
   });
 });
 
-
-/* ============================================================
-   GET PRODUCT BY ID
-   ============================================================ */
+// ============================================================
+// getProductById
+// ============================================================
 
 describe("getProductById", () => {
-  test("returns product successfully", async () => {
+  test("returns product by valid id", async () => {
     const product = {
-      _id: validId,
-      name: "Test Product",
+      _id: "507f1f77bcf86cd799439011",
+      name: "Apple",
       isActive: true,
     };
 
+    mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+
     Product.findById.mockReturnValue(
-      createQueryChain(product)
+      createQueryMock(product)
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProductById(req, res);
 
-    expect(Product.findById).toHaveBeenCalledWith(validId);
+    expect(Product.findById).toHaveBeenCalledWith(
+      "507f1f77bcf86cd799439011"
+    );
 
     expect(res.json).toHaveBeenCalledWith(product);
   });
 
-
-  test("returns 404 for invalid ObjectId", async () => {
+  test("returns 404 for invalid product id", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    const req = {
+    const req = createRequest({
       params: {
         id: "invalid",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProductById(req, res);
 
@@ -875,19 +942,18 @@ describe("getProductById", () => {
     expect(Product.findById).not.toHaveBeenCalled();
   });
 
-
   test("returns 404 when product does not exist", async () => {
     Product.findById.mockReturnValue(
-      createQueryChain(null)
+      createQueryMock(null)
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProductById(req, res);
 
@@ -897,23 +963,24 @@ describe("getProductById", () => {
       message: "Product not found",
     });
   });
-
 
   test("returns 404 when product is inactive", async () => {
-    Product.findById.mockReturnValue(
-      createQueryChain({
-        _id: validId,
-        isActive: false,
-      })
-    );
-
-    const req = {
-      params: {
-        id: validId,
-      },
+    const product = {
+      _id: "507f1f77bcf86cd799439011",
+      isActive: false,
     };
 
-    const res = mockResponse();
+    Product.findById.mockReturnValue(
+      createQueryMock(product)
+    );
+
+    const req = createRequest({
+      params: {
+        id: "507f1f77bcf86cd799439011",
+      },
+    });
+
+    const res = createResponse();
 
     await getProductById(req, res);
 
@@ -924,127 +991,145 @@ describe("getProductById", () => {
     });
   });
 
+  test("returns 500 when database throws", async () => {
+    Product.findById.mockReturnValue(
+      createQueryMock(Promise.reject(new Error("Database error")))
+    );
 
-  test("returns 500 when database fails", async () => {
-    Product.findById.mockReturnValue({
-      populate: jest.fn().mockReturnThis(),
-      then: (resolve, reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).then(resolve, reject),
-      catch: (reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).catch(reject),
+    const req = createRequest({
+      params: {
+        id: "507f1f77bcf86cd799439011",
+      },
     });
 
-    const req = {
-      params: {
-        id: validId,
-      },
-    };
-
-    const res = mockResponse();
+    const res = createResponse();
 
     await getProductById(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "Database failure",
+      message: "Database error",
     });
   });
 });
 
-
-/* ============================================================
-   CREATE PRODUCT
-   ============================================================ */
+// ============================================================
+// createProduct
+// ============================================================
 
 describe("createProduct", () => {
-  test("creates product successfully", async () => {
+  test("creates a product successfully", async () => {
     const product = {
-      _id: validId,
-      name: "New Product",
-      basePrice: 500,
-      totalStock: 10,
+      _id: "product123",
+      name: {
+        en: "Apple",
+        bn: "আপেল",
+      },
+      description: {
+        en: "Fresh apple",
+        bn: "তাজা আপেল",
+      },
+      basePrice: 100,
+      totalStock: 50,
+      isFeatured: true,
+      isActive: true,
     };
 
     Product.create.mockResolvedValue(product);
 
-    const req = {
+    const req = createRequest({
       body: {
-        name: "New Product",
-        description: "Test description",
-        category: validId,
-        basePrice: 500,
-        images: ["image.jpg"],
-        totalStock: 10,
+        name: {
+          en: "Apple",
+          bn: "আপেল",
+        },
+        description: {
+          en: "Fresh apple",
+          bn: "তাজা আপেল",
+        },
+        basePrice: 100,
+        totalStock: 50,
         isFeatured: true,
         isActive: true,
-
-        // Should NOT be passed
-        averageRating: 5,
-        randomField: "blocked",
+        maliciousField: "should-not-be-saved",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await createProduct(req, res);
 
     expect(Product.create).toHaveBeenCalledWith({
-      name: "New Product",
-      description: "Test description",
-      category: validId,
-      basePrice: 500,
-      images: ["image.jpg"],
-      totalStock: 10,
+      name: {
+        en: "Apple",
+        bn: "আপেল",
+      },
+      description: {
+        en: "Fresh apple",
+        bn: "তাজা আপেল",
+      },
+      basePrice: 100,
+      totalStock: 50,
       isFeatured: true,
       isActive: true,
     });
+
+    expect(Product.create.mock.calls[0][0]).not.toHaveProperty(
+      "maliciousField"
+    );
 
     expect(res.status).toHaveBeenCalledWith(201);
 
     expect(res.json).toHaveBeenCalledWith(product);
   });
 
-
-  test("does not include undefined fields", async () => {
-    Product.create.mockResolvedValue({
-      name: "Product",
-    });
-
-    const req = {
-      body: {
-        name: "Product",
-        basePrice: 100,
+  test("ignores undefined fields", async () => {
+    const product = {
+      _id: "product123",
+      name: {
+        en: "Apple",
       },
     };
 
-    const res = mockResponse();
+    Product.create.mockResolvedValue(product);
+
+    const req = createRequest({
+      body: {
+        name: {
+          en: "Apple",
+        },
+        basePrice: undefined,
+        totalStock: 20,
+      },
+    });
+
+    const res = createResponse();
 
     await createProduct(req, res);
 
     expect(Product.create).toHaveBeenCalledWith({
-      name: "Product",
-      basePrice: 100,
+      name: {
+        en: "Apple",
+      },
+      totalStock: 20,
     });
   });
 
-
-  test("returns 400 when creation fails", async () => {
+  test("returns 400 when product creation fails", async () => {
     Product.create.mockRejectedValue(
       new Error("Validation failed")
     );
 
-    const req = {
+    const req = createRequest({
       body: {
-        name: "Invalid Product",
+        name: {
+          en: "Apple",
+        },
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await createProduct(req, res);
 
@@ -1056,44 +1141,48 @@ describe("createProduct", () => {
   });
 });
 
-
-/* ============================================================
-   UPDATE PRODUCT
-   ============================================================ */
+// ============================================================
+// updateProduct
+// ============================================================
 
 describe("updateProduct", () => {
   test("updates product successfully", async () => {
-    const product = {
-      _id: validId,
-      name: "Updated Product",
-      basePrice: 600,
+    const updatedProduct = {
+      _id: "507f1f77bcf86cd799439011",
+      name: {
+        en: "Updated Apple",
+      },
+      basePrice: 150,
     };
 
-    Product.findByIdAndUpdate.mockResolvedValue(product);
+    Product.findByIdAndUpdate.mockResolvedValue(
+      updatedProduct
+    );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
       body: {
-        name: "Updated Product",
-        basePrice: 600,
-
-        // Should not be written
-        averageRating: 5,
-        arbitraryField: "blocked",
+        name: {
+          en: "Updated Apple",
+        },
+        basePrice: 150,
+        maliciousField: "blocked",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await updateProduct(req, res);
 
     expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
-      validId,
+      "507f1f77bcf86cd799439011",
       {
-        name: "Updated Product",
-        basePrice: 600,
+        name: {
+          en: "Updated Apple",
+        },
+        basePrice: 150,
       },
       {
         new: true,
@@ -1101,23 +1190,24 @@ describe("updateProduct", () => {
       }
     );
 
-    expect(res.json).toHaveBeenCalledWith(product);
+    expect(res.json).toHaveBeenCalledWith(updatedProduct);
   });
 
-
-  test("returns 404 for invalid ObjectId", async () => {
+  test("returns 404 for invalid product id", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    const req = {
+    const req = createRequest({
       params: {
         id: "invalid",
       },
       body: {
-        name: "Updated",
+        name: {
+          en: "Updated",
+        },
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await updateProduct(req, res);
 
@@ -1130,20 +1220,21 @@ describe("updateProduct", () => {
     expect(Product.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-
   test("returns 404 when product does not exist", async () => {
     Product.findByIdAndUpdate.mockResolvedValue(null);
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
       body: {
-        name: "Updated",
+        name: {
+          en: "Updated",
+        },
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await updateProduct(req, res);
 
@@ -1154,22 +1245,21 @@ describe("updateProduct", () => {
     });
   });
 
-
   test("returns 400 when update fails validation", async () => {
     Product.findByIdAndUpdate.mockRejectedValue(
       new Error("Validation failed")
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
       body: {
-        basePrice: -10,
+        basePrice: -100,
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await updateProduct(req, res);
 
@@ -1181,33 +1271,33 @@ describe("updateProduct", () => {
   });
 });
 
-
-/* ============================================================
-   DELETE PRODUCT
-   ============================================================ */
+// ============================================================
+// deleteProduct
+// ============================================================
 
 describe("deleteProduct", () => {
   test("soft deletes product successfully", async () => {
-    const product = {
-      _id: validId,
-      name: "Product",
+    const deletedProduct = {
+      _id: "507f1f77bcf86cd799439011",
       isActive: false,
     };
 
-    Product.findByIdAndUpdate.mockResolvedValue(product);
+    Product.findByIdAndUpdate.mockResolvedValue(
+      deletedProduct
+    );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await deleteProduct(req, res);
 
     expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
-      validId,
+      "507f1f77bcf86cd799439011",
       {
         isActive: false,
       },
@@ -1221,17 +1311,16 @@ describe("deleteProduct", () => {
     });
   });
 
-
-  test("returns 404 for invalid ObjectId", async () => {
+  test("returns 404 for invalid product id", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    const req = {
+    const req = createRequest({
       params: {
         id: "invalid",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await deleteProduct(req, res);
 
@@ -1244,17 +1333,16 @@ describe("deleteProduct", () => {
     expect(Product.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
-
   test("returns 404 when product does not exist", async () => {
     Product.findByIdAndUpdate.mockResolvedValue(null);
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await deleteProduct(req, res);
 
@@ -1265,105 +1353,122 @@ describe("deleteProduct", () => {
     });
   });
 
-
-  test("returns 500 when deletion fails", async () => {
+  test("returns 500 when delete operation fails", async () => {
     Product.findByIdAndUpdate.mockRejectedValue(
-      new Error("Database failure")
+      new Error("Database error")
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        id: validId,
+        id: "507f1f77bcf86cd799439011",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await deleteProduct(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "Database failure",
+      message: "Database error",
     });
   });
 });
 
-
-/* ============================================================
-   GET RECOMMENDATIONS
-   ============================================================ */
+// ============================================================
+// getRecommendations
+// ============================================================
 
 describe("getRecommendations", () => {
-  test("returns recommendations from same category", async () => {
+  test("returns products from the same category", async () => {
+    const sourceProduct = {
+      _id: "source123",
+      category: "category123",
+    };
+
     const recommendations = [
       {
         _id: "product2",
-        category: "category1",
-        isActive: true,
-        totalStock: 5,
-      },
-      {
-        _id: "product3",
-        category: "category1",
+        category: "category123",
         isActive: true,
         totalStock: 10,
       },
+      {
+        _id: "product3",
+        category: "category123",
+        isActive: true,
+        totalStock: 5,
+      },
     ];
 
+    mongoose.Types.ObjectId.isValid.mockReturnValue(true);
+
     Product.findById.mockReturnValue(
-      createQueryChain({
-        category: "category1",
-      })
+      createQueryMock(sourceProduct)
     );
+
+    const recommendationQuery =
+      createQueryMock(recommendations);
 
     Product.find.mockReturnValue(
-      createQueryChain(recommendations)
+      recommendationQuery
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        productId: validId,
+        productId: "507f1f77bcf86cd799439011",
       },
-      query: {
-        limit: "5",
-      },
-    };
+      query: {},
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
-    expect(Product.findById).toHaveBeenCalledWith(validId);
+    expect(Product.findById).toHaveBeenCalledWith(
+      "507f1f77bcf86cd799439011"
+    );
 
     expect(Product.find).toHaveBeenCalledWith({
       _id: {
-        $ne: validId,
+        $ne: "507f1f77bcf86cd799439011",
       },
-      category: "category1",
+      category: "category123",
       isActive: true,
       totalStock: {
         $gt: 0,
       },
     });
 
+    expect(recommendationQuery.populate).toHaveBeenCalledWith(
+      "category",
+      "name slug"
+    );
+
+    expect(recommendationQuery.sort).toHaveBeenCalledWith({
+      createdAt: -1,
+    });
+
+    expect(recommendationQuery.limit).toHaveBeenCalledWith(8);
+
+    expect(recommendationQuery.lean).toHaveBeenCalled();
+
     expect(res.json).toHaveBeenCalledWith(
       recommendations
     );
   });
 
-
   test("returns 404 for invalid product id", async () => {
     mongoose.Types.ObjectId.isValid.mockReturnValue(false);
 
-    const req = {
+    const req = createRequest({
       params: {
         productId: "invalid",
       },
-      query: {},
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
@@ -1376,20 +1481,18 @@ describe("getRecommendations", () => {
     expect(Product.findById).not.toHaveBeenCalled();
   });
 
-
   test("returns 404 when source product does not exist", async () => {
     Product.findById.mockReturnValue(
-      createQueryChain(null)
+      createQueryMock(null)
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        productId: validId,
+        productId: "507f1f77bcf86cd799439011",
       },
-      query: {},
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
@@ -1400,142 +1503,136 @@ describe("getRecommendations", () => {
     });
   });
 
-
-  test("uses default recommendation limit of 8", async () => {
-    Product.findById.mockReturnValue(
-      createQueryChain({
-        category: "category1",
-      })
-    );
-
-    const chain = createQueryChain([]);
-
-    Product.find.mockReturnValue(chain);
-
-    const req = {
-      params: {
-        productId: validId,
-      },
-      query: {},
+  test("uses requested recommendation limit", async () => {
+    const sourceProduct = {
+      category: "category123",
     };
 
-    const res = mockResponse();
+    Product.findById.mockReturnValue(
+      createQueryMock(sourceProduct)
+    );
+
+    const recommendationQuery =
+      createQueryMock([]);
+
+    Product.find.mockReturnValue(
+      recommendationQuery
+    );
+
+    const req = createRequest({
+      params: {
+        productId: "507f1f77bcf86cd799439011",
+      },
+      query: {
+        limit: "5",
+      },
+    });
+
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
-    expect(chain.limit).toHaveBeenCalledWith(8);
+    expect(recommendationQuery.limit).toHaveBeenCalledWith(5);
   });
 
-
   test("caps recommendation limit at 12", async () => {
+    const sourceProduct = {
+      category: "category123",
+    };
+
     Product.findById.mockReturnValue(
-      createQueryChain({
-        category: "category1",
-      })
+      createQueryMock(sourceProduct)
     );
 
-    const chain = createQueryChain([]);
+    const recommendationQuery =
+      createQueryMock([]);
 
-    Product.find.mockReturnValue(chain);
+    Product.find.mockReturnValue(
+      recommendationQuery
+    );
 
-    const req = {
+    const req = createRequest({
       params: {
-        productId: validId,
+        productId: "507f1f77bcf86cd799439011",
       },
       query: {
         limit: "100",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
-    expect(chain.limit).toHaveBeenCalledWith(12);
+    expect(recommendationQuery.limit).toHaveBeenCalledWith(
+      12
+    );
   });
 
+  test("returns empty array when no same-category products exist", async () => {
+    const sourceProduct = {
+      category: "category123",
+    };
 
-  test("returns empty array when no recommendations exist", async () => {
     Product.findById.mockReturnValue(
-      createQueryChain({
-        category: "category1",
-      })
+      createQueryMock(sourceProduct)
     );
 
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([])
     );
 
-    const req = {
+    const req = createRequest({
       params: {
-        productId: validId,
+        productId: "507f1f77bcf86cd799439011",
       },
-      query: {},
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
     expect(res.json).toHaveBeenCalledWith([]);
   });
 
-
-  test("returns 500 when recommendation query fails", async () => {
+  test("returns 500 when recommendation lookup fails", async () => {
     Product.findById.mockReturnValue(
-      createQueryChain({
-        category: "category1",
-      })
+      createQueryMock(
+        Promise.reject(new Error("Database error"))
+      )
     );
 
-    Product.find.mockReturnValue({
-      populate: jest.fn().mockReturnThis(),
-      sort: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockReturnThis(),
-
-      then: (resolve, reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).then(resolve, reject),
-
-      catch: (reject) =>
-        Promise.reject(
-          new Error("Database failure")
-        ).catch(reject),
+    const req = createRequest({
+      params: {
+        productId: "507f1f77bcf86cd799439011",
+      },
     });
 
-    const req = {
-      params: {
-        productId: validId,
-      },
-      query: {},
-    };
-
-    const res = mockResponse();
+    const res = createResponse();
 
     await getRecommendations(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "Database failure",
+      message: "Database error",
     });
   });
 });
 
-
-/* ============================================================
-   SEARCH PRODUCTS
-   ============================================================ */
+// ============================================================
+// searchProducts
+// ============================================================
 
 describe("searchProducts", () => {
-  test("returns empty arrays when query is missing", async () => {
-    const req = {
-      query: {},
-    };
+  test("returns empty products and categories for empty query", async () => {
+    const req = createRequest({
+      query: {
+        q: "",
+      },
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await searchProducts(req, res);
 
@@ -1545,18 +1642,16 @@ describe("searchProducts", () => {
     });
 
     expect(Product.find).not.toHaveBeenCalled();
+
     expect(Category.find).not.toHaveBeenCalled();
   });
 
+  test("returns empty products and categories when q is missing", async () => {
+    const req = createRequest({
+      query: {},
+    });
 
-  test("returns empty arrays when query is empty", async () => {
-    const req = {
-      query: {
-        q: "",
-      },
-    };
-
-    const res = mockResponse();
+    const res = createResponse();
 
     await searchProducts(req, res);
 
@@ -1566,148 +1661,85 @@ describe("searchProducts", () => {
     });
   });
 
-
-  test("trims search query", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
+  test("returns empty result when query contains only spaces", async () => {
+    const req = createRequest({
       query: {
-        q: "   apple   ",
+        q: "   ",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await searchProducts(req, res);
 
-    expect(Product.find).toHaveBeenCalled();
-
-    const productQuery =
-      Product.find.mock.calls[0][0];
-
-    expect(productQuery.$or[0]["name.en"]).toEqual(
-      expect.objectContaining({
-        $regex: expect.any(RegExp),
-      })
-    );
+    expect(res.json).toHaveBeenCalledWith({
+      products: [],
+      categories: [],
+    });
   });
 
-
-  test("searches products by English and Bangla names", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
-      query: {
-        q: "apple",
-      },
-    };
-
-    const res = mockResponse();
-
-    await searchProducts(req, res);
-
-    const productQuery =
-      Product.find.mock.calls[0][0];
-
-    expect(productQuery.isActive).toBe(true);
-
-    expect(productQuery.$or).toHaveLength(2);
-
-    expect(productQuery.$or[0]).toHaveProperty(
-      "name.en"
-    );
-
-    expect(productQuery.$or[1]).toHaveProperty(
-      "name.bn"
-    );
-  });
-
-
-  test("searches categories by English and Bangla names", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
-      query: {
-        q: "food",
-      },
-    };
-
-    const res = mockResponse();
-
-    await searchProducts(req, res);
-
-    const categoryQuery =
-      Category.find.mock.calls[0][0];
-
-    expect(categoryQuery.$or).toHaveLength(2);
-
-    expect(categoryQuery.$or[0]).toHaveProperty(
-      "name.en"
-    );
-
-    expect(categoryQuery.$or[1]).toHaveProperty(
-      "name.bn"
-    );
-  });
-
-
-  test("returns product and category search results", async () => {
+  test("searches products and categories successfully", async () => {
     const products = [
       {
-        _id: "1",
+        _id: "product1",
         name: {
           en: "Apple",
         },
-        images: ["apple.jpg"],
+        images: [],
         basePrice: 100,
       },
     ];
 
     const categories = [
       {
-        _id: "cat1",
+        _id: "category1",
         name: {
-          en: "Fruits",
+          en: "Apple Products",
         },
-        slug: "fruits",
+        slug: "apple-products",
       },
     ];
 
     Product.find.mockReturnValue(
-      createQueryChain(products)
+      createQueryMock(products)
     );
 
     Category.find.mockReturnValue(
-      createQueryChain(categories)
+      createQueryMock(categories)
     );
 
-    const req = {
+    const req = createRequest({
       query: {
         q: "apple",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await searchProducts(req, res);
+
+    expect(Product.find).toHaveBeenCalledWith({
+      isActive: true,
+      $or: [
+        {
+          "name.en": expect.any(RegExp),
+        },
+        {
+          "name.bn": expect.any(RegExp),
+        },
+      ],
+    });
+
+    expect(Category.find).toHaveBeenCalledWith({
+      $or: [
+        {
+          "name.en": expect.any(RegExp),
+        },
+        {
+          "name.bn": expect.any(RegExp),
+        },
+      ],
+    });
 
     expect(res.json).toHaveBeenCalledWith({
       products,
@@ -1715,111 +1747,172 @@ describe("searchProducts", () => {
     });
   });
 
-
   test("limits product search results to 8", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
+    const productQuery = createQueryMock([]);
 
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
+    const categoryQuery = createQueryMock([]);
 
-    const req = {
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
       query: {
         q: "apple",
       },
-    };
-
-    const res = mockResponse();
-
-    await searchProducts(req, res);
-
-    const productChain =
-      Product.find.mock.results[0].value;
-
-    expect(productChain.limit).toHaveBeenCalledWith(8);
-  });
-
-
-  test("limits category search results to 4", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
-      query: {
-        q: "apple",
-      },
-    };
-
-    const res = mockResponse();
-
-    await searchProducts(req, res);
-
-    const categoryChain =
-      Category.find.mock.results[0].value;
-
-    expect(categoryChain.limit).toHaveBeenCalledWith(4);
-  });
-
-
-  test("escapes regex special characters", async () => {
-    Product.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    Category.find.mockReturnValue(
-      createQueryChain([])
-    );
-
-    const req = {
-      query: {
-        q: "(",
-      },
-    };
-
-    const res = mockResponse();
-
-    await searchProducts(req, res);
-
-    const productQuery =
-      Product.find.mock.calls[0][0];
-
-    const regex =
-      productQuery.$or[0]["name.en"].$regex;
-
-    expect(regex).toEqual(/\(/i);
-  });
-
-
-  test("returns 500 when product search fails", async () => {
-    Product.find.mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-
-      then: (resolve, reject) =>
-        Promise.reject(
-          new Error("Product search failed")
-        ).then(resolve, reject),
-
-      catch: (reject) =>
-        Promise.reject(
-          new Error("Product search failed")
-        ).catch(reject),
     });
 
-    const req = {
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    expect(productQuery.limit).toHaveBeenCalledWith(8);
+  });
+
+  test("limits category search results to 4", async () => {
+    const productQuery = createQueryMock([]);
+
+    const categoryQuery = createQueryMock([]);
+
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
       query: {
         q: "apple",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    expect(categoryQuery.limit).toHaveBeenCalledWith(4);
+  });
+
+  test("selects only required product fields", async () => {
+    const productQuery = createQueryMock([]);
+
+    const categoryQuery = createQueryMock([]);
+
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
+      query: {
+        q: "apple",
+      },
+    });
+
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    expect(productQuery.select).toHaveBeenCalledWith(
+      "_id name images basePrice"
+    );
+  });
+
+  test("selects only required category fields", async () => {
+    const productQuery = createQueryMock([]);
+
+    const categoryQuery = createQueryMock([]);
+
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
+      query: {
+        q: "apple",
+      },
+    });
+
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    expect(categoryQuery.select).toHaveBeenCalledWith(
+      "_id name slug"
+    );
+  });
+
+  test("trims search query before searching", async () => {
+    const productQuery = createQueryMock([]);
+
+    const categoryQuery = createQueryMock([]);
+
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
+      query: {
+        q: "   apple   ",
+      },
+    });
+
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    const productCall = Product.find.mock.calls[0][0];
+
+    const productRegex = productCall.$or[0]["name.en"];
+
+    expect(productRegex).toEqual(
+      expect.any(RegExp)
+    );
+
+    expect(productRegex.source).toBe("apple");
+  });
+
+  test("escapes regex special characters in autocomplete", async () => {
+    const productQuery = createQueryMock([]);
+
+    const categoryQuery = createQueryMock([]);
+
+    Product.find.mockReturnValue(productQuery);
+
+    Category.find.mockReturnValue(categoryQuery);
+
+    const req = createRequest({
+      query: {
+        q: "apple(",
+      },
+    });
+
+    const res = createResponse();
+
+    await searchProducts(req, res);
+
+    const productCall = Product.find.mock.calls[0][0];
+
+    const regex = productCall.$or[0]["name.en"];
+
+    expect(regex).toEqual(
+      expect.any(RegExp)
+    );
+
+    expect(regex.source).toBe("apple\\(");
+  });
+
+  test("returns 500 when product search fails", async () => {
+    Product.find.mockReturnValue(
+      createQueryMock(
+        Promise.reject(new Error("Product search failed"))
+      )
+    );
+
+    const req = createRequest({
+      query: {
+        q: "apple",
+      },
+    });
+
+    const res = createResponse();
 
     await searchProducts(req, res);
 
@@ -1830,34 +1923,24 @@ describe("searchProducts", () => {
     });
   });
 
-
   test("returns 500 when category search fails", async () => {
     Product.find.mockReturnValue(
-      createQueryChain([])
+      createQueryMock([])
     );
 
-    Category.find.mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
+    Category.find.mockReturnValue(
+      createQueryMock(
+        Promise.reject(new Error("Category search failed"))
+      )
+    );
 
-      then: (resolve, reject) =>
-        Promise.reject(
-          new Error("Category search failed")
-        ).then(resolve, reject),
-
-      catch: (reject) =>
-        Promise.reject(
-          new Error("Category search failed")
-        ).catch(reject),
-    });
-
-    const req = {
+    const req = createRequest({
       query: {
         q: "apple",
       },
-    };
+    });
 
-    const res = mockResponse();
+    const res = createResponse();
 
     await searchProducts(req, res);
 

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>19/19</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>19/19</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -138,35 +138,35 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import express from "express";
@@ -191,35 +191,35 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 import { loginLimiter, sensitiveActionLimiter } from "../middleware/rateLimiters.js";
 &nbsp;
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
+const router = express.Router();
 &nbsp;
 // Core auth
-<span class="cstat-no" title="statement not covered" >router.post("/register", sensitiveActionLimiter, registerUser);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/login", loginLimiter, loginUser);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/2fa/verify", loginLimiter, verifyTwoFactorLogin);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/refresh", refreshAccessToken);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/logout", logoutUser);</span>
-<span class="cstat-no" title="statement not covered" >router.get("/me", protect, getMe);</span>
-<span class="cstat-no" title="statement not covered" >router.patch("/me", protect, updateProfile);</span>
-<span class="cstat-no" title="statement not covered" >router.put("/me/address", protect, updateDefaultAddress);</span>
-<span class="cstat-no" title="statement not covered" >router.delete("/me", protect, sensitiveActionLimiter, deleteAccount);</span>
+router.post("/register", sensitiveActionLimiter, registerUser);
+router.post("/login", loginLimiter, loginUser);
+router.post("/2fa/verify", loginLimiter, verifyTwoFactorLogin);
+router.post("/refresh", refreshAccessToken);
+router.post("/logout", logoutUser);
+router.get("/me", protect, getMe);
+router.patch("/me", protect, updateProfile);
+router.put("/me/address", protect, updateDefaultAddress);
+router.delete("/me", protect, sensitiveActionLimiter, deleteAccount);
 &nbsp;
 // Email verification (OTP sent at registration)
-<span class="cstat-no" title="statement not covered" >router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);</span>
+router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
+router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 &nbsp;
 // Email verification (OTP sent at registration)
-<span class="cstat-no" title="statement not covered" >router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);</span>
+router.post("/verify-email", sensitiveActionLimiter, verifyEmailOtp);
+router.post("/resend-otp", sensitiveActionLimiter, resendEmailOtp);
 &nbsp;
 // Password reset — via the security question chosen at registration (no email service)
-<span class="cstat-no" title="statement not covered" >router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/forgot-password/reset", sensitiveActionLimiter, resetPasswordWithAnswer);</span>
+router.post("/forgot-password/question", sensitiveActionLimiter, getSecurityQuestion);
+router.post("/forgot-password/reset", sensitiveActionLimiter, resetPasswordWithAnswer);
 &nbsp;
 // 2FA management (requires being logged in)
-<span class="cstat-no" title="statement not covered" >router.post("/2fa/setup", protect, setupTwoFactor);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/2fa/verify-setup", protect, verifyTwoFactorSetup);</span>
-<span class="cstat-no" title="statement not covered" >router.post("/2fa/disable", protect, disableTwoFactor);</span>
+router.post("/2fa/setup", protect, setupTwoFactor);
+router.post("/2fa/verify-setup", protect, verifyTwoFactorSetup);
+router.post("/2fa/disable", protect, disableTwoFactor);
 &nbsp;
 export default router;
 &nbsp;</pre></td></tr></table></pre>
@@ -229,7 +229,7 @@ export default router;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:14:59.888Z
+                at 2026-08-18T17:40:46.926Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">94.73% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>18/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/18</span>
+                <span class='fraction'>15/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">93.75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>15/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -108,16 +108,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -125,18 +125,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -147,16 +147,16 @@ import path from "path";
 import { protect, adminOnly } from "../middleware/authMiddleware.js";
 import { upload, uploadDir } from "../middleware/upload.js";
 &nbsp;
-const router = <span class="cstat-no" title="statement not covered" >express.Router();</span>
+const router = express.Router();
 &nbsp;
 // POST /api/upload (admin only) — accepts a single "image" file, saves it to
 // frontend/public/uploads/, and returns the public URL to store on the
 // product/category record.
-<span class="cstat-no" title="statement not covered" >router.post("/", protect, adminOnly, <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  upload.single("image")(req, res, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (err) <span class="cstat-no" title="statement not covered" >return res.status(400).json({ message: err.message || "Upload failed." });</span></span>
-<span class="cstat-no" title="statement not covered" >    if (!req.file) <span class="cstat-no" title="statement not covered" >return res.status(400).json({ message: "No file uploaded." });</span></span>
-<span class="cstat-no" title="statement not covered" >    res.status(201).json({ url: `/uploads/${req.file.filename}` });</span>
+router.post("/", protect, adminOnly, (req, res) =&gt; {
+  upload.single("image")(req, res, (err) =&gt; {
+    if (err) return res.status(400).json({ message: err.message || <span class="branch-1 cbranch-no" title="branch not covered" >"Upload failed." </span>});
+    if (!req.file) return res.status(400).json({ message: "No file uploaded." });
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
   });
 });
 &nbsp;
@@ -164,18 +164,18 @@ const router = <span class="cstat-no" title="statement not covered" >express.Rou
 // disk once it's no longer referenced by a product/category, so replacing
 // or removing an image doesn't leave orphaned files behind. Only accepts
 // URLs pointing inside uploadDir to prevent path traversal.
-<span class="cstat-no" title="statement not covered" >router.delete("/", protect, adminOnly, <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {</span>
-  const { url } = <span class="cstat-no" title="statement not covered" >req.body || {};</span>
-<span class="cstat-no" title="statement not covered" >  if (typeof url !== "string" || !url.startsWith("/uploads/")) {</span>
+router.delete("/", protect, adminOnly, (req, res) =&gt; {
+  const { url } = req.body || <span class="branch-1 cbranch-no" title="branch not covered" >{};</span>
+  if (typeof url !== "string" || !url.startsWith("/uploads/")) {
+    return res.status(400).json({ message: "Invalid image url." });
+  }
+  const filePath = path.join(uploadDir, path.basename(url));
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (path.dirname(filePath) !== uploadDir) {
 <span class="cstat-no" title="statement not covered" >    return res.status(400).json({ message: "Invalid image url." });</span>
   }
-  const filePath = <span class="cstat-no" title="statement not covered" >path.join(uploadDir, path.basename(url));</span>
-<span class="cstat-no" title="statement not covered" >  if (path.dirname(filePath) !== uploadDir) {</span>
-<span class="cstat-no" title="statement not covered" >    return res.status(400).json({ message: "Invalid image url." });</span>
-  }
-<span class="cstat-no" title="statement not covered" >  fs.unlink(filePath, <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (err &amp;&amp; err.code !== "ENOENT") <span class="cstat-no" title="statement not covered" >return res.status(500).json({ message: "Failed to delete image." });</span></span>
-<span class="cstat-no" title="statement not covered" >    res.json({ message: "Image deleted." });</span>
+  fs.unlink(filePath, (err) =&gt; {
+    if (err &amp;&amp; err.code !== "ENOENT") return res.status(500).json({ message: "Failed to delete image." });
+    res.json({ message: "Image deleted." });
   });
 });
 &nbsp;
@@ -187,7 +187,7 @@ export default router;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:15:00.330Z
+                at 2026-08-18T17:40:47.763Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
