@@ -12,7 +12,6 @@
   "subtotal": "Subtotal ({{count}} {{label}})",
   "deliveryCod": "Delivery (COD)",
   "estimatedTotal": "Estimated Total",
-  "deliveryNote": "* Delivery charge waived for online payments (bKash / Bank)",
   "proceedToCheckout": "Proceed to Checkout →",
   "mergeNotice_one": "{{count}} item from your saved cart couldn't be added — it may be out of stock or no longer available.",
   "mergeNotice_other": "{{count}} items from your saved cart couldn't be added — they may be out of stock or no longer available.",

@@ -1,8 +1,10 @@
 import Refund from "../models/Refund.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { notifyAdmins } from "../utils/notifyAdmins.js";
+import { sendRefundStatusEmail } from "../utils/mailer.js";
 
 const REASONS = ["damaged", "wrong_item", "not_as_described", "changed_mind", "size_issue", "other"];
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -50,6 +52,21 @@ const buildRefundDoc = async (order, body, submitter) => {
 
   const item = order.items.find((i) => i.product && i.product.toString() === productId);
   if (!item) throw { status: 404, message: "That product is not part of this order." };
+
+  // The unique index on (order, item.product) only blocks a second *open*
+  // (pending/approved) request — once one is processed it falls outside
+  // that partial index, so without this check the same item could be
+  // returned/exchanged and restocked over and over within the return
+  // window. A rejected request is deliberately NOT checked here so the
+  // customer can still resubmit after a fixable rejection.
+  const alreadyProcessed = await Refund.findOne({
+    order: order._id,
+    "item.product": item.product,
+    status: "processed",
+  });
+  if (alreadyProcessed) {
+    throw { status: 400, message: "This item has already been refunded or exchanged." };
+  }
 
   const qty = Number(quantity) || item.quantity;
   if (qty < 1 || qty > item.quantity) {
@@ -194,8 +211,13 @@ export const getGuestRefunds = async (req, res) => {
       "guestInfo.email": new RegExp(`^${escapeRegex(email.trim())}$`, "i"),
     }).select("_id");
 
+    // Sorted newest-first: rejected requests can be resubmitted, so the same
+    // order+item can have more than one Refund doc — the frontend's
+    // find()-based lookup picks whichever comes first, and it should always
+    // be the latest request, not a stale rejected one.
     const refunds = await Refund.find({ order: { $in: validOrders.map((o) => o._id) } })
-      .select("order item.product status requestType");
+      .select("order item.product status requestType adminNote createdAt")
+      .sort({ createdAt: -1 });
     res.json(refunds);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch return requests." });
@@ -243,32 +265,52 @@ export const updateRefundStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status." });
     }
 
-    const refund = await Refund.findById(req.params.id);
-    if (!refund) return res.status(404).json({ message: "Return request not found." });
-
+    // An approved request can still be rejected (e.g. the admin approved by
+    // mistake, or later spots a problem) — only a processed one is final.
     const allowedFrom = {
       approved: ["pending"],
-      rejected: ["pending"],
+      rejected: ["pending", "approved"],
       processed: ["approved"],
     };
-    if (!allowedFrom[status].includes(refund.status)) {
-      return res.status(400).json({
-        message: `Cannot move a "${refund.status}" request to "${status}".`,
-      });
+
+    const update = { status };
+    if (adminNote) update.adminNote = adminNote;
+    if (status === "processed") {
+      update.stockRestored = true;
+      update.processedAt = new Date();
     }
 
-    refund.status = status;
-    if (adminNote) refund.adminNote = adminNote;
+    // Atomic find-and-update guarded by the CURRENT status, so two
+    // near-simultaneous "Process" clicks can't both pass the status check
+    // and both restock the item — only the request that actually wins the
+    // status transition (result non-null) runs the stock update below.
+    // {new: false} returns the pre-update doc, which still has the correct
+    // item/order/user/requestType fields for the stock update and
+    // notification below.
+    const refund = await Refund.findOneAndUpdate(
+      { _id: req.params.id, status: { $in: allowedFrom[status] } },
+      update,
+      { new: false }
+    );
+
+    if (!refund) {
+      const existing = await Refund.findById(req.params.id).select("status");
+      if (!existing) return res.status(404).json({ message: "Return request not found." });
+      return res.status(400).json({
+        message: `Cannot move a "${existing.status}" request to "${status}".`,
+      });
+    }
 
     if (status === "processed" && !refund.stockRestored) {
       await Product.findByIdAndUpdate(refund.item.product, {
         $inc: { totalStock: refund.item.quantity },
       });
-      refund.stockRestored = true;
-      refund.processedAt = new Date();
     }
 
-    await refund.save();
+    // `refund` is still the pre-update snapshot ({new: false} above) — patch
+    // it in memory with what was just written so the notification and the
+    // response payload reflect the new status instead of the stale one.
+    Object.assign(refund, update);
 
     if (refund.user) {
       const messages = {
@@ -283,6 +325,32 @@ export const updateRefundStatus = async (req, res) => {
         message: messages[status],
         order: refund.order,
       }).catch(() => {});
+    }
+
+    // Best-effort email — guests have no in-app notification bell at all, so
+    // this is their only way to find out a status changed (mirrors how
+    // orderController.js emails guests unconditionally on order status
+    // changes). Registered users additionally get one unless they've turned
+    // email notifications off — the bell above always fires for them either
+    // way, so this is a bonus channel, not their only one.
+    const emailArgs = {
+      itemName: refund.item.nameSnapshot,
+      requestType: refund.requestType,
+      status,
+      adminNote,
+    };
+    if (refund.isGuest) {
+      if (refund.guestInfo?.email) {
+        sendRefundStatusEmail(refund.guestInfo.email, emailArgs).catch(() => {});
+      }
+    } else if (refund.user) {
+      User.findById(refund.user).select("email notificationsEnabled")
+        .then((u) => {
+          if (u?.email && u.notificationsEnabled) {
+            sendRefundStatusEmail(u.email, emailArgs).catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
 
     res.json(refund);

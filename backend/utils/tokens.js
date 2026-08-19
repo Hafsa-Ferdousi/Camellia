@@ -27,3 +27,18 @@ export const refreshCookieOptions = () => ({
   path: "/api/auth", // only sent to auth endpoints that need it
   maxAge: REFRESH_TOKEN_TTL_MS,
 });
+
+// Non-httpOnly companion to the refresh cookie, readable by frontend JS, so
+// the app can skip the doomed-to-401 refresh call on mount for a visitor who
+// was never logged in (or whose session already ended) instead of firing it
+// unconditionally on every page load. Carries no secret — just a same-shaped
+// presence/absence signal, always set/cleared together with the real cookie.
+export const SESSION_HINT_COOKIE_NAME = "hasSession";
+
+export const sessionHintCookieOptions = () => ({
+  httpOnly: false,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+  maxAge: REFRESH_TOKEN_TTL_MS,
+});

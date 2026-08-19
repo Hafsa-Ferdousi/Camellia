@@ -143,9 +143,6 @@ export default function Cart() {
                 ৳ {formatPrice(subtotal + DELIVERY, language)}
               </span>
             </div>
-            <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>
-              {t("deliveryNote")}
-            </p>
           </div>
 
           <button

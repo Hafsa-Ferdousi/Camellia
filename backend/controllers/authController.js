@@ -21,6 +21,8 @@ import {
   REFRESH_TOKEN_TTL_MS,
   REFRESH_COOKIE_NAME,
   refreshCookieOptions,
+  SESSION_HINT_COOKIE_NAME,
+  sessionHintCookieOptions,
 } from "../utils/tokens.js";
 
 const publicUser = (user) => ({
@@ -51,6 +53,7 @@ async function issueSession(user, req, res) {
   await user.save({ validateBeforeSave: false });
 
   res.cookie(REFRESH_COOKIE_NAME, rawRefresh, refreshCookieOptions());
+  res.cookie(SESSION_HINT_COOKIE_NAME, "1", sessionHintCookieOptions());
   return accessToken;
 }
 
@@ -211,6 +214,7 @@ export const refreshAccessToken = async (req, res) => {
     const user = await User.findOne({ "refreshTokens.tokenHash": tokenHash }).select("+refreshTokens");
     if (!user) {
       res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+      res.clearCookie(SESSION_HINT_COOKIE_NAME, sessionHintCookieOptions());
       return res.status(401).json({ message: "Refresh token invalid. Please log in again." });
     }
 
@@ -220,6 +224,7 @@ export const refreshAccessToken = async (req, res) => {
       user.refreshTokens = user.refreshTokens.filter((t) => t.tokenHash !== tokenHash);
       await user.save({ validateBeforeSave: false });
       res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+      res.clearCookie(SESSION_HINT_COOKIE_NAME, sessionHintCookieOptions());
       return res.status(401).json({ message: "Refresh token expired. Please log in again." });
     }
 
@@ -244,6 +249,7 @@ export const logoutUser = async (req, res) => {
       await User.updateOne({ "refreshTokens.tokenHash": tokenHash }, { $pull: { refreshTokens: { tokenHash } } });
     }
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+    res.clearCookie(SESSION_HINT_COOKIE_NAME, sessionHintCookieOptions());
     res.json({ message: "Logged out." });
   } catch (error) {
     sendError(res, error);
@@ -319,6 +325,7 @@ export const resetPasswordWithAnswer = async (req, res) => {
     await user.save();
 
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+    res.clearCookie(SESSION_HINT_COOKIE_NAME, sessionHintCookieOptions());
     res.json({ message: "Password reset successfully. Please log in with your new password." });
   } catch (error) {
     sendError(res, error);
@@ -470,6 +477,7 @@ export const deleteAccount = async (req, res) => {
     await user.deleteOne();
 
     res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions());
+    res.clearCookie(SESSION_HINT_COOKIE_NAME, sessionHintCookieOptions());
     res.json({ message: "Your account has been deleted." });
   } catch (error) {
     sendError(res, error);

@@ -20,7 +20,18 @@ export function AuthProvider({ children }) {
   // load — re-establish the session here using the httpOnly refresh cookie
   // before asking who's logged in. A rejected refresh just means there's no
   // valid session (guest), not an error.
+  //
+  // The refresh cookie itself is httpOnly (unreadable here), but a
+  // same-lifecycle, non-secret "hasSession" cookie is set/cleared alongside
+  // it specifically so this check can skip the call for a visitor who was
+  // never logged in — otherwise every first-time guest page load fires a
+  // request that's guaranteed to 401.
   useEffect(() => {
+    if (!document.cookie.includes("hasSession=1")) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     refreshAccessToken()
       .then(() => getMe())
       .then(r => setUser(r.data))

@@ -53,20 +53,25 @@ export default function Home() {
   const [copiedCode,  setCopiedCode]  = useState("");
 
   useEffect(() => {
-    getCategories().then(r => setCategories(r.data)).catch(() => setCatError(true));
+    getCategories().then(r => Array.isArray(r.data) ? setCategories(r.data) : setCatError(true)).catch(() => setCatError(true));
   }, []);
 
   // Coupons the admin has activated are otherwise invisible to customers
   // (previously the only place a code appeared was the admin panel itself).
   // Surface any currently-usable ones here so shoppers actually see them.
+  //
+  // Array.isArray guards every list below against a malformed 200 (e.g. a
+  // transient gateway/redeploy response that isn't real JSON) slipping past
+  // .catch() and reaching .map() downstream — that's what crashed the whole
+  // page in production instead of just leaving a section empty.
   useEffect(() => {
-    getActiveCoupons().then(r => setCoupons(r.data)).catch(() => setCoupons([]));
+    getActiveCoupons().then(r => setCoupons(Array.isArray(r.data) ? r.data : [])).catch(() => setCoupons([]));
   }, []);
 
   // Coupons that are turned on but haven't started yet — teased on the
   // homepage with a live countdown so customers know to come back.
   useEffect(() => {
-    getUpcomingCoupons().then(r => setUpcomingCoupons(r.data)).catch(() => setUpcomingCoupons([]));
+    getUpcomingCoupons().then(r => setUpcomingCoupons(Array.isArray(r.data) ? r.data : [])).catch(() => setUpcomingCoupons([]));
   }, []);
 
   const copyCoupon = (code) => {
@@ -104,7 +109,7 @@ export default function Home() {
     // of the isFeatured flag admins can set. The backend already supports a
     // featured=true filter (productController.js) — use it.
     getProducts({ featured: true, limit: 4 })
-      .then(r => setFeatured(r.data.slice(0, 4)))
+      .then(r => setFeatured(Array.isArray(r.data) ? r.data.slice(0, 4) : []))
       .catch(() => setFeatured([]))
       .finally(() => setLoadingF(false));
   }, []);
@@ -115,7 +120,7 @@ export default function Home() {
     // just the newest products, so this reflects what customers are really
     // buying.
     getBestSellers(4)
-      .then(r => setBestSellers(r.data))
+      .then(r => setBestSellers(Array.isArray(r.data) ? r.data : []))
       .catch(() => setBestSellers([]))
       .finally(() => setLoadingBS(false));
   }, []);
@@ -242,22 +247,20 @@ export default function Home() {
         .coupon-chip-expiry { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
         /* ── Upcoming coupons (mobile) ──
-           Same band, a second row underneath — cooler/less saturated so it
-           reads as "not live yet", with a ticking countdown instead of a
-           copy-able code chip. */
-        .coupon-upcoming-head { text-align: center; margin: 22px 0 14px; }
-        .coupon-upcoming-eyebrow {
-          display: inline-flex; align-items: center; gap: 8px;
-          font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
-          text-transform: uppercase; color: var(--muted);
-        }
+           Same band, a second row underneath, given the exact same
+           eyebrow + italic-title header and card layout as the live
+           offers above it — cooler/muted eyebrow color and a countdown
+           pill in place of the copy-able code chip are the only things
+           that mark it as "not live yet". */
+        .coupon-upcoming-head { text-align: center; margin: 30px 0 18px; padding-top: 26px; border-top: 1px solid rgba(232,97,0,0.2); }
+        .coupon-strip-eyebrow--upcoming { color: var(--muted); }
         .coupon-chip--upcoming { opacity: 0.92; }
         .coupon-chip-countdown {
-          display: inline-flex; align-items: center; gap: 6px;
-          font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+          display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+          font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
           color: var(--maroon-dark); background: var(--gold-pale);
           border: 1px solid rgba(244,196,48,0.55);
-          border-radius: 20px; padding: 6px 12px; margin-top: 6px;
+          border-radius: 20px; padding: 7px 13px; white-space: nowrap;
         }
       `}</style>
 
@@ -273,7 +276,7 @@ export default function Home() {
               <>
                 <div className="coupon-strip-head">
                   <span className="coupon-strip-eyebrow">{t("home:offersEyebrow", { defaultValue: "Limited Time" })}</span>
-                  <h2 className="coupon-strip-title">{t("home:offersTitle", { defaultValue: "Exclusive Offers For You" })}</h2>
+                  <h2 className="coupon-strip-title">{t("home:offersTitle", { defaultValue: "Exclusive Offers" })}</h2>
                 </div>
                 <div className="coupon-row">
                   {coupons.map(c => (
@@ -292,9 +295,9 @@ export default function Home() {
                         <div className="coupon-chip-title">
                           {c.discountType === "percentage"
                             ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
-                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
                           {c.minimumPurchase > 0 &&
-                            ` · ${t("home:couponMinPurchase", { value: `৳ ${formatPrice(c.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(c.minimumPurchase, language, 0)}` })}`}
+                            ` · ${t("home:couponMinPurchase", { value: `৳ ${formatPrice(c.minimumPurchase, language, 0)}`, defaultValue: `min. ৳ ${formatPrice(c.minimumPurchase, language, 0)}` })}`}
                         </div>
                         {c.title && <div className="coupon-chip-desc">{c.title}</div>}
                         {c.startDate && c.endDate && (
@@ -316,23 +319,24 @@ export default function Home() {
             {upcomingCoupons.length > 0 && (
               <>
                 <div className="coupon-upcoming-head">
-                  <span className="coupon-upcoming-eyebrow">
-                    <Clock size={11} /> {t("home:upcomingEyebrow", { defaultValue: "Coming Soon" })}
+                  <span className="coupon-strip-eyebrow coupon-strip-eyebrow--upcoming">
+                    <Clock size={12} /> {t("home:upcomingEyebrow", { defaultValue: "Coming Soon" })}
                   </span>
+                  <h2 className="coupon-strip-title">{t("home:upcomingTitle", { defaultValue: "More Savings on the Way" })}</h2>
                 </div>
                 <div className="coupon-row">
                   {upcomingCoupons.map(c => (
                     <div key={c._id} className="coupon-chip coupon-chip--upcoming">
+                      <div className="coupon-chip-countdown">
+                        <Clock size={13} /> <CouponCountdown target={c.startDate} t={(k, o) => t(`home:${k}`, o)} />
+                      </div>
                       <div className="coupon-chip-text">
                         <div className="coupon-chip-title">
                           {c.discountType === "percentage"
                             ? t("home:couponPercentOff", { value: c.discountValue, defaultValue: `${c.discountValue}% off` })
-                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
+                            : t("home:couponFixedOff", { value: `৳ ${formatPrice(c.discountValue, language, 0)}`, defaultValue: `৳ ${formatPrice(c.discountValue, language, 0)} off` })}
                         </div>
                         {c.title && <div className="coupon-chip-desc">{c.title}</div>}
-                        <div className="coupon-chip-countdown">
-                          <Clock size={11} /> <CouponCountdown target={c.startDate} t={(k, o) => t(`home:${k}`, o)} />
-                        </div>
                       </div>
                     </div>
                   ))}

@@ -241,8 +241,12 @@ export default function TrackOrder() {
                         <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 13, flexWrap: "wrap", gap: 8 }}>
                           <div>
                             <div>{item.nameSnapshot || localized(item.product?.name, language)} × {item.quantity}</div>
+                            {/* A rejected request doesn't block re-requesting (the
+                                backend explicitly allows resubmission after a
+                                rejection) — only a still-open (pending/approved) or
+                                already-processed request should hide the button. */}
                             {order.status === "delivered" && (
-                              existingRefund ? (
+                              existingRefund && existingRefund.status !== "rejected" ? (
                                 <span style={{
                                   display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
                                   padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
@@ -253,6 +257,16 @@ export default function TrackOrder() {
                                 </span>
                               ) : daysLeft > 0 ? (
                                 <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                  {existingRefund && (
+                                    <span style={{
+                                      display: "inline-block", fontSize: 10, fontWeight: 600,
+                                      padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                      background: REFUND_STATUS_STYLE.rejected.bg,
+                                      color: REFUND_STATUS_STYLE.rejected.color,
+                                    }}>
+                                      {t("refundStatus_rejected")}
+                                    </span>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => setReturnTarget({ order, item })}
@@ -268,11 +282,25 @@ export default function TrackOrder() {
                                     · {t("returnDaysLeft", { count: daysLeft })}
                                   </span>
                                 </div>
+                              ) : existingRefund ? (
+                                <span style={{
+                                  display: "inline-block", marginTop: 4, fontSize: 10, fontWeight: 600,
+                                  padding: "2px 8px", borderRadius: 12, textTransform: "capitalize",
+                                  background: REFUND_STATUS_STYLE.rejected.bg,
+                                  color: REFUND_STATUS_STYLE.rejected.color,
+                                }}>
+                                  {t("refundStatus_rejected")}
+                                </span>
                               ) : (
                                 <span style={{ display: "inline-block", marginTop: 4, fontSize: 10, color: "var(--muted)" }}>
                                   {t("returnWindowClosed")}
                                 </span>
                               )
+                            )}
+                            {existingRefund?.status === "rejected" && existingRefund.adminNote && (
+                              <div style={{ marginTop: 3, fontSize: 10, color: "var(--muted)", fontStyle: "italic" }}>
+                                {t("adminNoteLabel")}: {existingRefund.adminNote}
+                              </div>
                             )}
                           </div>
                           <span style={{ fontWeight: 600, color: "var(--gold-text)" }}>৳ {formatPrice(item.price * item.quantity, language)}</span>
