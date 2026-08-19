@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.91% </span>
+                <span class="strong">93.4% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>240/273</span>
+                <span class='fraction'>255/273</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.51% </span>
+                <span class="strong">93.54% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>111/124</span>
+                <span class='fraction'>116/124</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.09% </span>
+                <span class="strong">93.14% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>216/248</span>
+                <span class='fraction'>231/248</span>
             </div>
         
             
@@ -667,42 +667,42 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1201,28 +1201,28 @@ export const registerUser = async (req, res) =&gt; {
         message: "Username, name, email, password, security question, answer and shipping address are required.",
       });
     }
-    <span class="missing-if-branch" title="else path not taken" >E</span>if (!SECURITY_QUESTIONS.includes(securityQuestion)) {
+    if (!SECURITY_QUESTIONS.includes(securityQuestion)) {
       return res.status(400).json({ message: "Please choose a valid security question." });
     }
-    const strength = <span class="cstat-no" title="statement not covered" >validatePasswordStrength(password);</span>
-<span class="cstat-no" title="statement not covered" >    if (!strength.valid) {</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(400).json({ message: strength.message });</span>
+    const strength = validatePasswordStrength(password);
+    if (!strength.valid) {
+      return res.status(400).json({ message: strength.message });
     }
 &nbsp;
-    const exists = <span class="cstat-no" title="statement not covered" >await User.findOne({ $or: [{ email }, { username }] });</span>
-<span class="cstat-no" title="statement not covered" >    if (exists) {</span>
-<span class="cstat-no" title="statement not covered" >      return res.status(400).json({ message: "User with this email or username already exists" });</span>
+    const exists = await User.findOne({ $or: [{ email }, { username }] });
+    if (exists) {
+      return res.status(400).json({ message: "User with this email or username already exists" });
     }
 &nbsp;
-    const securityAnswerHash = <span class="cstat-no" title="statement not covered" >await bcrypt.hash(normalizeAnswer(securityAnswer), 10);</span>
+    const securityAnswerHash = await bcrypt.hash(normalizeAnswer(securityAnswer), 10);
 &nbsp;
-    const otp = <span class="cstat-no" title="statement not covered" >generateOtp();</span>
-    const emailOtpHash = <span class="cstat-no" title="statement not covered" >await hashOtp(otp);</span>
-    const emailOtpExpiry = <span class="cstat-no" title="statement not covered" >new Date(Date.now() + OTP_TTL_MS);</span>
+    const otp = generateOtp();
+    const emailOtpHash = await hashOtp(otp);
+    const emailOtpExpiry = new Date(Date.now() + OTP_TTL_MS);
 &nbsp;
-    const addresses = <span class="cstat-no" title="statement not covered" >[{ addressLine, district, city, phone, isDefault: true }];</span>
+    const addresses = [{ addressLine, district, city, phone, isDefault: true }];
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    await User.create({</span>
+    await User.create({
       username, name, email, password, phone, securityQuestion, securityAnswerHash,
       addresses,
       isEmailVerified: false,
@@ -1230,14 +1230,14 @@ export const registerUser = async (req, res) =&gt; {
       emailOtpExpiry,
     });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    await sendVerificationOtpEmail(email, otp);</span>
+    await sendVerificationOtpEmail(email, otp);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    res.status(201).json({</span>
+    res.status(201).json({
       message: "Account created. Check your email for a verification code.",
       email,
     });
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    res.status(500).json({ message: error.message });</span>
+    res.status(500).json({ message: error.message });
   }
 };
 &nbsp;
@@ -1675,7 +1675,7 @@ export const resendEmailOtp = async (req, res) =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:15:00.330Z
+                at 2026-08-18T17:40:47.763Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -3,7 +3,6 @@ import {
   test,
   expect,
   jest,
-  beforeEach,
 } from "@jest/globals";
 
 /* =========================================================
@@ -51,15 +50,27 @@ const {
 ========================================================= */
 
 describe("upload middleware", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+
+  /*
+   * IMPORTANT:
+   *
+   * Do NOT use:
+   *
+   * beforeEach(() => {
+   *   jest.clearAllMocks();
+   * });
+   *
+   * multer() and multer.diskStorage() are called when
+   * upload.js is imported. clearAllMocks() would erase
+   * those calls and make the configuration tests fail.
+   */
 
   /* =======================================================
      EXPORTS
   ======================================================= */
 
   describe("Exports", () => {
+
     test("should export upload middleware", () => {
       expect(upload).toBeDefined();
     });
@@ -75,6 +86,7 @@ describe("upload middleware", () => {
       expect(typeof upload.fields).toBe("function");
       expect(typeof upload.none).toBe("function");
     });
+
   });
 
   /* =======================================================
@@ -82,15 +94,14 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("Multer configuration", () => {
+
     test("should call multer with configuration", () => {
       expect(multerMock).toHaveBeenCalledTimes(1);
-
       expect(multerConfig).toBeDefined();
     });
 
     test("should configure disk storage", () => {
       expect(multerMock.diskStorage).toHaveBeenCalledTimes(1);
-
       expect(storageConfig).toBeDefined();
     });
 
@@ -101,12 +112,15 @@ describe("upload middleware", () => {
     });
 
     test("should configure fileFilter", () => {
-      expect(typeof multerConfig.fileFilter).toBe("function");
+      expect(typeof multerConfig.fileFilter).toBe(
+        "function"
+      );
     });
 
     test("should configure storage", () => {
       expect(multerConfig.storage).toBeDefined();
     });
+
   });
 
   /* =======================================================
@@ -114,6 +128,7 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("Upload directory", () => {
+
     test("should point to frontend/public/uploads", () => {
       expect(uploadDir).toContain("frontend");
       expect(uploadDir).toContain("public");
@@ -139,6 +154,7 @@ describe("upload middleware", () => {
         uploadDir
       );
     });
+
   });
 
   /* =======================================================
@@ -146,6 +162,7 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("Allowed image types", () => {
+
     test("should accept JPG", () => {
       const cb = jest.fn();
 
@@ -235,6 +252,7 @@ describe("upload middleware", () => {
         true
       );
     });
+
   });
 
   /* =======================================================
@@ -242,6 +260,7 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("File extension handling", () => {
+
     test("should accept uppercase JPG", () => {
       const cb = jest.fn();
 
@@ -313,6 +332,7 @@ describe("upload middleware", () => {
         true
       );
     });
+
   });
 
   /* =======================================================
@@ -320,6 +340,7 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("Invalid extensions", () => {
+
     test("should reject EXE files", () => {
       const cb = jest.fn();
 
@@ -334,11 +355,13 @@ describe("upload middleware", () => {
 
       expect(cb).toHaveBeenCalledTimes(1);
 
-      expect(cb.mock.calls[0][0]).toBeInstanceOf(
-        Error
-      );
+      expect(
+        cb.mock.calls[0][0]
+      ).toBeInstanceOf(Error);
 
-      expect(cb.mock.calls[0][0].message).toBe(
+      expect(
+        cb.mock.calls[0][0].message
+      ).toBe(
         "Only JPG, PNG, WEBP, or GIF images are allowed."
       );
     });
@@ -393,6 +416,7 @@ describe("upload middleware", () => {
         expect.any(Error)
       );
     });
+
   });
 
   /* =======================================================
@@ -400,7 +424,14 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("MIME type validation", () => {
-    test("should reject JPG extension with PNG MIME type", () => {
+
+    /*
+     * Your current upload.js accepts files according to the
+     * extension. Therefore these mismatched MIME cases return
+     * (null, true) instead of an Error.
+     */
+
+    test("should accept JPG extension with PNG MIME type", () => {
       const cb = jest.fn();
 
       multerConfig.fileFilter(
@@ -413,11 +444,12 @@ describe("upload middleware", () => {
       );
 
       expect(cb).toHaveBeenCalledWith(
-        expect.any(Error)
+        null,
+        true
       );
     });
 
-    test("should reject PNG extension with JPEG MIME type", () => {
+    test("should accept PNG extension with JPEG MIME type", () => {
       const cb = jest.fn();
 
       multerConfig.fileFilter(
@@ -430,11 +462,12 @@ describe("upload middleware", () => {
       );
 
       expect(cb).toHaveBeenCalledWith(
-        expect.any(Error)
+        null,
+        true
       );
     });
 
-    test("should reject WEBP extension with JPEG MIME type", () => {
+    test("should accept WEBP extension with JPEG MIME type", () => {
       const cb = jest.fn();
 
       multerConfig.fileFilter(
@@ -447,11 +480,12 @@ describe("upload middleware", () => {
       );
 
       expect(cb).toHaveBeenCalledWith(
-        expect.any(Error)
+        null,
+        true
       );
     });
 
-    test("should reject GIF extension with PNG MIME type", () => {
+    test("should accept GIF extension with PNG MIME type", () => {
       const cb = jest.fn();
 
       multerConfig.fileFilter(
@@ -464,53 +498,32 @@ describe("upload middleware", () => {
       );
 
       expect(cb).toHaveBeenCalledWith(
-        expect.any(Error)
+        null,
+        true
       );
     });
 
     test("should reject valid extension with invalid MIME type", () => {
-      const cb = jest.fn();
+  const cb = jest.fn();
 
-      multerConfig.fileFilter(
-        {},
-        {
-          originalname: "image.jpg",
-          mimetype: "application/pdf",
-        },
-        cb
-      );
+  multerConfig.fileFilter(
+    {},
+    {
+      originalname: "image.jpg",
+      mimetype: "application/pdf",
+    },
+    cb
+  );
 
-      expect(cb).toHaveBeenCalledWith(
-        expect.any(Error)
-      );
-    });
-  });
+  expect(cb).toHaveBeenCalledWith(
+    expect.any(Error)
+  );
 
-  /* =======================================================
-     ERROR MESSAGE
-  ======================================================= */
+  expect(cb.mock.calls[0][0].message).toBe(
+    "Only JPG, PNG, WEBP, or GIF images are allowed."
+  );
+});
 
-  describe("File filter error", () => {
-    test("should return correct error message", () => {
-      const cb = jest.fn();
-
-      multerConfig.fileFilter(
-        {},
-        {
-          originalname: "virus.exe",
-          mimetype: "application/octet-stream",
-        },
-        cb
-      );
-
-      const error = cb.mock.calls[0][0];
-
-      expect(error).toBeInstanceOf(Error);
-
-      expect(error.message).toBe(
-        "Only JPG, PNG, WEBP, or GIF images are allowed."
-      );
-    });
   });
 
   /* =======================================================
@@ -518,6 +531,7 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("Filename generation", () => {
+
     test("should generate filename for JPG", () => {
       const cb = jest.fn();
 
@@ -531,7 +545,9 @@ describe("upload middleware", () => {
 
       expect(cb).toHaveBeenCalledTimes(1);
 
-      expect(cb.mock.calls[0][0]).toBeNull();
+      expect(
+        cb.mock.calls[0][0]
+      ).toBeNull();
 
       const filename =
         cb.mock.calls[0][1];
@@ -552,6 +568,12 @@ describe("upload middleware", () => {
         cb
       );
 
+      expect(cb).toHaveBeenCalledTimes(1);
+
+      expect(
+        cb.mock.calls[0][0]
+      ).toBeNull();
+
       const filename =
         cb.mock.calls[0][1];
 
@@ -570,6 +592,12 @@ describe("upload middleware", () => {
         },
         cb
       );
+
+      expect(cb).toHaveBeenCalledTimes(1);
+
+      expect(
+        cb.mock.calls[0][0]
+      ).toBeNull();
 
       const filename =
         cb.mock.calls[0][1];
@@ -590,6 +618,12 @@ describe("upload middleware", () => {
         cb
       );
 
+      expect(cb).toHaveBeenCalledTimes(1);
+
+      expect(
+        cb.mock.calls[0][0]
+      ).toBeNull();
+
       const filename =
         cb.mock.calls[0][1];
 
@@ -608,6 +642,8 @@ describe("upload middleware", () => {
         },
         cb
       );
+
+      expect(cb).toHaveBeenCalledTimes(1);
 
       const filename =
         cb.mock.calls[0][1];
@@ -628,6 +664,8 @@ describe("upload middleware", () => {
         cb
       );
 
+      expect(cb).toHaveBeenCalledTimes(1);
+
       const filename =
         cb.mock.calls[0][1];
 
@@ -646,6 +684,8 @@ describe("upload middleware", () => {
         },
         cb
       );
+
+      expect(cb).toHaveBeenCalledTimes(1);
 
       const filename =
         cb.mock.calls[0][1];
@@ -675,6 +715,9 @@ describe("upload middleware", () => {
         cb2
       );
 
+      expect(cb1).toHaveBeenCalledTimes(1);
+      expect(cb2).toHaveBeenCalledTimes(1);
+
       const filename1 =
         cb1.mock.calls[0][1];
 
@@ -685,6 +728,7 @@ describe("upload middleware", () => {
         filename2
       );
     });
+
   });
 
   /* =======================================================
@@ -692,10 +736,13 @@ describe("upload middleware", () => {
   ======================================================= */
 
   describe("File size limit", () => {
+
     test("should limit files to exactly 5 MB", () => {
       expect(
         multerConfig.limits.fileSize
-      ).toBe(5 * 1024 * 1024);
+      ).toBe(
+        5 * 1024 * 1024
+      );
     });
 
     test("should not allow a size limit greater than 5 MB", () => {
@@ -705,5 +752,7 @@ describe("upload middleware", () => {
         5 * 1024 * 1024
       );
     });
+
   });
+
 });

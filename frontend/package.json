@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@testing-library/react": "^16.3.0",
     "axios": "^1.7.2",
     "html2pdf.js": "^0.14.0",
     "i18next": "^26.3.6",
@@ -25,8 +26,13 @@
     "react-router-dom": "^6.24.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@babel/preset-env": "^7.29.7",
+    "@babel/preset-react": "^7.29.7",
     "@vitejs/plugin-react": "^4.3.1",
+    "babel-jest": "^29.7.0",
     "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "vite": "^5.3.1"
   }
 }

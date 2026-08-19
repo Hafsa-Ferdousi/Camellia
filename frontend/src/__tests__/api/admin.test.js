@@ -83,11 +83,15 @@ describe("Admin API", () => {
     });
 
     test("should propagate API error", async () => {
-      const error = new Error("Failed to get admin stats");
+      const error = new Error(
+        "Failed to get admin stats"
+      );
 
       mockClient.get.mockRejectedValue(error);
 
-      await expect(getAdminStats()).rejects.toThrow(
+      await expect(
+        getAdminStats()
+      ).rejects.toThrow(
         "Failed to get admin stats"
       );
     });
@@ -593,8 +597,9 @@ describe("Admin API", () => {
 
   describe("uploadImage", () => {
     test("should create FormData and send POST request", async () => {
-      const file = new Blob(
+      const file = new File(
         ["fake image data"],
+        "jewellery.png",
         {
           type: "image/png",
         }
@@ -618,9 +623,7 @@ describe("Admin API", () => {
 
       expect(url).toBe("/upload");
 
-      expect(formData).toBeInstanceOf(
-        FormData
-      );
+      expect(formData).toBeInstanceOf(FormData);
 
       expect(config).toEqual({
         headers: {
@@ -629,7 +632,18 @@ describe("Admin API", () => {
         },
       });
 
-      expect(formData.get("image")).toBe(file);
+      const uploadedFile = formData.get("image");
+
+      expect(uploadedFile).toBeInstanceOf(File);
+      expect(uploadedFile.name).toBe(
+        "jewellery.png"
+      );
+      expect(uploadedFile.type).toBe(
+        "image/png"
+      );
+      expect(uploadedFile.size).toBe(
+        file.size
+      );
     });
   });
 

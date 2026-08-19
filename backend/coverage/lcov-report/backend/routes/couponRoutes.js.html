@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -106,21 +106,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import express from "express";
@@ -136,21 +136,21 @@ import {
 import { protect, adminOnly, optionalAuth } from "../middleware/authMiddleware.js";
 &nbsp;
 // ── Admin coupon management — mounted at /api/admin/coupons ────────────────
-export const adminCouponRouter = <span class="cstat-no" title="statement not covered" >express.Router();</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.use(protect, adminOnly);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.post("/", createCoupon);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.get("/", getCoupons);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.get("/:id", getCouponById);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.put("/:id", updateCoupon);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.delete("/:id", deleteCoupon);</span>
-<span class="cstat-no" title="statement not covered" >adminCouponRouter.patch("/:id/status", setCouponStatus);</span>
+export const adminCouponRouter = express.Router();
+adminCouponRouter.use(protect, adminOnly);
+adminCouponRouter.post("/", createCoupon);
+adminCouponRouter.get("/", getCoupons);
+adminCouponRouter.get("/:id", getCouponById);
+adminCouponRouter.put("/:id", updateCoupon);
+adminCouponRouter.delete("/:id", deleteCoupon);
+adminCouponRouter.patch("/:id/status", setCouponStatus);
 &nbsp;
 // ── Customer coupon endpoints — mounted at /api/coupons ─────────────────────
-export const customerCouponRouter = <span class="cstat-no" title="statement not covered" >express.Router();</span>
+export const customerCouponRouter = express.Router();
 // optionalAuth: logged-in customers get their per-user usage enforced;
 // guests can still validate a code (per-user limits just won't apply to them
 // unless they're checking out and pass a guestEmail).
-<span class="cstat-no" title="statement not covered" >customerCouponRouter.post("/validate", optionalAuth, validateCoupon);</span>
+customerCouponRouter.post("/validate", optionalAuth, validateCoupon);
 &nbsp;
 export default customerCouponRouter;
 &nbsp;</pre></td></tr></table></pre>
@@ -160,7 +160,7 @@ export default customerCouponRouter;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:15:00.330Z
+                at 2026-08-18T17:40:47.763Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

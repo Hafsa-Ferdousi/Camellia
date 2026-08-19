@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/10</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -116,8 +116,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -127,21 +127,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -149,7 +147,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import bcrypt from "bcryptjs";
 import User from "../models/User.js";
@@ -159,31 +159,31 @@ import { normalizeAnswer } from "./securityQuestions.js";
 // from ADMIN_* env vars — never from a hardcoded password — so deploys never
 // ship a known admin credential in the repo. Idempotent: does nothing once
 // an admin already exists, so it's safe to run on every boot.
-export async function <span class="fstat-no" title="function not covered" >ensureAdminUser(</span>) {
-  const existingAdmin = <span class="cstat-no" title="statement not covered" >await User.findOne({ role: "admin" });</span>
-<span class="cstat-no" title="statement not covered" >  if (existingAdmin) <span class="cstat-no" title="statement not covered" >return;</span></span>
+export async function ensureAdminUser() {
+  const existingAdmin = await User.findOne({ role: "admin" });
+  if (existingAdmin) return;
 &nbsp;
   const {
     ADMIN_EMAIL,
     ADMIN_PASSWORD,
-    ADMIN_USERNAME = <span class="branch-0 cbranch-no" title="branch not covered" >"admin",</span>
-    ADMIN_NAME = <span class="branch-0 cbranch-no" title="branch not covered" >"Admin",</span>
+    ADMIN_USERNAME = "admin",
+    ADMIN_NAME = "Admin",
     ADMIN_PHONE,
     ADMIN_SECURITY_QUESTION,
     ADMIN_SECURITY_ANSWER,
-  } = <span class="cstat-no" title="statement not covered" >process.env;</span>
+  } = process.env;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_SECURITY_QUESTION || !ADMIN_SECURITY_ANSWER) {</span>
-<span class="cstat-no" title="statement not covered" >    console.warn(</span>
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_SECURITY_QUESTION || !ADMIN_SECURITY_ANSWER) {
+    console.warn(
       "⚠️  No admin account exists yet, and ADMIN_EMAIL / ADMIN_PASSWORD / " +
       "ADMIN_SECURITY_QUESTION / ADMIN_SECURITY_ANSWER are not all set in .env " +
       "— skipping admin bootstrap. Set them and restart the server to create one."
     );
-<span class="cstat-no" title="statement not covered" >    return;</span>
+    return;
   }
 &nbsp;
-  const securityAnswerHash = <span class="cstat-no" title="statement not covered" >await bcrypt.hash(normalizeAnswer(ADMIN_SECURITY_ANSWER), 10);</span>
-<span class="cstat-no" title="statement not covered" >  await User.create({</span>
+  const securityAnswerHash = await bcrypt.hash(normalizeAnswer(ADMIN_SECURITY_ANSWER), 10);
+  await User.create({
     username: ADMIN_USERNAME,
     name: ADMIN_NAME,
     email: ADMIN_EMAIL,
@@ -193,7 +193,7 @@ export async function <span class="fstat-no" title="function not covered" >ensur
     securityQuestion: ADMIN_SECURITY_QUESTION,
     securityAnswerHash,
   });
-<span class="cstat-no" title="statement not covered" >  console.log(`✅ Admin account bootstrapped: ${ADMIN_EMAIL}`);</span>
+  console.log(`✅ Admin account bootstrapped: ${ADMIN_EMAIL}`);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -202,7 +202,7 @@ export async function <span class="fstat-no" title="function not covered" >ensur
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-12T09:15:00.330Z
+                at 2026-08-18T17:40:47.763Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
